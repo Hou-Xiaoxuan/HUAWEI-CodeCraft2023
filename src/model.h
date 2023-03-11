@@ -46,7 +46,7 @@ struct Robot {
     double w;       // 角速度(正：顺时针)，弧度/s
     double dirc;    // 方向,弧度，[-pai,pai]
 
-    Robot(): in_station(-1), goods(0), time_factor(1.0), crash_factor(1.0), loc(0, 0), v(0, 0), w(0), dirc(0) { }
+    Robot() : in_station(-1), goods(0), time_factor(1.0), crash_factor(1.0), loc(0, 0), v(0, 0), w(0), dirc(0) { }
 };
 
 /*地图*/
@@ -92,7 +92,7 @@ void init(std::istream &io_in)
             7, 76000, 105000, {4, 5, 6}
         };
     }
-        /*工作台信息*/
+    /*工作台信息*/
     {
         workstations[1] = {1, 50, {}, {1}};
         workstations[2] = {2, 50, {}, {2}};
@@ -146,4 +146,43 @@ void init(std::istream &io_in)
         }
 }
 
+
+// XXX 似乎过度设计了
+namespace Ooutput
+{
+/**输出用*/
+struct Instruction {
+    int robot_id;
+    virtual void print(std::ostream &io_out) const = 0;
+};
+struct I_forward : public Instruction {
+    double v;    // 设置前进速度
+    void print(std::ostream &io_out) const override { io_out << "forward " << robot_id << " " << v << std::endl; }
+};
+struct I_rotate : public Instruction {
+    double w;    // 设置旋转速度
+    void print(std::ostream &io_out) const override { io_out << "rotate " << robot_id << " " << w << std::endl; }
+};
+struct I_buy : public Instruction {
+    void print(std::ostream &io_out) const override { io_out << "buy " << robot_id << std::endl; }
+};
+struct I_sell : public Instruction {
+    void print(std::ostream &io_out) const override { io_out << "sell " << robot_id << std::endl; }
+};
+struct I_destroy : public Instruction {
+    void print(std::ostream &io_out) const override { io_out << "destroy " << robot_id << std::endl; }
+};
+
+void print_instructions(const std::vector<Instruction *> &instructions, std::ostream &io_out)
+{
+    // 打印并销毁指令
+    for (auto &ins : instructions)
+    {
+        ins->print(io_out);
+        delete ins;
+    }
+    io_out<<"OK"<<std::endl;
+    io_out.flush();
+}
+}
 #endif
