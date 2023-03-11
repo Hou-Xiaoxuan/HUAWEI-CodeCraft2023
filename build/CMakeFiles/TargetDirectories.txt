@@ -1,3 +1,0 @@
-/run/media/linxuan/Storage/CodeSpace/_Project/2023华为软件精英挑战赛/HW2023/build/CMakeFiles/main.dir
-/run/media/linxuan/Storage/CodeSpace/_Project/2023华为软件精英挑战赛/HW2023/build/CMakeFiles/edit_cache.dir
-/run/media/linxuan/Storage/CodeSpace/_Project/2023华为软件精英挑战赛/HW2023/build/CMakeFiles/rebuild_cache.dir
