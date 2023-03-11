@@ -1,0 +1,12 @@
+{
+    // c++提示使用cmake配置
+    "cmake.sourceDirectory": "${workspaceFolder}",
+    // debug宏
+    "cmake.configureArgs": [
+        "-DCMAKE_BUILD_TYPE=Debug",
+    ],     
+    "cmake.buildDirectory": "${workspaceFolder}/build",
+    "cmake.configureOnOpen": true,
+    "cmake.buildTask": true,
+    
+}

@@ -1,0 +1,17 @@
+{
+    // make task
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "cmake",
+            "label": "cmake build",
+            "command": "build",
+            "targets": [
+                "main"
+            ],
+            "group": "build"
+            
+        }
+         
+    ]
+}
