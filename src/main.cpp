@@ -1,9 +1,8 @@
 #include <fstream>
 #include <iostream>
 using namespace std;
-#ifndef __MAP_H__
- #include "map.h"
-#endif
+#include "model.h"
+
 
 int main()
 {
@@ -21,7 +20,7 @@ int main()
 #endif
     puts("OK");
     fflush(stdout);
-    
+
 
     return 0;
 }
