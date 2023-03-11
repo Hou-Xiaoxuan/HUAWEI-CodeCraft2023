@@ -2,13 +2,12 @@
 #define MODULE_H
 #include <iostream>
 #include <vector>
-
-/*二维点*/
 struct Point {
-    double x, y;
-    Point(double x = 0, double y = 0) : x(x), y(y) { }
+    double x;
+    double y;
+    Point() : x(0), y(0) { }
+    Point(double x, double y) : x(x), y(y) { }
 };
-
 /*货物*/
 struct Goods {
     int type;                  // 编号
@@ -28,12 +27,26 @@ struct WorkStation {
 /*工作台*/
 struct Station {
     int type;
-    double x;
-    double y;
-    int timeleft; // -1表示空闲,0表示因输出满而停止,>0表示生产剩余时间
+    Point loc;
+    int timeleft;    // -1表示空闲,0表示因输出满而停止,>0表示生产剩余时间
     int material;    // 二进制表示物品拥有情况，从低位编码
     int product;     // 1表示有产品，0表示无产品
-    Station(int type, double x, double y) : type(type), x(x), y(y), timeleft(-1), material(0), product(0) { }
+    Station(int type, double x, double y) : type(type), loc(x, y), timeleft(-1), material(0), product(0) { }
+};
+
+struct Robot {
+    int in_station;    // -1表示不在工作台，否则表示工作台编号
+    int goods;         // 0表示无货物，否则表示货物编号
+    // 货物系数
+    double time_factor;     // 时间系数
+    double crash_factor;    // 碰撞系数
+    // 位置信息
+    Point loc;      // 坐标
+    Point v;        // 线速度
+    double w;       // 角速度(正：顺时针)，弧度/s
+    double dirc;    // 方向,弧度，[-pai,pai]
+
+    Robot(): in_station(-1), goods(0), time_factor(1.0), crash_factor(1.0), loc(0, 0), v(0, 0), w(0), dirc(0) { }
 };
 
 /*地图*/
@@ -43,8 +56,15 @@ struct Map {
 
     std::vector<std::vector<char>> map;
     std::vector<Station> station;
-    Map() : map(width + 1, std::vector<char>(height, +1)) { station.reserve(50); }
+    std::vector<Robot> robot;
+    Map() : map(width + 1, std::vector<char>(height, +1))
+    {
+        station.reserve(50);
+        robot.reserve(5);
+    }
 };
+
+
 
 /*全局变量*/
 std::vector<Goods> goods(8);                  // 7种货物
@@ -54,8 +74,8 @@ Map map;
 void init(std::istream &io_in)
 {
 
+    /*货物信息*/
     {
-        /*货物信息*/
         goods[1] = {1, 3000, 6000};
         goods[2] = {2, 4400, 7600};
         goods[3] = {3, 5800, 9200};
@@ -72,8 +92,8 @@ void init(std::istream &io_in)
             7, 76000, 105000, {4, 5, 6}
         };
     }
-    {
         /*工作台信息*/
+    {
         workstations[1] = {1, 50, {}, {1}};
         workstations[2] = {2, 50, {}, {2}};
         workstations[3] = {3, 50, {}, {3}};
@@ -109,7 +129,10 @@ void init(std::istream &io_in)
                 continue;
             else if (map.map[i][j] == 'A')
             {
-                // robot，暂时忽略
+                // robot
+                Robot rob;
+                rob.loc = Point(i * 0.5 - 0.25, j * 0.5 - 0.25);
+                map.robot.emplace_back(rob);
             }
             else if (map.map[i][j] >= '0' && map.map[i][j] <= '9')
             {
