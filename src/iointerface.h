@@ -17,7 +17,6 @@ std::vector<int> station_id_to_index;    // 输入id到index
 bool is_init = false;
 void read_flame(std::istream &io_in)
 {
-    cerr << meta.station.size() << ' ' << meta.robot.size() << endl;
     if (is_init == false)
     {
         robot_id_to_index.resize(ConVar::max_robot + 1);
@@ -30,19 +29,13 @@ void read_flame(std::istream &io_in)
     io_in >> flame >> money;
     meta.current_flame = flame;
     meta.current_money = money;
-    std::cerr << "[info][read_flame] " << flame << " " << money << std::endl;
     int k;
     io_in >> k;
-    std::cerr << "[info][read_flame] station num: " << k << std::endl;
+
     for (int i = 0; i < k; ++i)
     {
         Station tmp;
-        cerr << "station start read" << endl;
         io_in >> tmp.type >> tmp.loc.x >> tmp.loc.y >> tmp.timeleft >> tmp.material >> tmp.product;
-        cerr << "station read end" << endl;
-
-        cerr << "[info][read_flame] station(" << i << "): " << tmp.type << " " << tmp.loc.x << " "
-             << tmp.loc.y << " " << tmp.timeleft << " " << tmp.material << " " << tmp.product << endl;
         if (is_init == false)
         {
             // 找到 station.loc = Pointer(x,y)的下标
@@ -71,25 +64,21 @@ void read_flame(std::istream &io_in)
             station_id_to_index[i] = index;
             station_index_to_id[index] = i;
         }
-        cerr << "[info][read_flame] id_to_index[" << i << "]=" << station_id_to_index[i] << endl;
         int index = station_id_to_index[i];
 
-        // #ifdef DEBUG
-        //         if (meta.station[index].type != tmp.type){
-        //             std::cerr << "station type error" << std::endl;
-        //             throw "station type didn't match";
-        //         }
-        // #endif
+        #ifdef DEBUG
+                if (meta.station[index].type != tmp.type){
+                    std::cerr << "station type error" << std::endl;
+                    throw "station type didn't match";
+                }
+        #endif
         meta.station[index] = tmp;
-        cerr << "[info][read_flame] station over once" << endl;
     }
-    std::cerr << "[info][read_flame] station read end" << std::endl;
     for (int i = 0; i < ConVar::max_robot; i++)
     {
         Robot tmp;
         io_in >> tmp.in_station >> tmp.goods >> tmp.time_factor >> tmp.crash_factor >> tmp.w >> tmp.v.x
             >> tmp.v.y >> tmp.dirc >> tmp.loc.x >> tmp.loc.y;
-        std::cerr << "[info][read_flame] read robot(" << i << ")" << std::endl;
         if (is_init == false)
         {
             int index = -1;
@@ -115,7 +104,6 @@ void read_flame(std::istream &io_in)
 
     std::string ok;
     io_in >> ok;
-    std::cerr << "[info][read_flame] over, ok=" << ok << std::endl;
 }
 /**输出用*/
 struct Instruction {
@@ -163,7 +151,6 @@ struct I_destroy : public Instruction {
 
 void print_instructions(const std::vector<Instruction *> &instructions, std::ostream &io_out, int flame)
 {
-    cerr << "[info][print_instructions] print instructions count " << instructions.size() << endl;
     // 打印当前帧数
     io_out << flame << std::endl;
     // 打印并销毁指令
@@ -174,7 +161,6 @@ void print_instructions(const std::vector<Instruction *> &instructions, std::ost
     }
     io_out << "OK" << std::endl;
     io_out.flush();
-    cerr << "[info][print_instructions] print instructions over" << endl;
 }
 }
 
