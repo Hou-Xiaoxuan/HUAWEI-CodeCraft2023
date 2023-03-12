@@ -16,8 +16,9 @@ namespace ConVar {
     const static int time_limit = 3 * 60 * 50;             // 3分钟
     const static double map_weight = 50.0;                 // 地图大小
     const static double map_height = 50.0;                 // 地图大小
-    const static int max_workstation = 9;                  // 工作台数量
-    const static int max_goods = 7;                        // 货物数量
+    const static int worksation_type = 9;                  // 工作台种类
+    const static int max_workstation = 50;                 // 工作台数量
+    const static int good_types = 7;                        // 货物种类
     const static int max_robot = 4;                        // 机器人数量
     const static double robot_radius = 0.5;                // 机器人半径
     const static double robot_radius_goods = 0.53;         // 取货机器人半径

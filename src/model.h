@@ -1,15 +1,16 @@
 #ifndef MODULE_H
 #define MODULE_H
+#include <cmath>
 #include <iostream>
 #include <vector>
-#include<cmath>
 struct Point {
     double x;
     double y;
     Point() : x(0), y(0) { }
     Point(double x, double y) : x(x), y(y) { }
 
-    double static distance (const Point &a, const Point &b) {
+    double static distance(const Point &a, const Point &b)
+    {
         return sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
     }
 };
@@ -52,7 +53,9 @@ struct Robot {
     double w;       // 角速度(正：顺时针)，弧度/s
     double dirc;    // 方向,弧度，[-pai,pai]
 
-    Robot() : in_station(-1), goods(0), time_factor(1.0), crash_factor(1.0), loc(0, 0), v(0, 0), w(0), dirc(0) { }
+    Robot() :
+        in_station(-1), goods(0), time_factor(1.0), crash_factor(1.0), loc(0, 0), v(0, 0), w(0), dirc(0)
+    { }
 };
 
 /*地图*/
@@ -60,23 +63,25 @@ struct Map {
     const static int width = 100;
     const static int height = 100;
 
-    std::vector<std::vector<char>> map;
-    std::vector<Station> station;
-    std::vector<Robot> robot;
+    std::vector<std::vector<char>> map;    // 从1开始
+    std::vector<Station> station;          // 从1开始
+    std::vector<Robot> robot;              // 从1开始
     int current_flame;
     int current_money;
     Map() : map(width + 1, std::vector<char>(height, +1))
     {
         station.reserve(50);
         robot.reserve(5);
+        station.push_back(Station());
+        robot.push_back(Robot());
     }
 };
 
 
 
 /*全局变量*/
-std::vector<Goods> goods(8);                  // 7种货物
-std::vector<WorkStation> workstations(10);    // 9种工作台
+std::vector<Goods> goods(8);                  // 7种货物，从1开始
+std::vector<WorkStation> workstations(10);    // 9种工作台，从1开始
 Map meta;
 
 void init(std::istream &io_in)
@@ -129,32 +134,33 @@ void init(std::istream &io_in)
     }
 
     /*读入100*100的地图*/
-    for (int i = 1; i <= Map::width; i++)
-        for (int j = 1; j <= Map::height; j++)
+    for (int y = Map::width; y >= 1; y--)
+        for (int x = 1; x <= Map::height; x++)
         {
-            io_in >> meta.map[i][j];
-            if (meta.map[i][j] == '.')
+            io_in >> meta.map[x][y];
+            if (meta.map[x][y] == '.')
                 continue;
-            else if (meta.map[i][j] == 'A')
+            else if (meta.map[x][y] == 'A')
             {
                 // robot
                 Robot rob;
-                rob.loc = Point(i * 0.5 - 0.25, (100 - j) * 0.5 + 0.25);
+                rob.loc = Point(x * 0.5 - 0.25, y * 0.5 - 0.25);
                 meta.robot.emplace_back(rob);
             }
-            else if (meta.map[i][j] >= '0' && meta.map[i][j] <= '9')
+            else if (meta.map[x][y] >= '0' && meta.map[x][y] <= '9')
             {
                 // 1=0.5m,坐标为中心坐标
-                meta.station.emplace_back(Station {meta.map[i][j] - '0', i * 0.5 - 0.25, j * 0.5 - 0.25});
+                meta.station.emplace_back(meta.map[x][y] - '0', x * 0.5 - 0.25, y * 0.5 - 0.25);
             }
             else
             {
-                std::cerr << "非法输入，map[" << i << "][" << j << "] = " << meta.map[i][j] << std::endl;
+                std::cerr << "非法输入，map[" << y << "][" << x << "] = " << meta.map[x][y] << std::endl;
             }
         }
     // 读入标识结束的“ok”
     std::string ok;
     io_in >> ok;
+    std::cerr << "[info] ok = " << ok << std::endl;
 }
 
 
