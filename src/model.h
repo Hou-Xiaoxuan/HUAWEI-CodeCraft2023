@@ -7,6 +7,10 @@ struct Point {
     double y;
     Point() : x(0), y(0) { }
     Point(double x, double y) : x(x), y(y) { }
+
+    double static distance (const Point &a, const Point &b) {
+        return sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
+    }
 };
 /*货物*/
 struct Goods {
@@ -31,6 +35,7 @@ struct Station {
     int timeleft;    // -1表示空闲,0表示因输出满而停止,>0表示生产剩余时间
     int material;    // 二进制表示物品拥有情况，从低位编码
     int product;     // 1表示有产品，0表示无产品
+    Station() : type(-1), loc(-1, -1), timeleft(-1), material(0), product(0) { }
     Station(int type, double x, double y) : type(type), loc(x, y), timeleft(-1), material(0), product(0) { }
 };
 
@@ -57,6 +62,8 @@ struct Map {
     std::vector<std::vector<char>> map;
     std::vector<Station> station;
     std::vector<Robot> robot;
+    int current_flame;
+    int current_money;
     Map() : map(width + 1, std::vector<char>(height, +1))
     {
         station.reserve(50);
@@ -69,7 +76,7 @@ struct Map {
 /*全局变量*/
 std::vector<Goods> goods(8);                  // 7种货物
 std::vector<WorkStation> workstations(10);    // 9种工作台
-Map map;
+Map meta;
 
 void init(std::istream &io_in)
 {
@@ -124,65 +131,29 @@ void init(std::istream &io_in)
     for (int i = 1; i <= Map::width; i++)
         for (int j = 1; j <= Map::height; j++)
         {
-            io_in >> map.map[i][j];
-            if (map.map[i][j] == '.')
+            io_in >> meta.map[i][j];
+            if (meta.map[i][j] == '.')
                 continue;
-            else if (map.map[i][j] == 'A')
+            else if (meta.map[i][j] == 'A')
             {
                 // robot
                 Robot rob;
                 rob.loc = Point(i * 0.5 - 0.25, (100 - j) * 0.5 + 0.25);
-                map.robot.emplace_back(rob);
+                meta.robot.emplace_back(rob);
             }
-            else if (map.map[i][j] >= '0' && map.map[i][j] <= '9')
+            else if (meta.map[i][j] >= '0' && meta.map[i][j] <= '9')
             {
                 // 1=0.5m,坐标为中心坐标
-                map.station.emplace_back(Station {map.map[i][j] - '0', i * 0.5 - 0.25, j * 0.5 - 0.25});
+                meta.station.emplace_back(Station {meta.map[i][j] - '0', i * 0.5 - 0.25, j * 0.5 - 0.25});
             }
             else
             {
-                std::cerr << "非法输入，map[" << i << "][" << j << "] = " << map.map[i][j] << std::endl;
+                std::cerr << "非法输入，map[" << i << "][" << j << "] = " << meta.map[i][j] << std::endl;
             }
         }
 }
 
 
 // XXX 似乎过度设计了
-namespace output
-{
-/**输出用*/
-struct Instruction {
-    int robot_id;
-    virtual void print(std::ostream &io_out) const = 0;
-};
-struct I_forward : public Instruction {
-    double v;    // 设置前进速度
-    void print(std::ostream &io_out) const override { io_out << "forward " << robot_id << " " << v << std::endl; }
-};
-struct I_rotate : public Instruction {
-    double w;    // 设置旋转速度
-    void print(std::ostream &io_out) const override { io_out << "rotate " << robot_id << " " << w << std::endl; }
-};
-struct I_buy : public Instruction {
-    void print(std::ostream &io_out) const override { io_out << "buy " << robot_id << std::endl; }
-};
-struct I_sell : public Instruction {
-    void print(std::ostream &io_out) const override { io_out << "sell " << robot_id << std::endl; }
-};
-struct I_destroy : public Instruction {
-    void print(std::ostream &io_out) const override { io_out << "destroy " << robot_id << std::endl; }
-};
 
-void print_instructions(const std::vector<Instruction *> &instructions, std::ostream &io_out)
-{
-    // 打印并销毁指令
-    for (auto &ins : instructions)
-    {
-        ins->print(io_out);
-        delete ins;
-    }
-    io_out<<"OK"<<std::endl;
-    io_out.flush();
-}
-}
 #endif
