@@ -131,7 +131,7 @@ void init(std::istream &io_in)
             {
                 // robot
                 Robot rob;
-                rob.loc = Point(i * 0.5 - 0.25, j * 0.5 - 0.25);
+                rob.loc = Point(i * 0.5 - 0.25, (100 - j) * 0.5 + 0.25);
                 map.robot.emplace_back(rob);
             }
             else if (map.map[i][j] >= '0' && map.map[i][j] <= '9')
@@ -148,7 +148,7 @@ void init(std::istream &io_in)
 
 
 // XXX 似乎过度设计了
-namespace Ooutput
+namespace output
 {
 /**输出用*/
 struct Instruction {
