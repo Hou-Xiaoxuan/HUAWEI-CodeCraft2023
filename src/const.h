@@ -12,7 +12,7 @@
 // const double ROBOT_RADIUS_GOODS = 0.53;        // 取货机器人半径
 // const double ROBOT_WORKSTATION_CHECK = 0.4;    // 工作台检测半径
 // const double ROBOT_DENSITY = 20;               // 机器人密度
-struct ConVar {
+namespace ConVar {
     const static int time_limit = 3 * 60 * 50;             // 3分钟
     const static double map_weight = 50.0;                 // 地图大小
     const static double map_height = 50.0;                 // 地图大小
