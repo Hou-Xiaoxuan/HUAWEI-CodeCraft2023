@@ -2,6 +2,7 @@
 #define MODULE_H
 #include <iostream>
 #include <vector>
+#include<cmath>
 struct Point {
     double x;
     double y;
@@ -151,9 +152,10 @@ void init(std::istream &io_in)
                 std::cerr << "非法输入，map[" << i << "][" << j << "] = " << meta.map[i][j] << std::endl;
             }
         }
+    // 读入标识结束的“ok”
+    std::string ok;
+    io_in >> ok;
 }
 
-
-// XXX 似乎过度设计了
 
 #endif

@@ -87,6 +87,8 @@ int read_flame(std::iostream &io_in)
         int index = robot_id_to_index[i];
         meta.robot[index] = tmp;
     }
+    std::string ok;
+    io_in >> ok;
 }
 /**输出用*/
 struct Instruction {
