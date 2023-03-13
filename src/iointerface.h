@@ -38,7 +38,7 @@ void read_flame(std::istream &io_in)
         Robot tmp;
         io_in >> tmp.in_station >> tmp.goods >> tmp.time_factor >> tmp.crash_factor >> tmp.w >> tmp.v.x
             >> tmp.v.y >> tmp.dirc >> tmp.loc.x >> tmp.loc.y;
-
+        tmp.in_station = tmp.in_station == -1 ? -1 : tmp.in_station + 1;
         int index = i+1;
         meta.robot[index] = tmp;
     }
