@@ -13,6 +13,12 @@ struct Point {
     {
         return sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
     }
+
+    friend ostream &operator<<(ostream &os, const Point &p)
+    {
+        os << "(" << p.x << "," << p.y << ")";
+        return os;
+    }
 };
 /*货物*/
 struct Goods {
