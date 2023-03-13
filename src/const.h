@@ -23,7 +23,7 @@ const static double max_robot_angular_speed = M_PI;    // 机器人最大角速�
 const static double max_force = 250;                   // 最大牵引力
 const static double max_torque = 60;                   // 最大扭矩
 };
-/*常用值 comman varaible*/
+/*常用值 common varaible*/
 namespace ComVar
 {
 const static double robot_weight
@@ -33,6 +33,7 @@ const static double robot_goods_weight = ConVar::robot_radius_goods * ConVar::ro
 const static double max_robot_acceleration = ConVar::max_force / robot_weight;    // 最大加速度
 const static double max_robot_goods_acceleration = ConVar::max_force / robot_goods_weight;    // 最大加速度
 const static double flametime = 1.0 / 50;    // 一帧时间
+
 }
 
 #endif

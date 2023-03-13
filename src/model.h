@@ -14,7 +14,7 @@ struct Point {
         return sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
     }
 
-    friend ostream &operator<<(ostream &os, const Point &p)
+    friend std::ostream &operator<<(std::ostream &os, const Point &p)
     {
         os << "(" << p.x << "," << p.y << ")";
         return os;
@@ -38,6 +38,7 @@ struct WorkStation {
 
 /*工作台*/
 struct Station {
+    int id;    // 在数组中的下标
     int type;
     Point loc;
     int timeleft;    // -1表示空闲,0表示因输出满而停止,>0表示生产剩余时间
@@ -48,6 +49,7 @@ struct Station {
 };
 
 struct Robot {
+    int id;            // 在数组中的下标
     int in_station;    // -1表示不在工作台，否则表示工作台编号
     int goods;         // 0表示无货物，否则表示货物编号
     // 货物系数
@@ -151,12 +153,15 @@ void init(std::istream &io_in)
                 // robot
                 Robot rob;
                 rob.loc = Point(x * 0.5 - 0.25, y * 0.5 - 0.25);
+                rob.id = meta.robot.size();
                 meta.robot.emplace_back(rob);
+
             }
             else if (meta.map[x][y] >= '0' && meta.map[x][y] <= '9')
             {
                 // 1=0.5m,坐标为中心坐标
                 meta.station.emplace_back(meta.map[x][y] - '0', x * 0.5 - 0.25, y * 0.5 - 0.25);
+                meta.station.back().id = meta.station.size() - 1;
             }
             else
             {
