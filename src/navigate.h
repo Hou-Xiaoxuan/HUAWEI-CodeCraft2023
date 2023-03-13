@@ -22,16 +22,20 @@ double __get_max_robot_acceleration(const Robot &robot)
 /*速度调整*/
 void __change_speed(const Robot &robot, const Point &target, const vector<Point> &follow_target)
 {
-    double angle = atan(robot.v.y / robot.v.x);
-    double min_a_x = __get_max_robot_acceleration(robot) * cos(angle);
-    double min_a_y = __get_max_robot_acceleration(robot) * sin(angle);
+    double min_a_x
+        = __get_max_robot_acceleration(robot) * robot.v.x / (robot.v.x * robot.v.x + robot.v.y * robot.v.y);
+    double min_a_y
+        = __get_max_robot_acceleration(robot) * robot.v.y / (robot.v.x * robot.v.x + robot.v.y * robot.v.y);
     double max_dis_x = robot.v.x * robot.v.x / (2 * min_a_x);
     double max_dis_y = robot.v.y * robot.v.y / (2 * min_a_y);
     double next_v = 0;
 
-    if (robot.loc.x + max_dis_x >= ConVar::map_weight || robot.loc.x + max_dis_x <= 0
-        || robot.loc.y + max_dis_y >= ConVar::map_height || robot.loc.y + max_dis_y <= 0)
+    if (robot.loc.x + max_dis_x >= ConVar::map_weight || robot.loc.x - max_dis_x <= 0
+        || robot.loc.y + max_dis_y >= ConVar::map_height || robot.loc.y - max_dis_y <= 0)
     {
+        cerr << "current flame"
+             << " " << meta.current_flame << " "
+             << "limit" << endl;
         next_v = 0;
     }
     else
@@ -48,7 +52,7 @@ void __change_direction(const Robot &robot, const Point &target, const vector<Po
     double x = target.x - robot.loc.x;
 
     double angle = atan2(y, x);
-    if (angle - robot.dirc <= 1e-5) return;
+    if (fabs(angle - robot.dirc) <= 1e-5) return;
 
     double delta = angle - robot.dirc;
     if (delta > M_PI)

@@ -25,19 +25,22 @@ int main()
     fflush(stdout);
 
     /*----------START----------*/
+    int robot_target = -1;             // aim
+    int robot_id = 1;                  // 使用1号机器人实验
+    auto &robot = meta.robot[robot_id];
+    robot_target = next_target(-1);    // 初始化目标点
     while (cin.eof() == false)
     {
         cerr << "info: flame read" << endl;
         io::read_flame(cin);
         cerr << "info: flame read end, flame:" << meta.current_flame << endl;
-
-        vector<int> robot_target(5, -1);    // 机器人目标点
-        int robot_id = 1;                   // 使用1号机器人实验
-        if (robot_target[robot_id] == -1) robot_target[robot_id] = next_target(-1);    // 初始化目标点
-        auto target = meta.station[robot_target[robot_id]].loc;
+        if (robot.in_station == robot_target)
+        {
+            robot_target = next_target(robot_target);
+        }
+        auto target = meta.station[robot_target].loc;
         navigate::move_to(robot_id, target);
         io::print_instructions(navigate::instructions, cout, meta.current_flame);
-        
     }
     return 0;
 }
