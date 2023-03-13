@@ -37,6 +37,7 @@ int main()
         auto target = meta.station[robot_target[robot_id]].loc;
         navigate::move_to(robot_id, target);
         io::print_instructions(navigate::instructions, cout, meta.current_flame);
+        
     }
     return 0;
 }

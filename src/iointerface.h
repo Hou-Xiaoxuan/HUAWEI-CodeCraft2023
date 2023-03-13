@@ -31,6 +31,7 @@ void read_flame(std::istream &io_in)
                     throw "station type didn't match";
                 }
         #endif
+        tmp.id = i+1;
         meta.station[index] = tmp;
     }
     for (int i = 0; i < ConVar::max_robot; i++)
@@ -40,6 +41,7 @@ void read_flame(std::istream &io_in)
             >> tmp.v.y >> tmp.dirc >> tmp.loc.x >> tmp.loc.y;
         tmp.in_station = tmp.in_station == -1 ? -1 : tmp.in_station + 1;
         int index = i+1;
+        tmp.id = i+1;
         meta.robot[index] = tmp;
     }
     std::string ok;
@@ -89,7 +91,8 @@ struct I_destroy : public Instruction {
     }
 };
 
-void print_instructions(const std::vector<Instruction *> &instructions, std::ostream &io_out, int flame)
+/*打印，并清空instructions*/
+void print_instructions(std::vector<Instruction *> &instructions, std::ostream &io_out, int flame)
 {
     // 打印当前帧数
     io_out << flame << std::endl;
@@ -101,6 +104,7 @@ void print_instructions(const std::vector<Instruction *> &instructions, std::ost
     }
     io_out << "OK" << std::endl;
     io_out.flush();
+    instructions.clear();
 }
 }
 
