@@ -6,7 +6,7 @@ using namespace std;
 
 int main()
 {
-    model::init(cin);
+    io::init(cin);
     puts("OK");
     fflush(stdout);
 
