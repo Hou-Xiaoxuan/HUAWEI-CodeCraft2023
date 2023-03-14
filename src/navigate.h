@@ -27,22 +27,11 @@ void __change_speed(const Robot &robot, const Point &target, const vector<Point>
     double stop_x = robot.loc.x + robot.v.x * t + 0.5 * min_a_x * t * t;
     double stop_y = robot.loc.y + robot.v.y * t + 0.5 * min_a_y * t * t;
 
-    cerr << "info: "
-         << "current " << robot.v.len() << endl;
     if (stop_x - ConVar::robot_radius_goods <= 0
         || stop_x + ConVar::robot_radius_goods >= ConVar::map_weight
         || stop_y - ConVar::robot_radius_goods <= 0
         || stop_y + ConVar::robot_radius_goods >= ConVar::map_height)
     {
-        cerr << "current flame " << meta.current_flame << " "
-             << "limit" << endl;
-
-        cerr << "info: "
-             << "loc " << robot.loc << endl;
-
-        cerr << "info: "
-             << "except " << robot.v.len() - __get_max_robot_acceleration(robot) * ComVar::flametime
-             << endl;
         next_v = 0;
     }
     else
