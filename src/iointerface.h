@@ -173,7 +173,7 @@ struct I_destroy : public Instruction {
         io_out << "destroy " << robot_id - 1 << std::endl;
     }
 };
-
+std::vector<io::Instruction *> instructions; // 输入使用全局变量
 /*打印，并清空instructions*/
 void print_instructions(std::vector<Instruction *> &instructions, std::ostream &io_out, int flame)
 {
