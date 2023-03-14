@@ -136,6 +136,7 @@ struct Instruction {
     int robot_id;
     Instruction(int robot_id) : robot_id(robot_id) { }
     virtual void print(std::ostream &io_out) const = 0;
+    virtual ~Instruction() { }
 };
 struct I_forward : public Instruction {
     double v;    // 设置前进速度
