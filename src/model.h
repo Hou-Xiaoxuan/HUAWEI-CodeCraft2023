@@ -44,10 +44,10 @@ struct Goods {
 
 /*工作台类型*/
 struct WorkStation {
-    int type;                     // 编号
-    int worktime;                 // 生产时间
-    std::vector<int> needs;       // 生产所需物品
-    std::vector<int> produces;    // 生产物品
+    int type;                  // 编号
+    int worktime;              // 生产时间
+    std::vector<int> needs;    // 生产所需物品
+    int produce;               // 生产物品
 };
 
 /*工作台*/
