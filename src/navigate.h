@@ -14,27 +14,31 @@ using namespace std;
 
 vector<io::Instruction *> instructions;
 
-double __get_max_robot_acceleration(const Robot &robot)
-{
-    return robot.goods == 0 ? ComVar::max_robot_acceleration : ComVar::max_robot_goods_acceleration;
-}
+double __get_max_robot_acceleration(const Robot &robot) { return ComVar::max_robot_goods_acceleration; }
 
 
 /*速度调整*/
 void __change_speed(const Robot &robot, const Point &target, const vector<Point> &follow_target)
 {
+    double next_v;
     double min_a_x = __get_max_robot_acceleration(robot) * robot.v.x / robot.v.len();
     double min_a_y = __get_max_robot_acceleration(robot) * robot.v.y / robot.v.len();
-    double max_dis_x = robot.v.x * robot.v.x / (2 * min_a_x);
-    double max_dis_y = robot.v.y * robot.v.y / (2 * min_a_y);
-    double next_v = 0;
+    double t = robot.v.len() / __get_max_robot_acceleration(robot);
+    double stop_x = robot.loc.x + robot.v.x * t + 0.5 * min_a_x * t * t;
+    double stop_y = robot.loc.y + robot.v.y * t + 0.5 * min_a_y * t * t;
+
     cerr << "info: "
          << "current " << robot.v.len() << endl;
-    if (robot.loc.x + max_dis_x >= ConVar::map_weight || robot.loc.x - max_dis_x <= 0
-        || robot.loc.y + max_dis_y >= ConVar::map_height || robot.loc.y - max_dis_y <= 0)
+    if (stop_x - ConVar::robot_radius_goods <= 0
+        || stop_x + ConVar::robot_radius_goods >= ConVar::map_weight
+        || stop_y - ConVar::robot_radius_goods <= 0
+        || stop_y + ConVar::robot_radius_goods >= ConVar::map_height)
     {
         cerr << "current flame " << meta.current_flame << " "
              << "limit" << endl;
+
+        cerr << "info: "
+             << "loc " << robot.loc << endl;
 
         cerr << "info: "
              << "except " << robot.v.len() - __get_max_robot_acceleration(robot) * ComVar::flametime
