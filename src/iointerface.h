@@ -13,8 +13,8 @@ namespace io
 void init(std::istream &io_in)
 {
 
-    using model::meta;
     using model::goods;
+    using model::meta;
     using model::workstations;
     /*货物信息*/
     {
@@ -36,24 +36,24 @@ void init(std::istream &io_in)
     }
     /*工作台信息*/
     {
-        workstations[1] = {1, 50, {}, {1}};
-        workstations[2] = {2, 50, {}, {2}};
-        workstations[3] = {3, 50, {}, {3}};
+        workstations[1] = {1, 50, {}, 1};
+        workstations[2] = {2, 50, {}, 2};
+        workstations[3] = {3, 50, {}, 3};
         workstations[4] = {
             4, 500, {1, 2},
-              {4}
+              4
         };
         workstations[5] = {
             5, 500, {1, 3},
-              {5}
+              5
         };
         workstations[6] = {
             6, 500, {2, 3},
-              {6}
+              6
         };
         workstations[7] = {
             7, 1000, {4, 5, 6},
-              {7}
+              7
         };
         workstations[8] = {8, 1, {7}, {}};
         workstations[9] = {
@@ -107,14 +107,15 @@ void read_flame(std::istream &io_in)
     {
         Station tmp;
         io_in >> tmp.type >> tmp.loc.x >> tmp.loc.y >> tmp.timeleft >> tmp.material >> tmp.product;
-        int index = i+1;
-        #ifdef DEBUG
-                if (model::meta.station[index].type != tmp.type){
-                    std::cerr << "station type error" << std::endl;
-                    throw "station type didn't match";
-                }
-        #endif
-        tmp.id = i+1;
+        int index = i + 1;
+#ifdef DEBUG
+        if (model::meta.station[index].type != tmp.type)
+        {
+            std::cerr << "station type error" << std::endl;
+            throw "station type didn't match";
+        }
+#endif
+        tmp.id = i + 1;
         model::meta.station[index] = tmp;
     }
     for (int i = 0; i < ConVar::max_robot; i++)
@@ -123,8 +124,8 @@ void read_flame(std::istream &io_in)
         io_in >> tmp.in_station >> tmp.goods >> tmp.time_factor >> tmp.crash_factor >> tmp.w >> tmp.v.x
             >> tmp.v.y >> tmp.dirc >> tmp.loc.x >> tmp.loc.y;
         tmp.in_station = tmp.in_station == -1 ? -1 : tmp.in_station + 1;
-        int index = i+1;
-        tmp.id = i+1;
+        int index = i + 1;
+        tmp.id = i + 1;
         model::meta.robot[index] = tmp;
     }
     std::string ok;
@@ -154,26 +155,17 @@ struct I_rotate : public Instruction {
 };
 struct I_buy : public Instruction {
     I_buy(int robot_id) : Instruction(robot_id) { }
-    void print(std::ostream &io_out) const override
-    {
-        io_out << "buy " << robot_id - 1 << std::endl;
-    }
+    void print(std::ostream &io_out) const override { io_out << "buy " << robot_id - 1 << std::endl; }
 };
 struct I_sell : public Instruction {
     I_sell(int robot_id) : Instruction(robot_id) { }
-    void print(std::ostream &io_out) const override
-    {
-        io_out << "sell " << robot_id - 1 << std::endl;
-    }
+    void print(std::ostream &io_out) const override { io_out << "sell " << robot_id - 1 << std::endl; }
 };
 struct I_destroy : public Instruction {
     I_destroy(int robot_id) : Instruction(robot_id) { }
-    void print(std::ostream &io_out) const override
-    {
-        io_out << "destroy " << robot_id - 1 << std::endl;
-    }
+    void print(std::ostream &io_out) const override { io_out << "destroy " << robot_id - 1 << std::endl; }
 };
-std::vector<io::Instruction *> instructions; // 输入使用全局变量
+std::vector<io::Instruction *> instructions;    // 输入使用全局变量
 /*打印，并清空instructions*/
 void print_instructions(std::vector<Instruction *> &instructions, std::ostream &io_out, int flame)
 {
