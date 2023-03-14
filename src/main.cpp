@@ -3,7 +3,7 @@
 using namespace std;
 #include "iointerface.h"
 #include "model.h"
-
+#include "route_fool.h"
 int main()
 {
     io::init(cin);

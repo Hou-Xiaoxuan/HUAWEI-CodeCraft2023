@@ -10,4 +10,5 @@ if (!WIN32)
 endif (!WIN32)
 
 AUX_SOURCE_DIRECTORY(./src src)
+INCLUDE_DIRECTORIES(./src)
 ADD_EXECUTABLE(main ${src})
