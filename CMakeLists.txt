@@ -5,8 +5,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_STANDARD 11)
 
 add_definitions(-DDEBUG)
-
-if 
 if (!WIN32)
     link_libraries(pthread rt m)
 endif (!WIN32)
