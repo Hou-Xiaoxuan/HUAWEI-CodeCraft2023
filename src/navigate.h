@@ -11,9 +11,7 @@
 namespace navigate
 {
 using namespace std;
-
-vector<io::Instruction *> instructions;
-
+using io::instructions;
 double __get_max_robot_acceleration(const Robot &robot) { return ComVar::max_robot_goods_acceleration; }
 
 
