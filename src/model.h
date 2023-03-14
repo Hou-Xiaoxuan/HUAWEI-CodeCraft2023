@@ -63,7 +63,7 @@ struct Station {
 
     /*方法*/
     // 判断是否有物品
-    inline bool has_goods(int goods_id) const { return (material & (1 << (goods_id - 1))) != 0; }
+    inline bool goods_exist(int goods_id) const { return (material & (1 << (goods_id - 1))) != 0; }
 };
 
 struct Robot {
