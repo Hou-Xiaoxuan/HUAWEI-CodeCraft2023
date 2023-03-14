@@ -95,7 +95,7 @@ void give_pointing()
             if (robot.in_station == route.from_station_index)
             {
                 io::instructions.push_back(new io::I_buy(i));
-#ifdef Debug
+#ifdef DEBUG
                 if (meta.station[route.from_station_index].timeleft > 0)
                 {
                     cerr << "[error][pointing]"
@@ -119,7 +119,7 @@ void give_pointing()
             if (robot.in_station == route.to_station_index)
             {
                 io::instructions.push_back(new io::I_sell(i));
-#ifdef Debug
+#ifdef DEBUG
                 if (meta.station[route.to_station_index].has_goods(robot.goods))
                     cerr << "[error][pointing]"
                          << "robot " << i << " station " << route.to_station_index << "already has goods "
