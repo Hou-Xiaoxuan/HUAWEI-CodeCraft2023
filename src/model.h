@@ -60,6 +60,10 @@ struct Station {
     int product;     // 1表示有产品，0表示无产品
     Station() : type(-1), loc(-1, -1), timeleft(-1), material(0), product(0) { }
     Station(int type, double x, double y) : type(type), loc(x, y), timeleft(-1), material(0), product(0) { }
+
+    /*方法*/
+    // 判断是否有物品
+    inline bool has_goods(int goods_id) const { return (material & (1 << (goods_id - 1))) != 0; }
 };
 
 struct Robot {
