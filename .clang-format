@@ -23,7 +23,7 @@ AllowShortCaseLabelsOnASingleLine: true
 # 允许短的函数放在同一行: None, InlineOnly(定义在类中), Empty(空函数), Inline(定义在类中，空函数), All
 AllowShortFunctionsOnASingleLine: All
 AllowShortLambdasOnASingleLine: Empty
-AllowShortIfStatementsOnASingleLine: Never #WithoutElse
+AllowShortIfStatementsOnASingleLine: WithoutElse #WithoutElse
 AllowShortLoopsOnASingleLine: false
 # 模板换行
 AlwaysBreakAfterDefinitionReturnType: None

@@ -20,6 +20,20 @@ struct Point {
         return os;
     }
 };
+
+struct Speed {
+    double x;
+    double y;
+    Speed(double x, double y) : x(0), y(0) { }
+
+    double len() const { return sqrt(x * x + y * y); }
+
+    friend std::ostream &operator<<(std::ostream &os, const Speed &v)
+    {
+        os << "(" << v.x << "," << v.y << ")";
+        return os;
+    }
+};
 /*货物*/
 struct Goods {
     int type;                  // 编号
@@ -57,7 +71,7 @@ struct Robot {
     double crash_factor;    // 碰撞系数
     // 位置信息
     Point loc;      // 坐标
-    Point v;        // 线速度
+    Speed v;        // 线速度
     double w;       // 角速度(正：顺时针)，弧度/s
     double dirc;    // 方向,弧度，[-pai,pai]
 
@@ -155,7 +169,6 @@ void init(std::istream &io_in)
                 rob.loc = Point(x * 0.5 - 0.25, y * 0.5 - 0.25);
                 rob.id = meta.robot.size();
                 meta.robot.emplace_back(rob);
-
             }
             else if (meta.map[x][y] >= '0' && meta.map[x][y] <= '9')
             {
