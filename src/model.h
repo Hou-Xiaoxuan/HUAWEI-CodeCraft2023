@@ -100,12 +100,12 @@ struct Map {
 };
 
 
-
+namespace model
+{
 /*全局变量*/
 std::vector<Goods> goods(8);                  // 7种货物，从1开始
 std::vector<WorkStation> workstations(10);    // 9种工作台，从1开始
 Map meta;
-
 void init(std::istream &io_in)
 {
 
@@ -186,6 +186,8 @@ void init(std::istream &io_in)
     io_in >> ok;
     std::cerr << "[info] ok = " << ok << std::endl;
 }
+}
 
+const Map &meta = model::meta;
 
 #endif

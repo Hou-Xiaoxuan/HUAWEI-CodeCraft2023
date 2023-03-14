@@ -15,8 +15,8 @@ void read_flame(std::istream &io_in)
     // loc_to_index init
     int flame, money;
     io_in >> flame >> money;
-    meta.current_flame = flame;
-    meta.current_money = money;
+    model::meta.current_flame = flame;
+    model::meta.current_money = money;
     int k;
     io_in >> k;
 
@@ -26,13 +26,13 @@ void read_flame(std::istream &io_in)
         io_in >> tmp.type >> tmp.loc.x >> tmp.loc.y >> tmp.timeleft >> tmp.material >> tmp.product;
         int index = i+1;
         #ifdef DEBUG
-                if (meta.station[index].type != tmp.type){
+                if (model::meta.station[index].type != tmp.type){
                     std::cerr << "station type error" << std::endl;
                     throw "station type didn't match";
                 }
         #endif
         tmp.id = i+1;
-        meta.station[index] = tmp;
+        model::meta.station[index] = tmp;
     }
     for (int i = 0; i < ConVar::max_robot; i++)
     {
@@ -42,7 +42,7 @@ void read_flame(std::istream &io_in)
         tmp.in_station = tmp.in_station == -1 ? -1 : tmp.in_station + 1;
         int index = i+1;
         tmp.id = i+1;
-        meta.robot[index] = tmp;
+        model::meta.robot[index] = tmp;
     }
     std::string ok;
     io_in >> ok;
