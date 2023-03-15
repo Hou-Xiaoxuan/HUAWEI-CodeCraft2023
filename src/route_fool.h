@@ -67,7 +67,7 @@ void init()
             if (from.type != 9 and to.type == 9) add_edge(from, to);
         }
     processing.assign(meta.robot.size(), 0);
-    processing.assign(meta.robot.size(), 0);
+    processing_state.assign(meta.robot.size(), 0);
 }
 
 
@@ -216,15 +216,11 @@ void __give_pointing(int robot_id)
 
     if (best_route_index == -1)
     {
-#ifdef DEBUG
-        cerr << "no route found for robot" << robot_id << "at flame" << meta.current_flame << endl;
-        // pause
-        system("pause");
-        throw "no route found";
-#endif
+        cerr<<"[info][pointing] robot "<<robot_id<<" no route"<<endl;
     }
     else
     {
+        cerr<<"[info][pointing] "<<robot_id<<" route for "<<best_route_index<<endl;
         processing[robot_id] = best_route_index;
         processing_state[robot_id] = ProcessingState::PICKING;
     }
