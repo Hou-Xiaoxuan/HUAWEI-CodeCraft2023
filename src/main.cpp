@@ -6,11 +6,15 @@ using namespace std;
 
 int main()
 {
+    auto file = fstream("my.log");
+    cerr.rdbug(file.rdbuf());
     io::init(cin);
     puts("OK");
     fflush(stdout);
 
     /*----------START----------*/
+    int cnt = 0;
+    int flag = 1;
     while (cin.eof() == false)
     {
         cerr << "info: flame read" << endl;
@@ -18,14 +22,19 @@ int main()
         cerr << "info: flame read end, flame:" << meta.current_flame << endl;
 
         vector<io::Instruction *> instructions;
-        instructions.push_back(new io::I_forward(1, 6));
-        instructions.push_back(new io::I_forward(2, 6));
-        instructions.push_back(new io::I_forward(3, 6));
-        instructions.push_back(new io::I_forward(4, 6));
-        instructions.push_back(new io::I_rotate(1, -2));
-        instructions.push_back(new io::I_rotate(2, -1));
-        instructions.push_back(new io::I_rotate(3, 1));
-        instructions.push_back(new io::I_rotate(4, 2));
+        cerr << meta.robot[1].w << endl;
+        if (cnt % 20 == 0)
+        {
+            flag = -flag;
+        }
+        if (flag > 0)
+        {
+            instructions.push_back(new io::I_rotate(1, M_PI));
+        }
+        else
+        {
+            instructions.push_back(new io::I_rotate(1, -M_PI));
+        }
         io::print_instructions(instructions, cout, meta.current_flame);
     }
     return 0;
