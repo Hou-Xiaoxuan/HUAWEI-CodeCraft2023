@@ -15,7 +15,7 @@ using io::instructions;
 double __get_max_robot_acceleration(const Robot &robot) { return ComVar::max_robot_goods_acceleration; }
 
 
-double get_delta_angle(const Robot &robot, const Point &target)
+double __get_delta_angle(const Robot &robot, const Point &target)
 {
     double y = target.y - robot.loc.y;
     double x = target.x - robot.loc.x;
@@ -30,20 +30,24 @@ double get_delta_angle(const Robot &robot, const Point &target)
     return delta;
 }
 
+double __get_robot_radius(const Robot &robot)
+{
+    return robot.goods == 0 ? ConVar::robot_radius : ConVar::robot_radius_goods;
+}
+
 bool __is_in_circle(const Robot &robot, const Point &target)
 {
 
-    // shun shi zhen x + r * sin y - r * cos
-    // ni shi zhen x - r * sin y + r * cos
-    // yuan xin
+    // 顺时针 x + r * sin y - r * cos
+    // 逆时针 x - r * sin y + r * cos
     Point center;
-    // < 0 shun shi zhen; > 0 ni shi zhen
-    int flag = signbit(get_delta_angle(robot, target)) ? 1 : -1;
+    // < 0 顺时针; > 0 逆时针
+    int flag = signbit(__get_delta_angle(robot, target)) ? 1 : -1;
     center.x = robot.loc.x + flag * ComVar::max_ridus * sin(robot.dirc);
     center.y = robot.loc.y - flag * ComVar::max_ridus * cos(robot.dirc);
 
-    // XXX:buyong huowu banjing zengji lubangxing
-    return Point::distance(center, target) <= ComVar::max_ridus - ConVar::robot_radius;
+    double radius = __get_robot_radius(robot);
+    return Point::distance(center, target) <= ComVar::max_ridus - radius;
 }
 
 
@@ -58,7 +62,6 @@ void __change_speed(const Robot &robot, const Point &target, const vector<Point>
     double stop_x = robot.loc.x + robot.v.x * t + 0.5 * min_a_x * t * t;
     double stop_y = robot.loc.y + robot.v.y * t + 0.5 * min_a_y * t * t;
 
-    // XXX:with goods
     if (stop_x - ConVar::robot_radius_goods <= 0
         || stop_x + ConVar::robot_radius_goods >= ConVar::map_weight
         || stop_y - ConVar::robot_radius_goods <= 0
@@ -71,20 +74,18 @@ void __change_speed(const Robot &robot, const Point &target, const vector<Point>
     // prevent from circle
     if (__is_in_circle(robot, target))
     {
-        double next_v = 0.5 * Point::distance(robot.loc, target) / sin(get_delta_angle(robot, target))
+        double next_v = 0.5 * Point::distance(robot.loc, target) / sin(__get_delta_angle(robot, target))
             * ConVar::max_robot_angular_speed;
         instructions.push_back(new io::I_forward(robot.id, next_v));
         return;
-    }    instructions.push_back(new io::I_forward(robot.id, ConVar::max_robot_forward_speed));
-
-
-
+    }
+    instructions.push_back(new io::I_forward(robot.id, ConVar::max_robot_forward_speed));
 }
 
 /*角度调整*/
 void __change_direction(const Robot &robot, const Point &target, const vector<Point> &follow_target)
 {
-    double delta = get_delta_angle(robot, target);
+    double delta = __get_delta_angle(robot, target);
     if (delta >= ComVar::flametime * ConVar::max_robot_angular_speed)
     {
         instructions.push_back(
