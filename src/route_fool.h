@@ -72,7 +72,7 @@ void init()
 /*参考navigate的实现，给出准确的移动时间帧数量预估*/
 int __estimated_move_flame(Point from, Point target_one, Point target_two = Point(0, 0))
 {
-    static const int bias = 30;    // 误差
+    static const int bias = 3;    // 误差
     double time = 0;
     time += Point::distance(from, target_one) / ConVar::max_robot_forward_speed;
     if (target_two.x != 0 and target_two.y != 0)
@@ -202,8 +202,8 @@ void __give_pointing(int robot_id)
     }
     else
     {
-        cerr << "[info][__pointing] [flame=" << meta.current_flame << "]\trobot=" << robot_id
-             << "best ppf=" << best_profit_per_flame << " route [" << best_route_index
+        cerr << "[info][__pointing] [flame=" << meta.current_flame << "]\trobot = " << robot_id
+             << "best ppf = " << best_profit_per_flame << " route [" << best_route_index
              << "]: " << routes[best_route_index] << endl;
         processing[robot_id] = best_route_index;
         processing_state[robot_id] = ProcessingState::PICKING;
@@ -224,6 +224,7 @@ void give_pointing()
         {
             if (processing_state[i] == ProcessingState::SELL) /*结束了*/
             {
+                cerr << "[info][pointing] [flame="<<meta.current_flame<<"] robot " << i << " finished" << routes[processing[i]] << endl;
                 processing[i] = 0;
                 processing_state[i] = ProcessingState::PICKING;
                 continue;
