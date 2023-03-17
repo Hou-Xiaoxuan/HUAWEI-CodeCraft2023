@@ -120,7 +120,7 @@ void __give_pointing(int robot_id)
         // [等待时间计算]: 预期到达from点时，预期生产好材料所需要的时间
         int expected_ready_flame_count = ConVar::time_limit;    // from点预期生产好材料所需要的时间
         if (from_station.with_product == 1)
-            expected_ready_flame_count = min(expected_ready_flame_count, 0);
+            expected_ready_flame_count = 0;
         else if (from_station.timeleft > 0)
             expected_ready_flame_count = min(expected_ready_flame_count, from_station.timeleft);
         else
@@ -147,7 +147,7 @@ void __give_pointing(int robot_id)
 
             // [等待时间计算] 竞争产物，退让
             if (p_route.from_station_index == route.from_station_index
-                and p_route.goods == 0)    // 起点相同
+                and meta.robot[j].goods == 0)    // 起点相同
                 invalid_route = 100;
         }
         // cerr << "[info][__pointing]"
