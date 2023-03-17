@@ -8,18 +8,11 @@ using namespace std;
 
 void robot()
 {
-    auto log = ofstream("../log.txt");
-    cerr.rdbuf(log.rdbuf());
-
     io::init(cin);
     route_fool::init();
     puts("OK");
     fflush(stdout);
     /*----------START----------*/
-    vector<int> targets = {1, 2, 3};
-    int robot_id = 1;
-    int target_index = 0;
-    int cnt = 0;
     while (cin.eof() == false)
     {
         // cerr << "info: flame read" << endl;
@@ -42,7 +35,7 @@ int main()
     fstream fout("log.txt", ios::out);
     cerr.rdbuf(fout.rdbuf());
 
-    local();
-    // robot();
+    // local();
+    robot();
     return 0;
 }
