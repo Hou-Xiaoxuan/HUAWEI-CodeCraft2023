@@ -13,7 +13,6 @@ struct Route {
     int money_need;        // 开启任务需要资金
     int profit;            // 完成任务获得资金
     int goods;             // 运输的货物
-    int profit_per_dis;    // 每单位距离获得资金
 };
 
 
@@ -99,9 +98,9 @@ void __give_pointing(int robot_id)
             -
 
         */
-        const auto &target_goods = model::goods[meta.station[route.to_station_index].with_product];
         const auto &target_station = meta.station[route.to_station_index];
         const auto &from_station = meta.station[route.from_station_index];
+        const auto &target_goods = from_station.product();
         int expected_material = target_station.material;    // 预期到达from点时已有的原材料
         if (target_station.goods_exist(route.goods) and target_station.type != 8    // *contition 1-1.1
             and target_station.type != 9)
