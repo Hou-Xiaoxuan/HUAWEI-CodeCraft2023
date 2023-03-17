@@ -48,11 +48,9 @@ void init()
         r.from_station_index = from.id;
         r.to_station_index = to.id;
         r.finish_time = -1;
-        r.money_need = model::goods[from.product].cost;
-        r.profit = (model::goods[from.product].price - model::goods[to.product].cost);
-        r.profit_per_dis = (model::goods[from.product].price - model::goods[to.product].cost)
-            / Point::distance(from.loc, to.loc);
-        r.goods = from.product;
+        r.money_need = from.product().cost;
+        r.profit = from.product().price - from.product().cost;
+        r.goods = from.product_id();
         point_by[to.id].push_back(routes.size());
         point_to[from.id].push_back(routes.size());
         routes.push_back(r);
@@ -61,8 +59,8 @@ void init()
         for (int j = 1; j < meta.station.size(); j++)
         {
             const auto &from = meta.station[i], &to = meta.station[j];
-            if (first_class(i) and second_class(j)) add_edge(from, to);
-            if (second_class(i) and to.type == 7) add_edge(from, to);
+            if (first_class(from.type) and second_class(to.type)) add_edge(from, to);
+            if (second_class(from.type) and to.type == 7) add_edge(from, to);
             if (from.type == 7 and to.type == 8) add_edge(from, to);
             if (from.type != 9 and to.type == 9) add_edge(from, to);
         }
@@ -101,7 +99,7 @@ void __give_pointing(int robot_id)
             -
 
         */
-        const auto &target_goods = model::goods[meta.station[route.to_station_index].product];
+        const auto &target_goods = model::goods[meta.station[route.to_station_index].with_product];
         const auto &target_station = meta.station[route.to_station_index];
         const auto &from_station = meta.station[route.from_station_index];
         int expected_material = target_station.material;    // 预期到达from点时已有的原材料
@@ -116,7 +114,7 @@ void __give_pointing(int robot_id)
 
         // [等待时间计算]: 预期到达from点时，预期生产好材料所需要的时间
         int expected_ready_flame_count = ConVar::time_limit;    // from点预期生产好材料所需要的时间
-        if (from_station.product == 1)
+        if (from_station.with_product == 1)
             expected_ready_flame_count = min(expected_ready_flame_count, 0);
         else if (from_station.timeleft > 0)
             expected_ready_flame_count = min(expected_ready_flame_count, from_station.timeleft);
@@ -145,7 +143,7 @@ void __give_pointing(int robot_id)
             if (p_route.from_station_index == route.from_station_index and p_route.goods == 0)
             {
                 int p_get_material_flame_count = 0;    // p_route拿到原材料所需时间
-                if (from_station.product == 1)
+                if (from_station.with_product == 1)
                 {
                     // 移动时间
                     p_get_material_flame_count = (p_route.finish_time - meta.current_flame)

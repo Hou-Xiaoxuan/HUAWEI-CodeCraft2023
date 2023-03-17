@@ -106,7 +106,7 @@ void read_flame(std::istream &io_in)
     for (int i = 0; i < k; ++i)
     {
         Station tmp;
-        io_in >> tmp.type >> tmp.loc.x >> tmp.loc.y >> tmp.timeleft >> tmp.material >> tmp.product;
+        io_in >> tmp.type >> tmp.loc.x >> tmp.loc.y >> tmp.timeleft >> tmp.material >> tmp.with_product;
         int index = i + 1;
 #ifdef DEBUG
         if (model::meta.station[index].type != tmp.type)

@@ -37,8 +37,8 @@ struct Speed {
 /*货物*/
 struct Goods {
     int type;                  // 编号
-    int price;                 // 售价
     int cost;                  // 购买价
+    int price;                 // 售价
     std::vector<int> needs;    // 生产所需物品
 };
 
@@ -55,15 +55,19 @@ struct Station {
     int id;    // 在数组中的下标
     int type;
     Point loc;
-    int timeleft;    // -1表示空闲,0表示因输出满而停止,>0表示生产剩余时间
-    int material;    // 二进制表示物品拥有情况，从低位编码
-    int product;     // 1表示有产品，0表示无产品
-    Station() : type(-1), loc(-1, -1), timeleft(-1), material(0), product(0) { }
-    Station(int type, double x, double y) : type(type), loc(x, y), timeleft(-1), material(0), product(0) { }
+    int timeleft;        // -1表示空闲,0表示因输出满而停止,>0表示生产剩余时间
+    int material;        // 二进制表示物品拥有情况，从低位编码
+    int with_product;    // 1表示有产品，0表示无产品
+    Station() : type(-1), loc(-1, -1), timeleft(-1), material(0), with_product(0) { }
+    Station(int type, double x, double y) :
+        type(type), loc(x, y), timeleft(-1), material(0), with_product(0)
+    { }
 
     /*方法*/
     // 判断是否有物品
     inline bool goods_exist(int goods_id) const { return (material & (1 << (goods_id - 1))) != 0; }
+    inline int product_id() const { return model::workstations[type].produce; }
+    inline const Goods &product() const { return model::goods[product_id()]; }
 };
 
 struct Robot {
