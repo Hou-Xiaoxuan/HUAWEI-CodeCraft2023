@@ -28,7 +28,7 @@ vector<Route> routes;
 vector<vector<int>> point_to;    // 子节点，保存边的index
 vector<vector<int>> point_by;    // 父节边，保存边的index
 
-vector<int> processing;    // 机器人[i]正在处理的root
+vector<int> processing;    // 机器人[i]正在处理的route
 vector<int> processing_state;    // 机器人[i]正在处理的root的状态：0：取货中，1：运输中，2：卸货中
 enum ProcessingState {
     PICKING = 0,
@@ -56,7 +56,9 @@ void init()
         point_to[from.id].push_back(routes.size());
         routes.push_back(r);
     };
+
     for (int i = 1; i < meta.station.size(); i++)
+    {
         for (int j = 1; j < meta.station.size(); j++)
         {
             const auto &from = meta.station[i], &to = meta.station[j];
@@ -64,12 +66,13 @@ void init()
                 != to.workstation().needs.end())
                 add_edge(from, to);
         }
+    }
     processing.assign(meta.robot.size(), 0);
     processing_state.assign(meta.robot.size(), 0);
 }
 
 
-/*参考navigate的实现，给出准确的移动时间帧数量预估*/
+/*TODO 参考navigate的实现，给出准确的移动时间帧数量预估*/
 int __estimated_move_flame(Point from, Point target_one, Point target_two = Point(0, 0))
 {
     static const int bias = 3;    // 误差
@@ -79,6 +82,7 @@ int __estimated_move_flame(Point from, Point target_one, Point target_two = Poin
         time += Point::distance(target_one, target_two) / ConVar::max_robot_forward_speed;
     return static_cast<int>(time / 50.0) + bias;
 }
+
 void __give_pointing(int robot_id)
 {
     const auto &robot = meta.robot[robot_id];
@@ -92,7 +96,7 @@ void __give_pointing(int robot_id)
             1-2. 目标点是8、9号点(仅收购，无需等待完成）「1-1、1-2满足一点即可」
             2. 预期到达from点时，预期money足够
             4. 预期可以完成任务
-            5. progit_per_dis最优
+            5. best_profit_per_flame最优
         *  expected_profit
             -
         如果target已经有部分原材料/已有其他原材料在运输，则计算时要在profit中加入target生产货物利益的一部分
@@ -103,8 +107,9 @@ void __give_pointing(int robot_id)
         const auto &from_station = meta.station[route.from_station_index];
 
         int expected_material = target_station.material;    // 预期到达from点时已有的原材料
-        if (target_station.goods_exist(route.goods) and target_station.type != 8    // *contition 1-1.1
-            and target_station.type != 9)
+
+        if (target_station.type != 8    // *contition 1-1.1
+            and target_station.type != 9 and target_station.goods_exist(route.goods))
         {
             // cerr << "[info][__pointing]"
             //      << " [flame=]" << meta.current_flame << " roobot_id: " << robot_id << "with type "
@@ -112,7 +117,7 @@ void __give_pointing(int robot_id)
             continue;
         }
 
-        int expecteed_money = meta.current_money;      // 预期到达from点时的money
+        int expected_money = meta.current_money;       // 预期到达from点时的money
         int expected_profit = route.profit;            // 预期利润
         int expected_buy_flame = meta.current_flame    // 预期到达from点时的flame
             + __estimated_move_flame(robot.loc, meta.station[routes[i].from_station_index].loc);
@@ -131,19 +136,22 @@ void __give_pointing(int robot_id)
         {
 
             if (processing[j] == 0) continue;
-            auto &p_route = routes[processing[j]];
+
+            const auto &p_route = routes[processing[j]];
             if (p_route.to_station_index == route.to_station_index)
             {
                 if (p_route.goods == route.goods)    // 终点&货物相同
                     invalid_route += 1;              // *condition 1-1.2
                 else
                 {
-                    expected_material &= (1 << (p_route.goods - 1));    // 添加预期原材料
+                    // TODO
+                    expected_material &= (1 << p_route.goods);    // 添加预期原材料
                 }
             }
-            // expected_money
-            if (routes[processing[j]].finish_time <= expected_buy_flame)
-                expecteed_money += routes[processing[j]].money_need + routes[processing[j]].profit;
+
+            // TODO expected_money
+            if (p_route.finish_time <= expected_buy_flame)
+                expected_money += p_route.money_need + p_route.profit;
 
             // [等待时间计算] 竞争产物，退让
             if (p_route.from_station_index == route.from_station_index
@@ -155,8 +163,9 @@ void __give_pointing(int robot_id)
         //      << "with invalid= " << invalid_route << "skip route " << i << ": " << route << endl;
         if (target_station.type == 8 || target_station.type == 9)
             invalid_route -= ConVar::max_robot;    // *condition 1-2
+
         if (invalid_route > 0) continue;
-        if (expecteed_money < route.money_need) continue;    // *condition 2
+        if (expected_money < route.money_need) continue;    // *condition 2
 
         // [预期利润计算]：增加下一阶段预期产物的利润
         if (target_station.type == 8 or target_station.type == 9)
@@ -170,7 +179,7 @@ void __give_pointing(int robot_id)
                 material_count += expected_material & 1;
                 expected_material >>= 1;
             }
-            expected_profit += (target_station.product().cost - target_station.product().price) * 0.5
+            expected_profit += (target_station.product().price - target_station.product().cost) * 0.5
                 * material_count / target_station.product().needs.size();    // 加入预期利润0.5*原材料比例
         }
 
@@ -220,6 +229,7 @@ void __give_pointing(int robot_id)
         processing_state[robot_id] = ProcessingState::PICKING;
     }
 }
+
 /*1帧15ms内给出策略*/
 void give_pointing()
 {
