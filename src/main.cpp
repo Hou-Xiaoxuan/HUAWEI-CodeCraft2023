@@ -32,9 +32,11 @@ void local()
 int main()
 {
     // cerror重定向到文件
-    fstream fout("log.txt", ios::out);
-    cerr.rdbuf(fout.rdbuf());
-
+    fstream fout("/run/media/linxuan/Storage/CodeSpace/_Project/HW2023/log.txt", ios::out);
+    if(fout.is_open())
+        cerr.rdbuf(fout.rdbuf());
+    else
+        cerr<<"[error] log file open failed"<<endl;
     // local();
     robot();
     return 0;
