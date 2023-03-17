@@ -163,7 +163,7 @@ void __give_pointing(int robot_id)
         int expected_profit = route.profit;    // 预期利润
         if (target_station.type != 8 and target_station.type != 9)
         {
-            int material_count = 0;    // expected_material的1的个数
+            int material_count = 1;    // expected_material的1的个数
             while (expected_material)
             {
                 material_count += expected_material & 1;
