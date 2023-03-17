@@ -3,6 +3,7 @@
 #include <cmath>
 #include <iostream>
 #include <vector>
+// 声明，实现在文件尾部
 struct Point {
     double x;
     double y;
@@ -37,8 +38,8 @@ struct Speed {
 /*货物*/
 struct Goods {
     int type;                  // 编号
-    int price;                 // 售价
     int cost;                  // 购买价
+    int price;                 // 售价
     std::vector<int> needs;    // 生产所需物品
 };
 
@@ -55,11 +56,21 @@ struct Station {
     int id;    // 在数组中的下标
     int type;
     Point loc;
-    int timeleft;    // -1表示空闲,0表示因输出满而停止,>0表示生产剩余时间
-    int material;    // 二进制表示物品拥有情况，从低位编码
-    int product;     // 1表示有产品，0表示无产品
-    Station() : type(-1), loc(-1, -1), timeleft(-1), material(0), product(0) { }
-    Station(int type, double x, double y) : type(type), loc(x, y), timeleft(-1), material(0), product(0) { }
+    int timeleft;        // -1表示空闲,0表示因输出满而停止,>0表示生产剩余时间
+    int material;        // 二进制表示物品拥有情况，从低位编码
+    int with_product;    // 1表示有产品，0表示无产品
+    Station() : type(-1), loc(-1, -1), timeleft(-1), material(0), with_product(0) { }
+    Station(int type, double x, double y) :
+        type(type), loc(x, y), timeleft(-1), material(0), with_product(0)
+    { }
+
+    /*方法*/
+
+    // 判断是否有物品
+    inline bool goods_exist(int goods_id) const { return (material & (1 << (goods_id - 1))) != 0; }
+    inline int product_id() const;
+    inline const Goods &product() const;
+    inline const WorkStation &workstation() const;
 };
 
 struct Robot {
@@ -96,18 +107,43 @@ struct Map {
         robot.reserve(5);
         station.push_back(Station());
         robot.push_back(Robot());
+        current_money = ConVar::init_money;
     }
 };
-
 
 namespace model
 {
 /*全局变量*/
-std::vector<Goods> goods(8);                  // 7种货物，从1开始
-std::vector<WorkStation> workstations(10);    // 9种工作台，从1开始
-Map meta;
+// 7种货物，从1开始(8)
+std::vector<Goods> goods = {
+    {},
+    {1, 3000, 6000},
+    {2, 4400, 7600},
+    {3, 5800, 9200},
+    {4, 15400, 22500, {1, 2}},
+    {5, 17200, 25000, {1, 3}},
+    {6, 19200, 27500, {2, 3}},
+    {7, 76000, 105000, {4, 5, 6}},
+};
+// 9种工作台，从1开始
+std::vector<WorkStation> workstations = {
+    {},
+    {1, 50, {}, 1},
+    {2, 50, {}, 2},
+    {3, 50, {}, 3},
+    {4, 500, {1, 2}, 4},
+    {5, 500, {1, 3}, 5},
+    {6, 500, {2, 3}, 6},
+    {7, 1000, {4, 5, 6}, 7},
+    {8, 1, {7}, {}},
+    {9, 1, {1, 2, 3, 4, 5, 6, 7}, {}},
+};
+Map meta = Map();
 }
 
 const Map &meta = model::meta;
 
+int Station::product_id() const { return model::workstations[type].produce; }
+const Goods &Station::product() const { return model::goods[product_id()]; }
+const WorkStation &Station::workstation() const { return model::workstations[type]; }
 #endif

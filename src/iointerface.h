@@ -16,52 +16,6 @@ void init(std::istream &io_in)
     using model::goods;
     using model::meta;
     using model::workstations;
-    /*货物信息*/
-    {
-        goods[1] = {1, 3000, 6000};
-        goods[2] = {2, 4400, 7600};
-        goods[3] = {3, 5800, 9200};
-        goods[4] = {
-            4, 15400, 22500, {1, 2}
-        };
-        goods[5] = {
-            5, 17200, 25000, {1, 3}
-        };
-        goods[6] = {
-            6, 19200, 27500, {2, 3}
-        };
-        goods[7] = {
-            7, 76000, 105000, {4, 5, 6}
-        };
-    }
-    /*工作台信息*/
-    {
-        workstations[1] = {1, 50, {}, 1};
-        workstations[2] = {2, 50, {}, 2};
-        workstations[3] = {3, 50, {}, 3};
-        workstations[4] = {
-            4, 500, {1, 2},
-              4
-        };
-        workstations[5] = {
-            5, 500, {1, 3},
-              5
-        };
-        workstations[6] = {
-            6, 500, {2, 3},
-              6
-        };
-        workstations[7] = {
-            7, 1000, {4, 5, 6},
-              7
-        };
-        workstations[8] = {8, 1, {7}, {}};
-        workstations[9] = {
-            9, 1, {1, 2, 3, 4, 5, 6, 7},
-              {}
-        };
-    }
-
     /*读入100*100的地图*/
     for (int y = Map::width; y >= 1; y--)
         for (int x = 1; x <= Map::height; x++)
@@ -106,7 +60,7 @@ void read_flame(std::istream &io_in)
     for (int i = 0; i < k; ++i)
     {
         Station tmp;
-        io_in >> tmp.type >> tmp.loc.x >> tmp.loc.y >> tmp.timeleft >> tmp.material >> tmp.product;
+        io_in >> tmp.type >> tmp.loc.x >> tmp.loc.y >> tmp.timeleft >> tmp.material >> tmp.with_product;
         int index = i + 1;
 #ifdef DEBUG
         if (model::meta.station[index].type != tmp.type)

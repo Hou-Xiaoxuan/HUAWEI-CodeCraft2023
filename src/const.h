@@ -21,7 +21,8 @@ const static double max_robot_forward_speed = 6;       // 机器人最大前进�
 const static double max_robot_backward_speed = 2;      // 机器人最大后退速度
 const static double max_robot_angular_speed = M_PI;    // 机器人最大角速度
 const static double max_force = 250;                   // 最大牵引力
-const static double max_torque = 50;                   // 最大扭矩
+const static double max_torque = 60;                   // 最大扭矩
+const static int init_money = 200000;                  // 初始金钱
 };
 /*常用值 common varaible*/
 namespace ComVar
