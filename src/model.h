@@ -70,6 +70,7 @@ struct Station {
     inline bool goods_exist(int goods_id) const { return (material & (1 << (goods_id - 1))) != 0; }
     inline int product_id() const;
     inline const Goods &product() const;
+    inline const WorkStation &workstation() const;
 };
 
 struct Robot {
@@ -113,8 +114,30 @@ struct Map {
 namespace model
 {
 /*全局变量*/
-std::vector<Goods> goods(8);                  // 7种货物，从1开始
-std::vector<WorkStation> workstations(10);    // 9种工作台，从1开始
+// 7种货物，从1开始(8)
+std::vector<Goods> goods = {
+    {},
+    {1, 3000, 6000},
+    {2, 4400, 7600},
+    {3, 5800, 9200},
+    {4, 15400, 22500, {1, 2}},
+    {5, 17200, 25000, {1, 3}},
+    {6, 19200, 27500, {2, 3}},
+    {7, 76000, 105000, {4, 5, 6}},
+};
+// 9种工作台，从1开始
+std::vector<WorkStation> workstations = {
+    {},
+    {1, 50, {}, 1},
+    {2, 50, {}, 2},
+    {3, 50, {}, 3},
+    {4, 500, {1, 2}, 4},
+    {5, 500, {1, 3}, 5},
+    {6, 500, {2, 3}, 6},
+    {7, 1000, {4, 5, 6}, 7},
+    {8, 1, {7}, {}},
+    {9, 1, {1, 2, 3, 4, 5, 6, 7}, {}},
+};
 Map meta = Map();
 }
 
@@ -122,4 +145,5 @@ const Map &meta = model::meta;
 
 int Station::product_id() const { return model::workstations[type].produce; }
 const Goods &Station::product() const { return model::goods[product_id()]; }
+const WorkStation &Station::workstation() const { return model::workstations[type]; }
 #endif
