@@ -99,9 +99,10 @@ void __change_direction(const Robot &robot, const Point &target, const vector<Po
     double delta = __get_delta_angle(robot, target);
     double delta_dir = signbit(delta) ? -1 : 1;
     double angular_acceleration = __get_max_robot_angular_acceleration(robot);
-    if (delta_dir != signbit(robot.w))    // HACK
+    if (signbit(delta) != signbit(robot.w))    // HACK
     {
         instructions.push_back(new io::I_rotate(robot.id, ConVar::max_robot_angular_speed * delta_dir));
+        return;
     }
 
     double stop_angular = robot.w * robot.w * 0.5 / angular_acceleration;
