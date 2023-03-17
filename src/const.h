@@ -36,10 +36,10 @@ const static double flametime = 1.0 / 50;    // 一帧时间
 const static double max_ridus
     = ConVar::max_robot_forward_speed / ConVar::max_robot_angular_speed;    // 最大转弯半径
 const static double max_robot_angular_acceleration = 2 * ConVar::max_torque
-    / (robot_weight * ConVar::robot_radius * ConVar::robot_radius) / 50;    // 最大角加速度
+    / (robot_weight * ConVar::robot_radius * ConVar::robot_radius);    // 最大角加速度
 const static double max_robot_angular_acceleration_with_goods = 2 * ConVar::max_torque
-    / (robot_goods_weight * ConVar::robot_radius_goods * ConVar::robot_radius_goods)
-    / 50;    // 带着货物最大角加速度
+    / (robot_goods_weight * ConVar::robot_radius_goods
+        * ConVar::robot_radius_goods);    // 带着货物最大角加速度
 }
 
 #endif

@@ -12,8 +12,21 @@ namespace navigate
 {
 using namespace std;
 using io::instructions;
-double __get_max_robot_acceleration(const Robot &robot) { return ComVar::max_robot_goods_acceleration; }
+double __get_max_robot_acceleration(const Robot &robot)
+{
+    return robot.goods == 0 ? ComVar::max_robot_acceleration : ComVar::max_robot_goods_acceleration;
+}
 
+double __get_robot_radius(const Robot &robot)
+{
+    return robot.goods == 0 ? ConVar::robot_radius : ConVar::robot_radius_goods;
+}
+
+double __get_max_robot_angular_acceleration(const Robot &robot)
+{
+    return robot.goods == 0 ? ComVar::max_robot_angular_acceleration
+                            : ComVar::max_robot_angular_acceleration_with_goods;
+}
 
 double __get_delta_angle(const Robot &robot, const Point &target)
 {
@@ -30,10 +43,6 @@ double __get_delta_angle(const Robot &robot, const Point &target)
     return delta;
 }
 
-double __get_robot_radius(const Robot &robot)
-{
-    return robot.goods == 0 ? ConVar::robot_radius : ConVar::robot_radius_goods;
-}
 
 bool __is_in_circle(const Robot &robot, const Point &target)
 {
@@ -68,6 +77,7 @@ void __change_speed(const Robot &robot, const Point &target, const vector<Point>
         || stop_y + ConVar::robot_radius_goods >= ConVar::map_height)
     {
         instructions.push_back(new io::I_forward(robot.id, 0));
+        // cerr << "info: robot near wall" << endl;
         return;
     }
 
@@ -77,6 +87,7 @@ void __change_speed(const Robot &robot, const Point &target, const vector<Point>
         double next_v = 0.5 * Point::distance(robot.loc, target) / sin(__get_delta_angle(robot, target))
             * ConVar::max_robot_angular_speed;
         instructions.push_back(new io::I_forward(robot.id, next_v));
+        /// cerr << "info: next target in small circle" << endl;
         return;
     }
     instructions.push_back(new io::I_forward(robot.id, ConVar::max_robot_forward_speed));
@@ -86,15 +97,36 @@ void __change_speed(const Robot &robot, const Point &target, const vector<Point>
 void __change_direction(const Robot &robot, const Point &target, const vector<Point> &follow_target)
 {
     double delta = __get_delta_angle(robot, target);
-    if (delta >= ComVar::flametime * ConVar::max_robot_angular_speed)
+    double delta_dir = signbit(delta) ? -1 : 1;
+    double angular_acceleration = __get_max_robot_angular_acceleration(robot);
+    if (delta_dir != signbit(robot.w))    // HACK
     {
-        instructions.push_back(
-            new io::I_rotate(robot.id, ConVar::max_robot_angular_speed * (signbit(delta) ? -1 : 1)));
+        instructions.push_back(new io::I_rotate(robot.id, ConVar::max_robot_angular_speed * delta_dir));
     }
-    else
+
+    double stop_angular = robot.w * robot.w * 0.5 / angular_acceleration;
+    if (stop_angular >= fabs(delta))
     {
-        instructions.push_back(new io::I_rotate(robot.id, delta / ComVar::flametime));
+        instructions.push_back(new io::I_rotate(robot.id, 0));
+        return;
     }
+
+    double t1 = (ConVar::max_robot_angular_speed - fabs(robot.w)) / angular_acceleration;
+    double t2 = ComVar::flametime - t1;
+    double run_delta
+        = (ConVar::max_robot_angular_speed * ConVar::max_robot_angular_speed - robot.w * robot.w) * 0.5
+            / angular_acceleration
+        + ConVar::max_robot_angular_speed * t2;
+    if (run_delta >= fabs(delta))
+    {
+        double next_v = (2 * ComVar::flametime * robot.w + delta - robot.w * robot.w) * 0.5
+            / (angular_acceleration + 1) / ComVar::flametime;
+        instructions.push_back(new io::I_rotate(robot.id, next_v));
+        return;
+    }
+
+    instructions.push_back(new io::I_rotate(robot.id, ConVar::max_robot_angular_speed * delta_dir));
+    return;
 }
 
 
