@@ -249,7 +249,7 @@ void give_pointing()
 #endif
             }
             else
-                navigate::move_to(i, meta.station[route.from_station_index].loc);
+                navigate::move_to(robot, meta.station[route.from_station_index].loc);
         }
         else
         {
@@ -265,7 +265,7 @@ void give_pointing()
 #endif
             }
             else
-                navigate::move_to(i, meta.station[route.to_station_index].loc);
+                navigate::move_to(robot, meta.station[route.to_station_index].loc);
         }
     }
 }
