@@ -76,7 +76,7 @@ int __estimated_move_flame(Point from, Point target_one, Point target_two = Poin
     double time = 0;
     time += Point::distance(from, target_one) / ConVar::max_robot_forward_speed;
     if (target_two.x != 0 and target_two.y != 0)
-        time += Point::distance(target_one, target_two) / ConVar::max_robot_backward_speed;
+        time += Point::distance(target_one, target_two) / ConVar::max_robot_forward_speed;
     return static_cast<int>(time / 50.0) + bias;
 }
 void __give_pointing(int robot_id)
@@ -175,10 +175,21 @@ void __give_pointing(int robot_id)
         }
 
         // 计算利润率
-        int expected_flame_cost = max(expected_ready_flame_count,
-            __estimated_move_flame(robot.loc, meta.station[route.from_station_index].loc));
-        expected_flame_cost += __estimated_move_flame(
-            meta.station[route.from_station_index].loc, meta.station[route.to_station_index].loc);
+        // int expected_flame_cost = max(expected_ready_flame_count,
+        //     __estimated_move_flame(robot.loc, meta.station[route.from_station_index].loc));
+        // expected_flame_cost += __estimated_move_flame(
+        //     meta.station[route.from_station_index].loc, meta.station[route.to_station_index].loc);
+        int expected_flame_cost;
+        if (expected_buy_flame > __estimated_move_flame(robot.loc, from_station.loc))
+        {
+            expected_flame_cost
+                = expected_buy_flame + __estimated_move_flame(from_station.loc, target_station.loc);
+        }
+        else
+        {
+            expected_flame_cost = __estimated_move_flame(robot.loc, from_station.loc, target_station.loc);
+        }
+
         // cerr << "[info][__pointing]"
         //      << " [flame=]" << meta.current_flame << " robot_id: " << robot_id
         //      << " expected_flame_cost: " << expected_flame_cost << " expected_profit: " <<
@@ -189,10 +200,10 @@ void __give_pointing(int robot_id)
         {
             best_profit_per_flame = expected_profit / expected_flame_cost;
             best_route_index = i;
-            // cerr << "[info][__pointing] "
-            //      << " [flame=]" << meta.current_flame << "robot_id: " << robot_id
-            //      << "UPDATE best_profit_per_flame: " << best_profit_per_flame
-            //      << " best_route_index: " << best_route_index << endl;
+            cerr << "[info][__pointing] "
+                 << " [flame=" << meta.current_flame << "] robot_id: " << robot_id
+                 << "UPDATE best_profit_per_flame: " << best_profit_per_flame
+                 << " best_route_index: " << best_route_index << " route: " << route << endl;
         }
     }
 
@@ -202,7 +213,7 @@ void __give_pointing(int robot_id)
     }
     else
     {
-        cerr << "[info][__pointing] [flame=" << meta.current_flame << "]\trobot = " << robot_id
+        cerr << "[info][__pointing] [flame=" << meta.current_flame << "] robot = " << robot_id
              << "best ppf = " << best_profit_per_flame << " route [" << best_route_index
              << "]: " << routes[best_route_index] << endl;
         processing[robot_id] = best_route_index;
@@ -224,7 +235,8 @@ void give_pointing()
         {
             if (processing_state[i] == ProcessingState::SELL) /*结束了*/
             {
-                cerr << "[info][pointing] [flame="<<meta.current_flame<<"] robot " << i << " finished" << routes[processing[i]] << endl;
+                cerr << "[info][pointing] [flame=" << meta.current_flame << "] robot " << i << " finished"
+                     << routes[processing[i]] << endl;
                 processing[i] = 0;
                 processing_state[i] = ProcessingState::PICKING;
                 continue;
