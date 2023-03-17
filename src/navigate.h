@@ -77,7 +77,7 @@ void __change_speed(const Robot &robot, const Point &target, const vector<Point>
         || stop_y + ConVar::robot_radius_goods >= ConVar::map_height)
     {
         instructions.push_back(new io::I_forward(robot.id, 0));
-        cerr << "info: robot near wall" << endl;
+        // cerr << "info: robot near wall" << endl;
         return;
     }
 
@@ -87,7 +87,7 @@ void __change_speed(const Robot &robot, const Point &target, const vector<Point>
         double next_v = 0.5 * Point::distance(robot.loc, target) / sin(__get_delta_angle(robot, target))
             * ConVar::max_robot_angular_speed;
         instructions.push_back(new io::I_forward(robot.id, next_v));
-        cerr << "info: next target in small circle" << endl;
+        /// cerr << "info: next target in small circle" << endl;
         return;
     }
     instructions.push_back(new io::I_forward(robot.id, ConVar::max_robot_forward_speed));
@@ -97,10 +97,11 @@ void __change_speed(const Robot &robot, const Point &target, const vector<Point>
 void __change_direction(const Robot &robot, const Point &target, const vector<Point> &follow_target)
 {
     double delta = __get_delta_angle(robot, target);
+    double delta_dir = signbit(delta) ? -1 : 1;
     double angular_acceleration = __get_max_robot_angular_acceleration(robot);
-    if (signbit(delta) != signbit(robot.w))    // HACK
+    if (delta_dir != signbit(robot.w))    // HACK
     {
-        instructions.push_back(new io::I_rotate(robot.id, ConVar::max_robot_angular_speed));
+        instructions.push_back(new io::I_rotate(robot.id, ConVar::max_robot_angular_speed * delta_dir));
     }
 
     double stop_angular = robot.w * robot.w * 0.5 / angular_acceleration;
@@ -124,7 +125,7 @@ void __change_direction(const Robot &robot, const Point &target, const vector<Po
         return;
     }
 
-    instructions.push_back(new io::I_rotate(robot.id, ConVar::max_robot_angular_speed));
+    instructions.push_back(new io::I_rotate(robot.id, ConVar::max_robot_angular_speed * delta_dir));
     return;
 }
 
