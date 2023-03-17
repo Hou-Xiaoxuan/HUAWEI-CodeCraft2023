@@ -137,7 +137,6 @@ void move_to(const Robot &robot, Point target, vector<Point> follow_target = vec
 {
     __change_direction(robot, target, follow_target);
     __change_speed(robot, target, follow_target);
-    io::print_instructions(instructions, cout, meta.current_flame);
 }
 }
 #endif
