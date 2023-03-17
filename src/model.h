@@ -3,6 +3,7 @@
 #include <cmath>
 #include <iostream>
 #include <vector>
+// 声明，实现在文件尾部
 struct Point {
     double x;
     double y;
@@ -64,10 +65,11 @@ struct Station {
     { }
 
     /*方法*/
+
     // 判断是否有物品
     inline bool goods_exist(int goods_id) const { return (material & (1 << (goods_id - 1))) != 0; }
-    inline int product_id() const { return model::workstations[type].produce; }
-    inline const Goods &product() const { return model::goods[product_id()]; }
+    inline int product_id() const;
+    inline const Goods &product() const;
 };
 
 struct Robot {
@@ -107,15 +109,16 @@ struct Map {
     }
 };
 
-
 namespace model
 {
 /*全局变量*/
 std::vector<Goods> goods(8);                  // 7种货物，从1开始
 std::vector<WorkStation> workstations(10);    // 9种工作台，从1开始
-Map meta;
+Map meta = Map();
 }
 
 const Map &meta = model::meta;
 
+int Station::product_id() const { return model::workstations[type].produce; }
+const Goods &Station::product() const { return model::goods[product_id()]; }
 #endif
