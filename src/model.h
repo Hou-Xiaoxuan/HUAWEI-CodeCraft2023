@@ -106,6 +106,7 @@ struct Map {
         robot.reserve(5);
         station.push_back(Station());
         robot.push_back(Robot());
+        current_money = ConVar::init_money;
     }
 };
 

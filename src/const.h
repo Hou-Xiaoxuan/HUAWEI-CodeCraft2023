@@ -13,7 +13,7 @@ const static int worksation_type = 9;                  // 工作台种类
 const static int max_workstation = 50;                 // 工作台数量
 const static int good_types = 7;                       // 货物种类
 const static int max_robot = 4;                        // 机器人数量
-const static double robot_radius = 0.45;                // 机器人半径
+const static double robot_radius = 0.45;               // 机器人半径
 const static double robot_radius_goods = 0.53;         // 取货机器人半径
 const static double robot_workstation_check = 0.4;     // 工作台检测半径
 const static double robot_density = 20;                // 机器人密度
@@ -22,6 +22,7 @@ const static double max_robot_backward_speed = 2;      // 机器人最大后退�
 const static double max_robot_angular_speed = M_PI;    // 机器人最大角速度
 const static double max_force = 250;                   // 最大牵引力
 const static double max_torque = 60;                   // 最大扭矩
+const static int init_money = 200000;                  // 初始金钱
 };
 /*常用值 common varaible*/
 namespace ComVar
