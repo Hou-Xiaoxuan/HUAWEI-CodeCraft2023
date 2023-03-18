@@ -69,7 +69,7 @@ void init()
         }
     }
     processing.assign(meta.robot.size(), 0);
-    processing_state.assign(meta.robot.size(), 0);
+    processing_state.assign(meta.robot.size(), ProcessingState::PICKING);
 }
 
 
@@ -84,10 +84,10 @@ int __estimated_move_flame(Point from, Point target_one, Point target_two = Poin
     return static_cast<int>(time / 50.0) + bias;
 }
 
-void __give_pointing(int robot_id)
+int __give_pointing(int robot_id)
 {
     const auto &robot = meta.robot[robot_id];
-    int best_route_index = -1;
+    int best_route_index = 0;
     double best_profit_per_flame = 0;
     for (int i = 1; i < routes.size(); i++)
     {
@@ -132,7 +132,6 @@ void __give_pointing(int robot_id)
                     invalid_route += 1;              // *condition 1-1.2
                 else
                 {
-                    // TODO
                     expected_material &= (1 << p_route.goods);    // 添加预期原材料
                 }
             }
@@ -200,7 +199,7 @@ void __give_pointing(int robot_id)
         }
     }
 
-    if (best_route_index == -1)
+    if (best_route_index == 0)
     {
         cerr << "[info][pointing] robot " << robot_id << " no route" << endl;
     }
@@ -209,9 +208,8 @@ void __give_pointing(int robot_id)
         cerr << "[info][__pointing] [flame=" << meta.current_flame << "] robot = " << robot_id
              << "best ppf = " << best_profit_per_flame << " route [" << best_route_index
              << "]: " << routes[best_route_index] << endl;
-        processing[robot_id] = best_route_index;
-        processing_state[robot_id] = ProcessingState::PICKING;
     }
+    return best_route_index;
 }
 
 /*1帧15ms内给出策略*/
@@ -219,15 +217,14 @@ vector<optional<Route>> give_pointing()
 {
     for (int i = 1; i < meta.robot.size(); i++)
     {
-        if (processing[i] == 0)    // 分配任务
-            __give_pointing(i);
+        if (processing[i] == 0) processing[i] = __give_pointing(i);
         if (processing[i] == 0) continue;
         // 处理任务
         auto &route = routes[processing[i]];
         auto &robot = meta.robot[i];
         if (robot.goods == 0)
         {
-            if (processing_state[i] == ProcessingState::SELL) /*结束了*/
+            if (processing_state[i] == ProcessingState::SELL)    // 3->1
             {
                 cerr << "[info][pointing] [flame=" << meta.current_flame << "] robot " << i << " finished"
                      << routes[processing[i]] << endl;
@@ -235,7 +232,10 @@ vector<optional<Route>> give_pointing()
                 processing_state[i] = ProcessingState::PICKING;
                 continue;
             }
-            processing_state[i] = ProcessingState::BUY;
+            processing_state[i] = ProcessingState::BUY;    // 1->2
+
+            // TODO: 增加“不忠”逻辑，变更目标站点
+
             if (robot.in_station == route.from_station_index)
             {
                 io::instructions.push_back(new io::I_buy(i));
@@ -259,7 +259,8 @@ vector<optional<Route>> give_pointing()
         }
         else
         {
-            if (processing_state[i] == ProcessingState::BUY) processing_state[i] = ProcessingState::SELL;
+            if (processing_state[i] == ProcessingState::BUY)    // 2->3
+                processing_state[i] = ProcessingState::SELL;
             if (robot.in_station == route.to_station_index)
             {
                 io::instructions.push_back(new io::I_sell(i));
@@ -276,10 +277,8 @@ vector<optional<Route>> give_pointing()
     }
 
     vector<optional<Route>> rt(meta.robot.size());
-
-
     for (int i = 1; i < meta.robot.size(); i++)
-        if (processing[i] != 0)    // 分配任务
+        if (processing[i] != 0)
             rt[i] = routes[processing[i]];
     return rt;
 }
