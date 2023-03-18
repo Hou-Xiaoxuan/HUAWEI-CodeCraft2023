@@ -71,10 +71,10 @@ void __change_speed(const Robot &robot, const Point &target, const vector<Point>
     double stop_x = robot.loc.x + robot.v.x * t + 0.5 * min_a_x * t * t;
     double stop_y = robot.loc.y + robot.v.y * t + 0.5 * min_a_y * t * t;
 
-    if (stop_x - ConVar::robot_radius_goods <= 0
-        || stop_x + ConVar::robot_radius_goods >= ConVar::map_weight
-        || stop_y - ConVar::robot_radius_goods <= 0
-        || stop_y + ConVar::robot_radius_goods >= ConVar::map_height)
+    // XXX
+    double adapt = __get_robot_radius(robot);
+    if (stop_x - adapt <= 0 || stop_x + adapt >= ConVar::map_weight || stop_y - adapt <= 0
+        || stop_y + adapt >= ConVar::map_height)
     {
         instructions.push_back(new io::I_forward(robot.id, 0));
         // cerr << "info: robot near wall" << endl;
