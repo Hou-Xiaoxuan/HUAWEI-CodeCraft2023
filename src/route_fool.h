@@ -3,6 +3,7 @@
 #include "model.h"
 #include "navigate.h"
 #include <algorithm>
+#include <optional>
 #include <vector>
 namespace route_fool
 {
@@ -110,7 +111,7 @@ void __give_pointing(int robot_id)
         int expected_material = target_station.material;    // 预期到达from点时已有的原材料
 
         if (target_station.goods_exist(route.goods)) continue;    // *contition 1-1.1
-        if (from_station.with_product == 0) continue;            // *condition 3
+        if (from_station.with_product == 0) continue;             // *condition 3
 
         int expected_money = meta.current_money;       // 预期到达from点时的money
         int expected_buy_flame = meta.current_flame    // 预期到达from点时的flame
@@ -214,7 +215,7 @@ void __give_pointing(int robot_id)
 }
 
 /*1帧15ms内给出策略*/
-void give_pointing()
+vector<optional<Route>> give_pointing()
 {
     for (int i = 1; i < meta.robot.size(); i++)
     {
@@ -273,6 +274,14 @@ void give_pointing()
                 navigate::move_to(robot, meta.station[route.to_station_index].loc);
         }
     }
+
+    vector<optional<Route>> rt(meta.robot.size());
+
+
+    for (int i = 1; i < meta.robot.size(); i++)
+        if (processing[i] != 0)    // 分配任务
+            rt[i] = routes[processing[i]];
+    return rt;
 }
 }
 
