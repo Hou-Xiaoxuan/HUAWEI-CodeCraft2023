@@ -215,6 +215,7 @@ int __get_expected_flame_cost(const Robot &robot, const Route &route)
     {
         expected_flame_cost = __estimated_move_flame(robot.loc, from_station.loc, target_station.loc);
     }
+    return expected_flame_cost;
 }
 
 int __give_pointing(int robot_id, double init_ppf = 0.0)
