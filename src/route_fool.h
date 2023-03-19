@@ -133,6 +133,7 @@ int __give_pointing(int robot_id)
     const auto &robot = meta.robot[robot_id];
     int best_route_index = 0;
     double best_profit_per_flame = 0;
+    int best_finish_time = -1;
     for (int i = 1; i < routes.size(); i++)
     {
         const auto &route = routes[i];
@@ -247,6 +248,7 @@ int __give_pointing(int robot_id)
         {
             best_profit_per_flame = ppf;
             best_route_index = i;
+            best_finish_time = meta.current_flame + expected_flame_cost;
             cerr << "[info][__pointing] "
                  << " [flame=" << meta.current_flame << "] robot_id: " << robot_id
                  << "UPDATE best_profit_per_flame: " << best_profit_per_flame
@@ -264,6 +266,7 @@ int __give_pointing(int robot_id)
              << "best ppf = " << best_profit_per_flame << " route [" << best_route_index
              << "]: " << routes[best_route_index] << endl;
     }
+    routes[best_route_index].finish_time = best_finish_time;
     return best_route_index;
 }
 
@@ -283,6 +286,7 @@ vector<optional<Route>> give_pointing()
             {
                 cerr << "[info][pointing] [flame=" << meta.current_flame << "] robot " << i << " finished"
                      << routes[processing[i]] << endl;
+                routes[processing[i]].finish_time = -1;
                 processing[i] = 0;
                 processing_state[i] = ProcessingState::PICKING;
                 continue;
