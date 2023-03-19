@@ -37,6 +37,11 @@ enum ProcessingState {
     SELL = 2,
 };
 vector<double> super_demand;    // 是否有workstation正在等待货物[i]
+struct {
+    double bias = 0;
+    int cnt = 0;
+    inline double get() { return cnt > 0 ? bias / cnt : 0; }
+} __estimated_bias;
 /*4~5s内初始化所需要的变量*/
 void init()
 {
@@ -78,12 +83,12 @@ void init()
 /*TODO 参考navigate的实现，给出准确的移动时间帧数量预估*/
 int __estimated_move_flame(Point from, Point target_one, Point target_two = Point(0, 0))
 {
-    static const int bias = 10;    // 误差
+    const static double stable_bias = 10;
     double time = 0;
     time += Point::distance(from, target_one) / ConVar::max_robot_forward_speed;
     if (target_two.x != 0 and target_two.y != 0)
         time += Point::distance(target_one, target_two) / ConVar::max_robot_forward_speed;
-    return static_cast<int>(time / 50.0) + bias;
+    return static_cast<int>(time / 50.0) + stable_bias;
 }
 
 void __count_super_demand()
@@ -233,17 +238,17 @@ int __give_pointing(int robot_id)
             expected_flame_cost = __estimated_move_flame(robot.loc, from_station.loc, target_station.loc);
         }
 
-        double flame_bias = 10;    // 帧数统计误差,时间越接近重点，越增大帧数误差
+        double flame_bias = 0;    // 帧数统计误差,时间越接近重点，越增大帧数误差
 
-        if (meta.current_flame > 8000) flame_bias = 200;
+        if (meta.current_flame > 8000) flame_bias = __estimated_bias.get();
         if (meta.current_flame + expected_flame_cost + flame_bias > ConVar::time_limit)
             continue;    // *condition 4
         double ppf = expected_profit * 1.0 / expected_flame_cost;
         int empty_flame = 0;
-        if (from_station.with_product == 0 and from_station.timeleft > 0)
+        if (from_station.timeleft > 0)
             empty_flame
                 = max((from_station.timeleft - __estimated_move_flame(robot.loc, from_station.loc)), 0);
-        ppf -= empty_flame * 5;    // 空转惩罚，假设1000flame(20s)的预期收益是5000
+        ppf -= empty_flame * 10;    // 空转惩罚，假设1000flame(20s)的预期收益是10000
         if (ppf > best_profit_per_flame)
         {
             best_profit_per_flame = ppf;
@@ -286,6 +291,9 @@ vector<optional<Route>> give_pointing()
             {
                 cerr << "[info][pointing] [flame=" << meta.current_flame << "] robot " << i << " finished"
                      << routes[processing[i]] << endl;
+
+                __estimated_bias.bias += meta.current_flame - routes[processing[i]].finish_time;
+                __estimated_bias.cnt++;
                 routes[processing[i]].finish_time = -1;
                 processing[i] = 0;
                 processing_state[i] = ProcessingState::PICKING;
