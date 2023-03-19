@@ -102,6 +102,7 @@ void anticollision(const vector<optional<route_fool::Route>> &route)
                         delta -= 2 * M_PI;
                     else if (delta < -M_PI)
                         delta += 2 * M_PI;
+                    // XXX Check
                     if (fabs(delta) < M_PI / 2)
                     {
                         int flag = signbit(delta) ? -1 : 1;
