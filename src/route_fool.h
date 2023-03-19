@@ -124,11 +124,6 @@ void __count_super_demand()
         for (auto good : goods_false)
             super_demand[good] += demand_add;
     }
-
-    // debug log
-    for (int i = 1; i < super_demand.size(); i++)
-        cerr << "demand[" << i << "] = " << super_demand[i] << "\t";
-    cerr << endl;
 }
 
 int __give_pointing(int robot_id)
@@ -146,7 +141,7 @@ int __give_pointing(int robot_id)
             1-1.2. 没有其他机器人在处理该任务/同级别任务(运送相同货物到相同终点站)
             1-2. 目标点是8、9号点(仅收购，无需等待完成）「1-1、1-2满足一点即可」
             2. 预期到达from点时，预期money足够
-            3. 起点有货物(*优化可以加上可以预期得到货物*)
+            3. 起点有货物/在生产(*优化可以加上可以预期得到货物*)
             4. 预期可以完成任务
             5. best_profit_per_flame最优
         *  expected_profit
@@ -159,8 +154,8 @@ int __give_pointing(int robot_id)
 
         int expected_material = target_station.material;    // 预期到达from点时已有的原材料
 
-        if (target_station.goods_exist(route.goods)) continue;    // *contition 1-1.1
-        if (from_station.with_product == 0) continue;             // *condition 3
+        if (target_station.goods_exist(route.goods)) continue;                           // *contition 1-1.1
+        if (from_station.with_product == 0 and from_station.timeleft == -1) continue;    // *condition 3
 
         int expected_money = meta.current_money;       // 预期到达from点时的money
         int expected_buy_flame = meta.current_flame    // 预期到达from点时的flame
@@ -226,10 +221,11 @@ int __give_pointing(int robot_id)
         }
 
         int expected_flame_cost;
-        if (route.finish_time > __estimated_move_flame(robot.loc, from_station.loc))
+        if (from_station.with_product == 0
+            and from_station.timeleft > __estimated_move_flame(robot.loc, from_station.loc))
         {
             expected_flame_cost
-                = route.finish_time + __estimated_move_flame(from_station.loc, target_station.loc);
+                = from_station.timeleft + __estimated_move_flame(from_station.loc, target_station.loc);
         }
         else
         {
@@ -238,10 +234,14 @@ int __give_pointing(int robot_id)
 
         double flame_bias = 10;    // 帧数统计误差,时间越接近重点，越增大帧数误差
 
-        if (meta.current_flame > 8000) flame_bias = 100;
-        if (meta.current_flame + expected_flame_cost > ConVar::time_limit) continue;    // *condition 4
+        if (meta.current_flame > 8000) flame_bias = 200;
+        if (meta.current_flame + expected_flame_cost + flame_bias > ConVar::time_limit)
+            continue;    // *condition 4
         double ppf = expected_profit * 1.0 / expected_flame_cost;
-        int empty_flame = max((route.finish_time - __estimated_move_flame(robot.loc, from_station.loc)), 0);
+        int empty_flame = 0;
+        if (from_station.with_product == 0 and from_station.timeleft > 0)
+            empty_flame
+                = max((from_station.timeleft - __estimated_move_flame(robot.loc, from_station.loc)), 0);
         ppf -= empty_flame * 5;    // 空转惩罚，假设1000flame(20s)的预期收益是5000
         if (ppf > best_profit_per_flame)
         {
