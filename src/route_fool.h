@@ -88,7 +88,7 @@ int __estimated_move_flame(Point from, Point target_one, Point target_two = Poin
     time += Point::distance(from, target_one) / ConVar::max_robot_forward_speed;
     if (target_two.x != 0 and target_two.y != 0)
         time += Point::distance(target_one, target_two) / ConVar::max_robot_forward_speed;
-    return static_cast<int>(time / 50.0) + stable_bias;
+    return static_cast<int>(time * 50) + stable_bias;
 }
 
 void __count_super_demand()
