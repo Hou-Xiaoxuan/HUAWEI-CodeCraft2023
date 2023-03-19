@@ -53,6 +53,8 @@ struct WorkStation {
     int worktime;              // 生产时间
     std::vector<int> needs;    // 生产所需物品
     int produce;               // 生产物品
+    /*是否是是消费型(0 or 9)*/
+    inline bool is_consumer() const { return type == 8 or type == 9; }
 };
 
 /*工作台*/

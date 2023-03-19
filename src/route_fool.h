@@ -17,8 +17,9 @@ struct Route {
     int goods;         // 运输的货物
 
     // 状态值
-    int finish_time;    // 预期任务完成时间(帧)，-1代表未开始
-    double ppf;         // profit per frame
+    int start_flame;     // 预期任务开始时间(帧)，-1代表未开始
+    int finish_flame;    // 预期任务完成时间(帧)，-1代表未开始
+    double ppf;          // profit per frame
     friend ostream &operator<<(ostream &os, const Route &r)
     {
         os << "" << r.from_station_index << "(" << meta.station[r.from_station_index].type << ")"
@@ -29,7 +30,8 @@ struct Route {
     }
     inline void clear_state()
     {
-        finish_time = -1;
+        start_flame = -1;
+        finish_flame = -1;
         ppf = 0;
     }
 };
@@ -50,6 +52,11 @@ vector<double> super_demand;    // 是否有workstation正在等待货物[i]
 struct {
     double bias = 0;
     int cnt = 0;
+    inline void add(double v)
+    {
+        bias += v;
+        cnt++;
+    }
     inline double get() { return cnt > 0 ? bias / cnt : 0; }
 } __estimated_bias;
 /*4~5s内初始化所需要的变量*/
@@ -65,7 +72,7 @@ void init()
         Route r;
         r.from_station_index = from.id;
         r.to_station_index = to.id;
-        r.finish_time = -1;
+        r.finish_flame = -1;
         r.money_need = from.product().cost;
         r.profit = from.product().price - from.product().cost;
         r.goods = from.product_id();
@@ -148,14 +155,78 @@ double decrease_factor(int x, int maxX, int minRate = 0.8)
     return minRate;
 }
 
+double __get_expected_profit(const Robot &robot, const Route &route)
+{
+    const auto &from_station = meta.station[route.from_station_index];
+    const auto &target_station = meta.station[route.to_station_index];
+
+    int expected_material = 0;
+    for (int j = 1; j < meta.robot.size(); j++)
+    {
+        if (processing[j] == 0) continue;
+        if (robot.id == j) continue;
+        const auto &p_route = routes[processing[j]];
+        if (p_route.to_station_index == route.to_station_index)
+        {
+            if (p_route.goods != route.goods)
+                expected_material &= (1 << p_route.goods);    // 添加预期原材料
+        }
+    }
+
+    double expected_profit = static_cast<double>(route.profit)
+        * decrease_factor(__estimated_move_flame(from_station.loc, target_station.loc),
+            ConVar::time_limit);    // 预期利润
+    if (target_station.workstation().is_consumer() == false)
+        expected_profit += super_demand[target_station.product_id()];    // 更高阶段的预期利润
+
+    if (target_station.workstation().is_consumer() == false)
+    {
+        int material_count = 1;    // expected_material的1的个数
+        while (expected_material)
+        {
+            material_count += expected_material & 1;
+            expected_material >>= 1;
+        }
+        expected_profit
+            += static_cast<double>(target_station.product().price - target_station.product().cost) * 0.5
+            * material_count / target_station.product().needs.size();    // 加入预期利润0.5*原材料比例
+    }
+
+    int empty_flame = 0;
+    if (from_station.timeleft > 0)
+        empty_flame = max((from_station.timeleft - __estimated_move_flame(robot.loc, from_station.loc)), 0);
+    expected_profit -= empty_flame * 10;    // 空转惩罚，假设1000flame(20s)的预期收益是10000
+
+    return expected_profit;
+}
+
+int __get_expected_flame_cost(const Robot &robot, const Route &route)
+{
+    const auto &from_station = meta.station[route.from_station_index];
+    const auto &target_station = meta.station[route.to_station_index];
+    int expected_flame_cost;
+    if (from_station.with_product == 0
+        and from_station.timeleft > __estimated_move_flame(robot.loc, from_station.loc))
+    {
+        expected_flame_cost
+            = from_station.timeleft + __estimated_move_flame(from_station.loc, target_station.loc);
+    }
+    else
+    {
+        expected_flame_cost = __estimated_move_flame(robot.loc, from_station.loc, target_station.loc);
+    }
+}
+
 int __give_pointing(int robot_id, double init_ppf = 0.0)
 {
     __count_super_demand();
 
     const auto &robot = meta.robot[robot_id];
-    int best_route_index = 0;
-    double best_profit_per_flame = 0;
-    int best_finish_time = -1;
+    struct {
+        int route_index = 0;
+        int finish_time = 0;
+        double ppf = -1;
+    } best_choice;
     for (int i = 1; i < routes.size(); i++)
     {
         const auto &route = routes[i];
@@ -174,8 +245,6 @@ int __give_pointing(int robot_id, double init_ppf = 0.0)
         */
         const auto &target_station = meta.station[route.to_station_index];
         const auto &from_station = meta.station[route.from_station_index];
-
-        int expected_material = target_station.material;    // 预期到达from点时已有的原材料
 
         if (target_station.goods_exist(route.goods)) continue;                           // *contition 1-1.1
         if (from_station.with_product == 0 and from_station.timeleft == -1) continue;    // *condition 3
@@ -197,16 +266,12 @@ int __give_pointing(int robot_id, double init_ppf = 0.0)
             {
                 if (p_route.goods == route.goods)    // 终点&货物相同
                     invalid_route += 1;              // *condition 1-1.2
-                else
-                {
-                    expected_material &= (1 << p_route.goods);    // 添加预期原材料
-                }
             }
 
-            if (p_route.finish_time < expected_buy_flame and p_route.goods != 0)
+            if (p_route.finish_flame < expected_buy_flame and p_route.goods != 0)
                 expected_money += model::goods[p_route.goods].price - model::goods[p_route.goods].cost;
             // 无法判断买货顺序实现先后，保险起见减去花费
-            if (p_route.finish_time > expected_buy_flame and p_route.goods == 0)
+            if (p_route.finish_flame > expected_buy_flame and p_route.goods == 0)
                 expected_money -= model::goods[route.goods].cost;
 
 
@@ -216,86 +281,58 @@ int __give_pointing(int robot_id, double init_ppf = 0.0)
                 invalid_route = 100;
         }
 
-        if (target_station.type == 8 || target_station.type == 9)
+        if (target_station.workstation().is_consumer())
             invalid_route -= ConVar::max_robot;    // *condition 1-2
         if (invalid_route > 0) continue;
 
         if (expected_money < route.money_need) continue;    // *condition 2
 
-        /* 计算profit per flame(ppf)的参数，可调参数：
-           1.下一阶段收益的激励系数
-           2. 等待时间的惩罚系数 */
-        // [预期利润计算]：增加下一阶段预期产物的利润
-        double expected_profit = route.profit;    // 预期利润
-        if (target_station.type != 8 and target_station.type != 9)
-            expected_profit += super_demand[target_station.product_id()];    // 更高阶段的预期利润
 
-        if (target_station.type != 8 and target_station.type != 9)
-        {
-            int material_count = 1;    // expected_material的1的个数
-            while (expected_material)
-            {
-                material_count += expected_material & 1;
-                expected_material >>= 1;
-            }
-            expected_profit += (target_station.product().price - target_station.product().cost) * 0.5
-                * material_count / static_cast<double>(target_station.product().needs.size());    // 加入预期利润0.5*原材料比例
-        }
-
-        int expected_flame_cost;
-        if (from_station.with_product == 0
-            and from_station.timeleft > __estimated_move_flame(robot.loc, from_station.loc))
-        {
-            expected_flame_cost
-                = from_station.timeleft + __estimated_move_flame(from_station.loc, target_station.loc);
-        }
-        else
-        {
-            expected_flame_cost = __estimated_move_flame(robot.loc, from_station.loc, target_station.loc);
-        }
+        /*计算、选择最佳ppf*/
+        double expected_profit = __get_expected_profit(robot, route);         // 预期利润
+        int expected_flame_cost = __get_expected_flame_cost(robot, route);    // 预期时间
 
         double flame_bias = 0;    // 帧数统计误差,时间越接近重点，越增大帧数误差
-
         if (meta.current_flame > 8000) flame_bias = __estimated_bias.get();
         if (meta.current_flame + expected_flame_cost + flame_bias > ConVar::time_limit)
             continue;    // *condition 4
-        int empty_flame = 0;
-        if (from_station.timeleft > 0)
-            empty_flame
-                = max((from_station.timeleft - __estimated_move_flame(robot.loc, from_station.loc)), 0);
-        expected_profit -= empty_flame * 10;    // 空转惩罚，假设1000flame(20s)的预期收益是10000
 
-        double ppf = expected_profit * 1.0 / expected_flame_cost;
-        if (ppf > best_profit_per_flame)
+        double ppf = expected_profit / expected_flame_cost;
+#ifdef DEBUG
+        if (ppf > best_choice.ppf)
         {
-            best_profit_per_flame = ppf;
-            best_route_index = i;
-            best_finish_time = meta.current_flame + expected_flame_cost;
+            best_choice = {i, meta.current_flame + expected_flame_cost, ppf};
             cerr << "[info][__pointing] "
                  << " [flame=" << meta.current_flame << "] robot_id: " << robot_id
-                 << " UPDATE best_profit_per_flame: " << best_profit_per_flame
-                 << " best_route_index: " << best_route_index << " route: " << route << endl;
+                 << " UPDATE best_profit_per_flame: " << best_choice.ppf
+                 << " best_route_index: " << best_choice.route_index << " route: " << route << endl;
         }
         else
         {
             cerr << "[info][__pointing] [flame=" << meta.current_flame << "] robot_id=" << robot_id
                  << " route=" << route << " valid, but ppf=" << ppf << endl;
         }
+#else
+        if (ppf > best_choice.ppf) best_choice = {i, meta.current_flame + expected_flame_cost, ppf};
+#endif
     }
-
-    if (best_route_index == 0)
+#ifdef DEBUG
+    if (best_choice.route_index == 0)
     {
         cerr << "[info][pointing] robot " << robot_id << " no route" << endl;
     }
     else
     {
         cerr << "[info][__pointing] [flame=" << meta.current_flame << "] robot = " << robot_id
-             << "best ppf = " << best_profit_per_flame << " route [" << best_route_index
-             << "]: " << routes[best_route_index] << endl;
+             << "best ppf = " << best_choice.ppf << " route [" << best_choice.route_index
+             << "]: " << routes[best_choice.route_index] << endl;
     }
-    routes[best_route_index].finish_time = best_finish_time;
-    routes[best_route_index].ppf = best_profit_per_flame;
-    return best_route_index;
+#endif
+    routes[best_choice.route_index].start_flame = meta.current_flame;
+    routes[best_choice.route_index].finish_flame = best_choice.finish_time;
+    routes[best_choice.route_index].ppf = best_choice.ppf;
+
+    return best_choice.route_index;
 }
 
 /*1帧15ms内给出策略*/
@@ -315,9 +352,8 @@ vector<optional<Route>> give_pointing()
                 cerr << "[info][pointing] [flame=" << meta.current_flame << "] robot " << i << " finished"
                      << routes[processing[i]] << endl;
 
-                __estimated_bias.bias += meta.current_flame - routes[processing[i]].finish_time;
-                __estimated_bias.cnt++;
-                routes[processing[i]].finish_time = -1;
+                __estimated_bias.add(meta.current_flame - routes[processing[i]].finish_flame);
+                routes[processing[i]].clear_state();
                 processing[i] = 0;
                 processing_state[i] = ProcessingState::PICKING;
                 continue;
