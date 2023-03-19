@@ -26,7 +26,7 @@ void __shelter(const Robot &robot, int RotateDirection)
     navigate::move_to(robot, shelter_point);
 }
 // vector<vector<Point>> all_predict_point(ConVar::max_robot + 1, vector<Point>(ConVar::time_limit + 1));
-void anticollision(const vector<optional<route_fool::Route>> &route)
+void anticollision()
 {
 
     for (int predict_flame = 1; predict_flame <= 20; predict_flame += 1)

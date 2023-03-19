@@ -19,8 +19,8 @@ void robot()
         // cerr << "info: flame read" << endl;
         io::read_flame(cin);
         cerr << "info: flame read end, flame:" << meta.current_flame << endl;
-        auto processing_route = route_fool::give_pointing();
-        anticollision::anticollision(processing_route);
+        route_fool::give_pointing();
+        anticollision::anticollision();
         io::print_instructions(io::instructions, cout, meta.current_flame);
     }
 }
