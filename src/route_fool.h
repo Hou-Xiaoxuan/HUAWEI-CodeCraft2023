@@ -108,6 +108,7 @@ int __estimated_move_flame(Point from, Point target_one, Point target_two = Poin
     return static_cast<int>(time * 50.0 + stable_bias);
 }
 
+/* 全局统计demand需求 */
 void __count_super_demand()
 {
     /* 计算super_demand。如7在用于4后，会对5和6有强烈而需求
@@ -149,6 +150,7 @@ void __count_super_demand()
     }
 }
 
+/* 商品价值衰减率 */
 double decrease_factor(int x, int maxX, int minRate = 0.8)
 {
     if (x < maxX) return (1 - sqrt(1 - pow((1 - static_cast<double>(x) / maxX), 2))) + minRate;
@@ -218,10 +220,44 @@ int __get_expected_flame_cost(const Robot &robot, const Route &route)
     return expected_flame_cost;
 }
 
+/* 抢夺其他机器人任务 */
+int __steal_pointing(int robot_id)
+{
+    const auto &robot = meta.robot[robot_id];
+    for (const auto &p_robot : meta.robot)
+    {
+        if (p_robot == *meta.robot.begin()) continue;
+        if (processing[p_robot.id] == 0) continue;
+        if (p_robot.id == robot_id) continue;
+        if (p_robot.goods != 0) continue;
+        cerr<<"[info][__steal_pointing] p_robot.id="<<p_robot.id<<endl;
+
+        auto &route = routes[processing[p_robot.id]];
+
+        // XXX 简单策略，距离更近
+        if (__estimated_move_flame(robot.loc, meta.station[route.from_station_index].loc) * 2
+            < __estimated_move_flame(p_robot.loc, meta.station[route.from_station_index].loc))
+        {
+            // 成功抢夺
+            processing[robot_id] = processing[p_robot.id];
+            processing[p_robot.id] = 0;
+            // 信息更新
+            double expected_profit = __get_expected_profit(robot, route);
+            double expected_flame_cost = __get_expected_flame_cost(robot, route);
+            double ppf = expected_profit / expected_flame_cost;
+            route.ppf = ppf;
+            route.start_flame = meta.current_flame;
+            route.finish_flame = meta.current_flame + expected_flame_cost;
+            return processing[robot_id];
+        }
+    }
+    return 0;
+}
+
+/* 分配任务 */
 int __give_pointing(int robot_id, double init_ppf = 0.0)
 {
     __count_super_demand();
-
     const auto &robot = meta.robot[robot_id];
     struct {
         int route_index = 0;
@@ -341,6 +377,7 @@ vector<optional<Route>> give_pointing()
 {
     for (int i = 1; i < meta.robot.size(); i++)
     {
+        // if (processing[i] == 0) processing[i] = __steal_pointing(i); // 负优化
         if (processing[i] == 0) processing[i] = __give_pointing(i);
         if (processing[i] == 0) continue;
         // 处理任务
