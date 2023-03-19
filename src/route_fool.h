@@ -278,7 +278,6 @@ vector<optional<Route>> give_pointing()
 
     vector<optional<Route>> rt(meta.robot.size());
 
-
     for (int i = 1; i < meta.robot.size(); i++)
         if (processing[i] != 0)
             rt[i] = routes[processing[i]];

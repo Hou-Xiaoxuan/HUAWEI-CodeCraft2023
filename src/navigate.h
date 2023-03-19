@@ -46,16 +46,16 @@ double __get_delta_angle(const Robot &robot, const Point &target)
 
 bool __is_in_circle(const Robot &robot, const Point &target)
 {
-    // 顺时针 x + r * sin y - r * cos
-    // 逆时针 x - r * sin y + r * cos
+    // 顺时针 x - r * sin y + r * cos
+    // 逆时针 x + r * sin y - r * cos
     Point center;
     // < 0 顺时针; > 0 逆时针
     int flag = signbit(__get_delta_angle(robot, target)) ? -1 : 1;
-    center.x = robot.loc.x - flag * ComVar::max_ridus * sin(robot.dirc);
-    center.y = robot.loc.y + flag * ComVar::max_ridus * cos(robot.dirc);
+    center.x = robot.loc.x - flag * ComVar::max_radius * sin(robot.dirc);
+    center.y = robot.loc.y + flag * ComVar::max_radius * cos(robot.dirc);
 
     double radius = __get_robot_radius(robot);
-    return Point::distance(center, target) <= ComVar::max_ridus - radius;
+    return Point::distance(center, target) <= ComVar::max_radius - radius;
 }
 
 

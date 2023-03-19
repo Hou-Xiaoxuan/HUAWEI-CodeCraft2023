@@ -34,7 +34,7 @@ const static double robot_goods_weight = ConVar::robot_radius_goods * ConVar::ro
 const static double max_robot_acceleration = ConVar::max_force / robot_weight;    // 最大加速度
 const static double max_robot_goods_acceleration = ConVar::max_force / robot_goods_weight;    // 最大加速度
 const static double flametime = 1.0 / 50;    // 一帧时间
-const static double max_ridus
+const static double max_radius
     = ConVar::max_robot_forward_speed / ConVar::max_robot_angular_speed;    // 最大转弯半径
 const static double max_robot_angular_acceleration = 2 * ConVar::max_torque
     / (robot_weight * ConVar::robot_radius * ConVar::robot_radius);    // 最大角加速度
