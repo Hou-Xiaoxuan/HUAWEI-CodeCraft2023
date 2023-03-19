@@ -36,6 +36,7 @@ enum ProcessingState {
     BUY = 1,
     SELL = 2,
 };
+vector<double> super_demand;    // 是否有workstation正在等待货物[i]
 /*4~5s内初始化所需要的变量*/
 void init()
 {
@@ -70,13 +71,14 @@ void init()
     }
     processing.assign(meta.robot.size(), 0);
     processing_state.assign(meta.robot.size(), ProcessingState::PICKING);
+    super_demand.assign(model::goods.size(), 0);
 }
 
 
 /*TODO 参考navigate的实现，给出准确的移动时间帧数量预估*/
 int __estimated_move_flame(Point from, Point target_one, Point target_two = Point(0, 0))
 {
-    static const int bias = 3;    // 误差
+    static const int bias = 10;    // 误差
     double time = 0;
     time += Point::distance(from, target_one) / ConVar::max_robot_forward_speed;
     if (target_two.x != 0 and target_two.y != 0)
@@ -84,8 +86,55 @@ int __estimated_move_flame(Point from, Point target_one, Point target_two = Poin
     return static_cast<int>(time / 50.0) + bias;
 }
 
+void __count_super_demand()
+{
+    /* 计算super_demand。如7在用于4后，会对5和6有强烈而需求
+        demand在计算ddf是添加到利润中，激励生产高等级的原材料
+        * 暂时不考虑不7即将得到4而不是已经得到哦啊的情况
+    */
+    super_demand.clear();
+    super_demand.assign(model::goods.size(), 0);
+
+    for (int i = 1; i < meta.station.size(); i++)
+    {
+        const auto &station = meta.station[i];
+        if (station.material == 0) continue;
+        if (station.workstation().needs.empty()) continue;
+
+        vector<int> goods_true;
+        vector<int> goods_false;
+        for (int good : station.workstation().needs)
+        {
+            if (station.goods_exist(good))
+                goods_true.push_back(good);
+            else
+                goods_false.push_back(good);
+        }
+        if (goods_false.empty()) continue;    // 该站点已经满足所有需求
+        // 如果已经有货物往这里运送，就不要再增加需求了
+        for (int j = 1; j < meta.robot.size(); j++)
+        {
+            if (processing[j] == 0) continue;
+            const auto &route = routes[processing[j]];
+            if (route.to_station_index == station.id)
+                remove(goods_false.begin(), goods_false.end(), route.goods);
+        }
+        double demand_add = static_cast<double>(station.product().price - station.product().cost)
+            * goods_true.size() / (goods_true.size() + goods_false.size()) * 0.35;
+        for (auto good : goods_false)
+            super_demand[good] += demand_add;
+    }
+
+    // debug log
+    for (int i = 1; i < super_demand.size(); i++)
+        cerr << "demand[" << i << "] = " << super_demand[i] << "\t";
+    cerr << endl;
+}
+
 int __give_pointing(int robot_id)
 {
+    __count_super_demand();
+
     const auto &robot = meta.robot[robot_id];
     int best_route_index = 0;
     double best_profit_per_flame = 0;
@@ -162,6 +211,9 @@ int __give_pointing(int robot_id)
         // [预期利润计算]：增加下一阶段预期产物的利润
         int expected_profit = route.profit;    // 预期利润
         if (target_station.type != 8 and target_station.type != 9)
+            expected_profit += super_demand[target_station.product_id()];    // 更高阶段的预期利润
+
+        if (target_station.type != 8 and target_station.type != 9)
         {
             int material_count = 1;    // expected_material的1的个数
             while (expected_material)
@@ -184,6 +236,9 @@ int __give_pointing(int robot_id)
             expected_flame_cost = __estimated_move_flame(robot.loc, from_station.loc, target_station.loc);
         }
 
+        double flame_bias = 10;    // 帧数统计误差,时间越接近重点，越增大帧数误差
+
+        if (meta.current_flame > 8000) flame_bias = 100;
         if (meta.current_flame + expected_flame_cost > ConVar::time_limit) continue;    // *condition 4
         double ppf = expected_profit * 1.0 / expected_flame_cost;
         int empty_flame = max((route.finish_time - __estimated_move_flame(robot.loc, from_station.loc)), 0);
@@ -279,8 +334,7 @@ vector<optional<Route>> give_pointing()
     vector<optional<Route>> rt(meta.robot.size());
 
     for (int i = 1; i < meta.robot.size(); i++)
-        if (processing[i] != 0)
-            rt[i] = routes[processing[i]];
+        if (processing[i] != 0) rt[i] = routes[processing[i]];
     return rt;
 }
 }
