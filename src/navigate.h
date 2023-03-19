@@ -46,14 +46,13 @@ double __get_delta_angle(const Robot &robot, const Point &target)
 
 bool __is_in_circle(const Robot &robot, const Point &target)
 {
-
     // 顺时针 x + r * sin y - r * cos
     // 逆时针 x - r * sin y + r * cos
     Point center;
     // < 0 顺时针; > 0 逆时针
-    int flag = signbit(__get_delta_angle(robot, target)) ? 1 : -1;
-    center.x = robot.loc.x + flag * ComVar::max_ridus * sin(robot.dirc);
-    center.y = robot.loc.y - flag * ComVar::max_ridus * cos(robot.dirc);
+    int flag = signbit(__get_delta_angle(robot, target)) ? -1 : 1;
+    center.x = robot.loc.x - flag * ComVar::max_ridus * sin(robot.dirc);
+    center.y = robot.loc.y + flag * ComVar::max_ridus * cos(robot.dirc);
 
     double radius = __get_robot_radius(robot);
     return Point::distance(center, target) <= ComVar::max_ridus - radius;
@@ -77,7 +76,7 @@ void __change_speed(const Robot &robot, const Point &target, const vector<Point>
         || stop_y + adapt >= ConVar::map_height)
     {
         instructions.push_back(new io::I_forward(robot.id, 0));
-        // cerr << "info: robot near wall" << endl;
+        cerr << "info: robot near wall" << endl;
         return;
     }
 
@@ -87,6 +86,7 @@ void __change_speed(const Robot &robot, const Point &target, const vector<Point>
         double next_v = 0.5 * Point::distance(robot.loc, target) / sin(__get_delta_angle(robot, target))
             * ConVar::max_robot_angular_speed;
         instructions.push_back(new io::I_forward(robot.id, next_v));
+        cerr << "info: robot " << robot.id << " in circle: v " << next_v << endl;
         /// cerr << "info: next target in small circle" << endl;
         return;
     }

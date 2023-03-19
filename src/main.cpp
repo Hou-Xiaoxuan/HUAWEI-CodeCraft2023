@@ -1,6 +1,7 @@
 #include <fstream>
 #include <iostream>
 using namespace std;
+#include "anticollision.h"
 #include "iointerface.h"
 #include "model.h"
 #include "navigate.h"
@@ -18,7 +19,8 @@ void robot()
         // cerr << "info: flame read" << endl;
         io::read_flame(cin);
         cerr << "info: flame read end, flame:" << meta.current_flame << endl;
-        route_fool::give_pointing();
+        auto processing_route = route_fool::give_pointing();
+        anticollision::anticollision(processing_route);
         io::print_instructions(io::instructions, cout, meta.current_flame);
     }
 }
