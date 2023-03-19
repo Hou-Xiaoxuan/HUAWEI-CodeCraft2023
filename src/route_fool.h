@@ -22,8 +22,8 @@ struct Route {
     friend ostream &operator<<(ostream &os, const Route &r)
     {
         os << "" << r.from_station_index << "(" << meta.station[r.from_station_index].type << ")"
-           << "@" << meta.station[r.from_station_index].loc
-           << "->" << r.to_station_index << "(" << meta.station[r.to_station_index].type << ")"
+           << "@" << meta.station[r.from_station_index].loc << "->" << r.to_station_index << "("
+           << meta.station[r.to_station_index].type << ")"
            << "@" << meta.station[r.to_station_index].loc;
         return os;
     }
@@ -140,6 +140,12 @@ void __count_super_demand()
         for (auto good : goods_false)
             super_demand[good] += demand_add;
     }
+}
+
+double decrease_factor(int x, int maxX, int minRate = 0.8)
+{
+    if (x < maxX) return (1 - sqrt(1 - pow((1 - static_cast<double>(x) / maxX), 2))) + minRate;
+    return minRate;
 }
 
 int __give_pointing(int robot_id, double init_ppf = 0.0)
