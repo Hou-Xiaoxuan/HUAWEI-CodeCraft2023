@@ -11,16 +11,25 @@ using namespace std;
 struct Route {
     int from_station_index;
     int to_station_index;
+    int money_need;    // 开启任务需要资金
+    int profit;        // 完成任务获得资金
+    int goods;         // 运输的货物
+
+    // 状态值
     int finish_time;    // 预期任务完成时间(帧)，-1代表未开始
-    int money_need;     // 开启任务需要资金
-    int profit;         // 完成任务获得资金
-    int goods;          // 运输的货物
+    double ppf;         // profit per frame
     friend ostream &operator<<(ostream &os, const Route &r)
     {
         os << "" << r.from_station_index << "(" << meta.station[r.from_station_index].type << ")"
+           << "@" << meta.station[r.from_station_index].loc
            << "->" << r.to_station_index << "(" << meta.station[r.to_station_index].type << ")"
-           << " finish_time:" << r.finish_time << " money_need:" << r.money_need;
+           << "@" << meta.station[r.to_station_index].loc;
         return os;
+    }
+    inline void clear_state()
+    {
+        finish_time = -1;
+        ppf = 0;
     }
 };
 
@@ -83,7 +92,7 @@ void init()
 /*TODO 参考navigate的实现，给出准确的移动时间帧数量预估*/
 int __estimated_move_flame(Point from, Point target_one, Point target_two = Point(0, 0))
 {
-    const static double stable_bias = 10;
+    const static double stable_bias = 15;
     double time = 0;
     time += Point::distance(from, target_one) / ConVar::max_robot_forward_speed;
     if (target_two.x != 0 and target_two.y != 0)
@@ -105,7 +114,6 @@ void __count_super_demand()
         const auto &station = meta.station[i];
         if (station.material == 0) continue;
         if (station.workstation().needs.empty()) continue;
-
         vector<int> goods_true;
         vector<int> goods_false;
         for (int good : station.workstation().needs)
@@ -131,7 +139,7 @@ void __count_super_demand()
     }
 }
 
-int __give_pointing(int robot_id)
+int __give_pointing(int robot_id, double init_ppf = 0.0)
 {
     __count_super_demand();
 
@@ -205,7 +213,6 @@ int __give_pointing(int robot_id)
 
         if (expected_money < route.money_need) continue;    // *condition 2
 
-
         /* 计算profit per flame(ppf)的参数，可调参数：
            1.下一阶段收益的激励系数
            2. 等待时间的惩罚系数 */
@@ -243,12 +250,13 @@ int __give_pointing(int robot_id)
         if (meta.current_flame > 8000) flame_bias = __estimated_bias.get();
         if (meta.current_flame + expected_flame_cost + flame_bias > ConVar::time_limit)
             continue;    // *condition 4
-        double ppf = expected_profit * 1.0 / expected_flame_cost;
         int empty_flame = 0;
         if (from_station.timeleft > 0)
             empty_flame
                 = max((from_station.timeleft - __estimated_move_flame(robot.loc, from_station.loc)), 0);
-        ppf -= empty_flame * 10;    // 空转惩罚，假设1000flame(20s)的预期收益是10000
+        expected_profit -= empty_flame * 10;    // 空转惩罚，假设1000flame(20s)的预期收益是10000
+
+        double ppf = expected_profit * 1.0 / expected_flame_cost;
         if (ppf > best_profit_per_flame)
         {
             best_profit_per_flame = ppf;
@@ -256,8 +264,13 @@ int __give_pointing(int robot_id)
             best_finish_time = meta.current_flame + expected_flame_cost;
             cerr << "[info][__pointing] "
                  << " [flame=" << meta.current_flame << "] robot_id: " << robot_id
-                 << "UPDATE best_profit_per_flame: " << best_profit_per_flame
+                 << " UPDATE best_profit_per_flame: " << best_profit_per_flame
                  << " best_route_index: " << best_route_index << " route: " << route << endl;
+        }
+        else
+        {
+            cerr << "[info][__pointing] [flame=" << meta.current_flame << "] robot_id=" << robot_id
+                 << " route=" << route << " valid, but ppf=" << ppf << endl;
         }
     }
 
@@ -272,6 +285,7 @@ int __give_pointing(int robot_id)
              << "]: " << routes[best_route_index] << endl;
     }
     routes[best_route_index].finish_time = best_finish_time;
+    routes[best_route_index].ppf = best_profit_per_flame;
     return best_route_index;
 }
 
