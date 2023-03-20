@@ -152,7 +152,6 @@ void _count_super_demand()
 /* 商品价值衰减率 */
 double decrease_factor(int x, int maxX, double minRate = 0.8)
 {
-    return 1.0;    // close decrease
     if (x < maxX) return (1 - sqrt(1 - pow((1 - static_cast<double>(x) / maxX), 2))) + minRate;
     return minRate;
 }
@@ -261,10 +260,10 @@ int _give_pointing(int robot_id, double init_ppf = 0.0)
     _count_super_demand();
     const auto &robot = meta.robot[robot_id];
     struct {
-        int route_index = 0;
-        int finish_time = 0;
+        int index = 0;
+        int finish_flame = 0;
         double ppf = -1;
-    } best_choice;
+    } best_route;
     for (int i = 1; i < routes.size(); i++)
     {
         const auto &route = routes[i];
@@ -337,13 +336,13 @@ int _give_pointing(int robot_id, double init_ppf = 0.0)
 
         double ppf = expected_profit / expected_flame_cost;
 #ifdef DEBUG
-        if (ppf > best_choice.ppf)
+        if (ppf > best_route.ppf)
         {
-            best_choice = {i, meta.current_flame + expected_flame_cost, ppf};
+            best_route = {i, meta.current_flame + expected_flame_cost, ppf};
             cerr << "[info][__pointing] "
                  << " [flame=" << meta.current_flame << "] robot_id: " << robot_id
-                 << " UPDATE best_profit_per_flame: " << best_choice.ppf
-                 << " best_route_index: " << best_choice.route_index << " route: " << route << endl;
+                 << " UPDATE best_profit_per_flame: " << best_route.ppf
+                 << " best_route_index: " << best_route.index << " route: " << route << endl;
         }
         else
         {
@@ -351,26 +350,26 @@ int _give_pointing(int robot_id, double init_ppf = 0.0)
                  << " route=" << route << " valid, but ppf=" << ppf << endl;
         }
 #else
-        if (ppf > best_choice.ppf) best_choice = {i, meta.current_flame + expected_flame_cost, ppf};
+        if (ppf > best_route.ppf) best_route = {i, meta.current_flame + expected_flame_cost, ppf};
 #endif
     }
 #ifdef DEBUG
-    if (best_choice.route_index == 0)
+    if (best_route.index == 0)
     {
         cerr << "[info][pointing] robot " << robot_id << " no route" << endl;
     }
     else
     {
         cerr << "[info][__pointing] [flame=" << meta.current_flame << "] robot = " << robot_id
-             << "best ppf = " << best_choice.ppf << " route [" << best_choice.route_index
-             << "]: " << routes[best_choice.route_index] << endl;
+             << "best ppf = " << best_route.ppf << " route [" << best_route.index
+             << "]: " << routes[best_route.index] << endl;
     }
 #endif
-    routes[best_choice.route_index].start_flame = meta.current_flame;
-    routes[best_choice.route_index].finish_flame = best_choice.finish_time;
-    routes[best_choice.route_index].ppf = best_choice.ppf;
+    routes[best_route.index].start_flame = meta.current_flame;
+    routes[best_route.index].finish_flame = best_route.finish_flame;
+    routes[best_route.index].ppf = best_route.ppf;
 
-    return best_choice.route_index;
+    return best_route.index;
 }
 
 /*1帧15ms内给出策略*/
