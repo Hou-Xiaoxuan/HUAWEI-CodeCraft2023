@@ -1,0 +1,20 @@
+Diagnostics:
+    ClangTidy:
+        Add: [
+          performance-*,
+          bugprone-*,
+          protability-*,
+          modernize-*,
+        ]
+        Remove: [
+            misc-definitions-in-headers, # .h文件定义变量
+            bugprone-easily-swappable-parameters, # 易错参数
+            modernize-use-trailing-return-type, # 返回值类型
+            modernize-use-nodiscard, # 忽略返回值
+            # 不知道是啥
+        ]
+CompileFlags:
+  Add: [
+    -std=c++20,
+    -DDEBUG
+  ]

@@ -4,6 +4,7 @@
 #include "navigate.h"
 #include <algorithm>
 #include <optional>
+#include <sys/_types/_size_t.h>
 #include <vector>
 namespace route_fool
 {
@@ -35,8 +36,8 @@ struct Route {
 
 
 vector<Route> routes;
-vector<vector<int>> point_to;    // 子节点，保存边的index
-vector<vector<int>> point_by;    // 父节边，保存边的index
+vector<vector<size_t>> point_to;    // 子节点，保存边的index
+vector<vector<size_t>> point_by;    // 父节边，保存边的index
 
 vector<int> processing;    // 机器人[i]正在处理的route
 vector<int> processing_state;    // 机器人[i]正在处理的root的状态：0：取货中，1：运输中，2：卸货中
@@ -55,9 +56,9 @@ struct {
 void init()
 {
     routes.reserve(1000);
-    point_by = vector<vector<int>>(meta.station.size());
-    point_to = vector<vector<int>>(meta.station.size());
-    routes.push_back(Route());    // 0号root为无效root
+    point_by.assign(meta.station.size(), vector<size_t>());
+    point_to.assign(meta.station.size(), vector<size_t>());
+    routes.emplace_back();    // 0号root为无效root
 
     // 根据goods的依赖关系建图
     auto add_edge = [&](const Station &from, const Station &to) {
@@ -97,7 +98,7 @@ int __estimated_move_flame(Point from, Point target_one, Point target_two = Poin
     time += Point::distance(from, target_one) / ConVar::max_robot_forward_speed;
     if (target_two.x != 0 and target_two.y != 0)
         time += Point::distance(target_one, target_two) / ConVar::max_robot_forward_speed;
-    return static_cast<int>(time * 50) + stable_bias;
+    return static_cast<int>(time * 50.0 + stable_bias);
 }
 
 void __count_super_demand()
@@ -130,10 +131,12 @@ void __count_super_demand()
             if (processing[j] == 0) continue;
             const auto &route = routes[processing[j]];
             if (route.to_station_index == station.id)
-                remove(goods_false.begin(), goods_false.end(), route.goods);
+                goods_false.erase(remove(goods_false.begin(), goods_false.end(), route.goods), goods_false.end());
+            
+                
         }
         double demand_add = static_cast<double>(station.product().price - station.product().cost)
-            * goods_true.size() / (goods_true.size() + goods_false.size()) * 0.35;
+            * static_cast<double>(goods_true.size()) / static_cast<double>(goods_true.size() + goods_false.size()) * 0.35;
         for (auto good : goods_false)
             super_demand[good] += demand_add;
     }
@@ -217,7 +220,7 @@ int __give_pointing(int robot_id, double init_ppf = 0.0)
            1.下一阶段收益的激励系数
            2. 等待时间的惩罚系数 */
         // [预期利润计算]：增加下一阶段预期产物的利润
-        int expected_profit = route.profit;    // 预期利润
+        double expected_profit = route.profit;    // 预期利润
         if (target_station.type != 8 and target_station.type != 9)
             expected_profit += super_demand[target_station.product_id()];    // 更高阶段的预期利润
 
@@ -230,7 +233,7 @@ int __give_pointing(int robot_id, double init_ppf = 0.0)
                 expected_material >>= 1;
             }
             expected_profit += (target_station.product().price - target_station.product().cost) * 0.5
-                * material_count / target_station.product().needs.size();    // 加入预期利润0.5*原材料比例
+                * material_count / static_cast<double>(target_station.product().needs.size());    // 加入预期利润0.5*原材料比例
         }
 
         int expected_flame_cost;

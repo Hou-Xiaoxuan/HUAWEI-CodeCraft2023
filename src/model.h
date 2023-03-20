@@ -1,13 +1,17 @@
 #ifndef MODULE_H
 #define MODULE_H
+#include "const.h"
 #include <cmath>
 #include <iostream>
 #include <vector>
 // 声明，实现在文件尾部
+struct Point;
+
+
 struct Point {
-    double x;
-    double y;
-    Point() : x(0), y(0) { }
+    double x{};
+    double y{};
+    Point() =default;
     Point(double x, double y) : x(x), y(y) { }
 
     double static distance(const Point &a, const Point &b)
@@ -53,16 +57,14 @@ struct WorkStation {
 
 /*工作台*/
 struct Station {
-    int id;    // 在数组中的下标
-    int type;
-    Point loc;
-    int timeleft;        // -1表示空闲,0表示因输出满而停止,>0表示生产剩余时间
-    int material;        // 二进制表示物品拥有情况，从低位编码
-    int with_product;    // 1表示有产品，0表示无产品
-    Station() : type(-1), loc(-1, -1), timeleft(-1), material(0), with_product(0) { }
-    Station(int type, double x, double y) :
-        type(type), loc(x, y), timeleft(-1), material(0), with_product(0)
-    { }
+    int id {0};    // 在数组中的下标
+    int type {0};
+    Point loc {0, 0};
+    int timeleft {-1};       // -1表示空闲,0表示因输出满而停止,>0表示生产剩余时间
+    int material {0};        // 二进制表示物品拥有情况，从低位编码
+    int with_product {0};    // 1表示有产品，0表示无产品
+    Station() = default;
+    Station(int type, double x, double y) : type(type), loc(x, y) { }
 
     /*方法*/
 
@@ -74,21 +76,19 @@ struct Station {
 };
 
 struct Robot {
-    int id;            // 在数组中的下标
-    int in_station;    // -1表示不在工作台，否则表示工作台编号
-    int goods;         // 0表示无货物，否则表示货物编号
+    int id;               // 在数组中的下标
+    int in_station {};    // -1表示不在工作台，否则表示工作台编号
+    int goods {};         // 0表示无货物，否则表示货物编号
     // 货物系数
-    double time_factor;     // 时间系数
-    double crash_factor;    // 碰撞系数
+    double time_factor {};     // 时间系数
+    double crash_factor {};    // 碰撞系数
     // 位置信息
-    Point loc;      // 坐标
-    Speed v;        // 线速度
-    double w;       // 角速度(正：顺时针)，弧度/s
-    double dirc;    // 方向,弧度，[-pai,pai]
+    Point loc {};      // 坐标
+    Speed v {0, 0};    // 线速度
+    double w {};       // 角速度(正：顺时针)，弧度/s
+    double dirc {};    // 方向,弧度，[-pai,pai]
 
-    Robot() :
-        in_station(-1), goods(0), time_factor(1.0), crash_factor(1.0), loc(0, 0), v(0, 0), w(0), dirc(0)
-    { }
+    Robot() = default;
 };
 
 /*地图*/
@@ -105,8 +105,8 @@ struct Map {
     {
         station.reserve(50);
         robot.reserve(5);
-        station.push_back(Station());
-        robot.push_back(Robot());
+        station.emplace_back();
+        robot.emplace_back();
         current_money = ConVar::init_money;
     }
 };
