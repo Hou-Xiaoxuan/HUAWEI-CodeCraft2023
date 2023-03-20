@@ -313,6 +313,9 @@ int _give_pointing(int robot_id, double init_ppf = 0.0)
             if (p_route.from_station_index == route.from_station_index
                 and meta.robot[j].goods == 0)    // 起点相同
                 invalid_route = 100;
+
+            // [就近原则]
+            if (route.from_station_index == p_route.to_station_index) invalid_route = 100;
         }
 
         if (target_station.workstation().is_consumer())
