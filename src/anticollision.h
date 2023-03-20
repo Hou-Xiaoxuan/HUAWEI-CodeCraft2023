@@ -29,11 +29,13 @@ Point _shelter(const Robot &robot, int RotateDirection)
 void anticollision(const vector<optional<route_fool::Route>> &routes)
 {
 
-    set<pair<int, int>> collision_set;
+    int max_predict_flame = 15;
     const auto &robots = meta.robot;
-    for (int predict_flame = 15; predict_flame > 0; predict_flame -= 1)
+    vector<pair<int, int>> collision_set;
+    vector<vector<Point>> predict_point(max_predict_flame + 1, vector<Point>(robots.size()));
+    for (int predict_flame = 1; predict_flame <= max_predict_flame; ++predict_flame)
     {
-        vector<Point> predict_point(robots.size());
+
         double predict_time = predict_flame * ComVar::flametime;
         for (int i = 1; i < robots.size(); ++i)
         {
@@ -41,8 +43,8 @@ void anticollision(const vector<optional<route_fool::Route>> &routes)
 
             if (fabs(robot.w) < M_PI / 10)
             {
-                predict_point[i].x = robot.loc.x + robot.v.x * predict_time;
-                predict_point[i].y = robot.loc.y + robot.v.y * predict_time;
+                predict_point[predict_flame][i].x = robot.loc.x + robot.v.x * predict_time;
+                predict_point[predict_flame][i].y = robot.loc.y + robot.v.y * predict_time;
                 continue;
             }
 
@@ -52,20 +54,26 @@ void anticollision(const vector<optional<route_fool::Route>> &routes)
             center.y = robot.loc.y + radius * cos(robot.dirc);
 
             double predict_angular = robot.dirc + robot.w * predict_time;
-            predict_point[i].x = center.x + radius * sin(predict_angular);
-            predict_point[i].y = center.y - radius * cos(predict_angular);
+            predict_point[predict_flame][i].x = center.x + radius * sin(predict_angular);
+            predict_point[predict_flame][i].y = center.y - radius * cos(predict_angular);
         }
-
-        for (int i = 1; i < predict_point.size(); ++i)
+    }
+    vector<vector<int>> vis = vector<vector<int>>(robots.size(), vector<int>(robots.size(), 0));
+    for (int predict_flame = max_predict_flame; predict_flame >= 1; predict_flame -= 1)
+    {
+        for (int i = 1; i < robots.size(); ++i)
         {
-            for (int j = i + 1; j < predict_point.size(); ++j)
+            for (int j = i + 1; j < robots.size() and not vis[i][j]; ++j)
             {
+                if (vis[i][j]) continue;
 
                 double min_distance
                     = navigate::__get_robot_radius(robots[i]) + navigate::__get_robot_radius(robots[j]);
-                if (Point::distance(predict_point[i], predict_point[j]) <= min_distance)
+                if (Point::distance(predict_point[predict_flame][i], predict_point[predict_flame][j])
+                    <= min_distance)
                 {
-                    collision_set.insert({i, j});
+                    collision_set.push_back({i, j});
+                    vis[i][j] = vis[j][i] = 1;
                 }
             }
         }
