@@ -1,20 +1,19 @@
 #ifndef __ANTICOLLISION_H__
 #define __ANTICOLLISION_H__
 
-#include <optional>
-#include <iostream>
-#include <vector>
 #include "const.h"
 #include "model.h"
 #include "route_fool.h"
+#include <iostream>
+#include <optional>
 #include <set>
+#include <vector>
 
 namespace anticollision
 {
 using namespace std;
 using io::instructions;
-
-void _shelter(const Robot &robot, int RotateDirection)
+Point _shelter(const Robot &robot, int RotateDirection)
 {
     Point center;    // 圆心
     center.x = robot.loc.x + RotateDirection * ComVar::max_radius * sin(robot.dirc);
@@ -24,10 +23,7 @@ void _shelter(const Robot &robot, int RotateDirection)
     Point shelter_point;
     shelter_point.x = center.x - RotateDirection * ComVar::max_radius * sin(shelter_angular);
     shelter_point.y = center.y + RotateDirection * ComVar::max_radius * cos(shelter_angular);
-    cerr << "info: "
-         << "robot " << robot.id << " shelter point: " << shelter_point << endl;
-
-    navigate::move_to(robot, shelter_point);
+    return shelter_point;
 }
 
 void anticollision(const vector<optional<route_fool::Route>> &routes)
@@ -35,7 +31,7 @@ void anticollision(const vector<optional<route_fool::Route>> &routes)
 
     set<pair<int, int>> collision_set;
     const auto &robots = meta.robot;
-    for (int predict_flame = 1; predict_flame <= 20; predict_flame += 1)
+    for (int predict_flame = 15; predict_flame > 0; predict_flame -= 1)
     {
         vector<Point> predict_point(robots.size());
         double predict_time = predict_flame * ComVar::flametime;
@@ -83,29 +79,30 @@ void anticollision(const vector<optional<route_fool::Route>> &routes)
 
         cerr << "info: "
              << "robot " << i << " and robot " << j << " will collide" << endl;
-        double delta = robots[i].dirc - robots[j].dirc;
-        if (delta > M_PI)
-            delta -= 2 * M_PI;
-        else if (delta < -M_PI)
-            delta += 2 * M_PI;
-
+        vector<Point> shelter_i = {_shelter(robots[i], 1), _shelter(robots[i], -1)};
+        vector<Point> shelter_j = {_shelter(robots[j], 1), _shelter(robots[j], -1)};
+        int shelter_index_i = 0, shelter_index_j = 0;
+        double shelter_dis = 0;
+        for (int k = 0; k < 2; ++k)
+        {
+            for (int l = 0; l < 2; ++l)
+            {
+                double tmp_dis = Point::distance(shelter_i[k], shelter_j[l]);
+                if (tmp_dis >= shelter_dis)
+                {
+                    shelter_dis = tmp_dis;
+                    shelter_index_i = k;
+                    shelter_index_j = l;
+                    break;
+                }
+            }
+        }
+        navigate::move_to(robots[i], shelter_i[shelter_index_i]);
+        navigate::move_to(robots[j], shelter_j[shelter_index_j]);
         cerr << "info: "
-             << "robot " << i << " and robot " << j << " delta " << delta << endl;
-        if (fabs(delta) < M_PI / 2)
-        {
-            cerr << "info: "
-                 << "robot " << i << " and robot " << j << " rotate different" << endl;
-            int flag = signbit(delta) ? 1 : -1;
-            _shelter(meta.robot[i], flag);
-            _shelter(meta.robot[j], -flag);
-        }
-        else
-        {
-            cerr << "info: "
-                 << "robot " << i << " and robot " << j << " rotate same" << endl;
-            _shelter(meta.robot[i], 1);
-            _shelter(meta.robot[j], 1);
-        }
+             << "robot " << i << " move to " << shelter_i[shelter_index_i] << endl;
+        cerr << "info: "
+             << "robot " << j << " move to " << shelter_j[shelter_index_j] << endl;
     }
 }
 }
