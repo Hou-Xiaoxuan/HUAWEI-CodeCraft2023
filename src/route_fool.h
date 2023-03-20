@@ -161,7 +161,7 @@ double _get_expected_profit(const Robot &robot, const Route &route)
     const auto &from_station = meta.station[route.from_station_index];
     const auto &target_station = meta.station[route.to_station_index];
 
-    int expected_material = 0;
+    int expected_material = target_station.material;
     for (int j = 1; j < meta.robot.size(); j++)
     {
         if (processing[j] == 0) continue;
