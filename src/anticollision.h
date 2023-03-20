@@ -40,27 +40,12 @@ void anticollision(vector<optional<route_fool::Route>> routes)
         double predict_time = predict_flame * ComVar::flametime;
         for (int i = 1; i < robots.size(); ++i)
         {
-            // cerr << "info: "
-            //      << "robot " << i << " speed: " << meta.robot[i].v << endl;
             const auto &robot = robots[i];
 
             if (fabs(robot.w) < M_PI / 10)
             {
                 predict_point[i].x = robot.loc.x + robot.v.x * predict_time;
                 predict_point[i].y = robot.loc.y + robot.v.y * predict_time;
-
-                // all_predict_point[i][meta.current_flame] = predict_point[i];
-                //  if (meta.current_flame > predict_flame && i == 1)
-                //  {
-                //      double error
-                //          = Point::distance(all_predict_point[i][meta.current_flame - predict_flame],
-                //          robot.loc);
-                //      // if (error > 0.4)
-                //      // {
-                //      cerr << "info: "
-                //           << "robot " << i << " line predict error: " << error << endl;
-                //      // }
-                //  }
                 continue;
             }
 
@@ -72,24 +57,6 @@ void anticollision(vector<optional<route_fool::Route>> routes)
             double predict_angular = robot.dirc + robot.w * predict_time;
             predict_point[i].x = center.x + radius * sin(predict_angular);
             predict_point[i].y = center.y - radius * cos(predict_angular);
-            // all_predict_point[i][meta.current_flame] = predict_point[i];
-            //  cerr << "info: "
-            //       << "robot " << i << " center point: " << center << endl;
-            //  cerr << "info: "
-            //       << "robot " << i << " center radius: " << radius << endl;
-
-            // if (meta.current_flame > predict_flame && i == 1)
-            // {
-            //     double error
-            //         = Point::distance(all_predict_point[i][meta.current_flame - predict_flame],
-            //         robot.loc);
-            //     // if (error > 0.4)
-            //     // {
-            //     cerr << "info: "
-            //          << "robot " << i << " circle predict error: " << error << endl;
-
-            //     // }
-            // }
         }
 
         for (int i = 1; i < predict_point.size(); ++i)
@@ -106,6 +73,7 @@ void anticollision(vector<optional<route_fool::Route>> routes)
             }
         }
     }
+
     // bianli collision_set
     for (const auto &collision : collision_set)
     {
@@ -120,25 +88,8 @@ void anticollision(vector<optional<route_fool::Route>> routes)
         else if (delta < -M_PI)
             delta += 2 * M_PI;
 
-        if (routes[i].has_value() and routes[j].has_value())
-        {
-            int target_i = robots[i].goods == 0 ? routes[i].value().from_station_index
-                                                : routes[i].value().to_station_index;
-            int target_j = robots[j].goods == 0 ? routes[j].value().from_station_index
-                                                : routes[j].value().to_station_index;
-            if (target_i == target_j)
-            {
-                cerr << "info: "
-                     << "robot " << i << " and robot " << j << " has same target" << endl;
-                int flag = signbit(delta) ? 1 : -1;
-                __shelter(meta.robot[i], flag);
-                __shelter(meta.robot[i], flag);
-                instructions.push_back(new io::I_forward(j, 0));
-                continue;
-            }
-        }
-
-
+        cerr << "info: "
+             << "robot " << i << " and robot " << j << " delta " << delta << endl;
         if (fabs(delta) < M_PI / 2)
         {
             cerr << "info: "
