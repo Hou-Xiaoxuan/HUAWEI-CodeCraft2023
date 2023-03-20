@@ -172,7 +172,7 @@ double _get_expected_profit(const Robot &robot, const Route &route)
     }
 
     auto expected_profit = static_cast<double>(route.profit);    // 预期利润
-    // expected_profit *= decrease_factor(__estimated_move_flame(from_station.loc, target_station.loc),
+    // expected_profit *= decrease_factor(_estimated_move_flame(from_station.loc, target_station.loc),
     //     ConVar::time_limit);
     if (target_station.workstation().is_consumer() == false)
         expected_profit += super_demand[target_station.product_id()];    // 更高阶段的预期利润
