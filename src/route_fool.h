@@ -57,7 +57,7 @@ struct {
         cnt++;
     }
     inline double get() { return cnt > 0 ? bias / cnt : 0; }
-} __estimated_bias;
+} _estimated_bias;
 /*4~5s内初始化所需要的变量*/
 void init()
 {
@@ -97,7 +97,7 @@ void init()
 
 
 /*TODO 参考navigate的实现，给出准确的移动时间帧数量预估*/
-int __estimated_move_flame(Point from, Point target_one, Point target_two = Point(0, 0))
+int _estimated_move_flame(Point from, Point target_one, Point target_two = Point(0, 0))
 {
     const static double stable_bias = 15;
     double time = 0;
@@ -108,7 +108,7 @@ int __estimated_move_flame(Point from, Point target_one, Point target_two = Poin
 }
 
 /* 全局统计demand需求 */
-void __count_super_demand()
+void _count_super_demand()
 {
     /* 计算super_demand。如7在用于4后，会对5和6有强烈而需求
         demand在计算ddf是添加到利润中，激励生产高等级的原材料
@@ -138,12 +138,12 @@ void __count_super_demand()
             if (processing[j] == 0) continue;
             const auto &route = routes[processing[j]];
             if (route.to_station_index == station.id)
-                goods_false.erase(remove(goods_false.begin(), goods_false.end(), route.goods), goods_false.end());
-            
-                
+                goods_false.erase(
+                    remove(goods_false.begin(), goods_false.end(), route.goods), goods_false.end());
         }
         double demand_add = static_cast<double>(station.product().price - station.product().cost)
-            * static_cast<double>(goods_true.size()) / static_cast<double>(goods_true.size() + goods_false.size()) * 0.35;
+            * static_cast<double>(goods_true.size())
+            / static_cast<double>(goods_true.size() + goods_false.size()) * 0.35;
         for (auto good : goods_false)
             super_demand[good] += demand_add;
     }
@@ -152,11 +152,12 @@ void __count_super_demand()
 /* 商品价值衰减率 */
 double decrease_factor(int x, int maxX, double minRate = 0.8)
 {
+    return 1.0;    // close decrease
     if (x < maxX) return (1 - sqrt(1 - pow((1 - static_cast<double>(x) / maxX), 2))) + minRate;
     return minRate;
 }
 
-double __get_expected_profit(const Robot &robot, const Route &route)
+double _get_expected_profit(const Robot &robot, const Route &route)
 {
     const auto &from_station = meta.station[route.from_station_index];
     const auto &target_station = meta.station[route.to_station_index];
@@ -174,9 +175,9 @@ double __get_expected_profit(const Robot &robot, const Route &route)
         }
     }
 
-    double expected_profit = static_cast<double>(route.profit)
-        * decrease_factor(__estimated_move_flame(from_station.loc, target_station.loc),
-            ConVar::time_limit);    // 预期利润
+    auto expected_profit = static_cast<double>(route.profit);    // 预期利润
+    // expected_profit *= decrease_factor(__estimated_move_flame(from_station.loc, target_station.loc),
+    //     ConVar::time_limit);
     if (target_station.workstation().is_consumer() == false)
         expected_profit += super_demand[target_station.product_id()];    // 更高阶段的预期利润
 
@@ -190,37 +191,38 @@ double __get_expected_profit(const Robot &robot, const Route &route)
         }
         expected_profit
             += static_cast<double>(target_station.product().price - target_station.product().cost) * 0.5
-            * material_count / static_cast<double>(target_station.product().needs.size());    // 加入预期利润0.5*原材料比例
+            * material_count
+            / static_cast<double>(target_station.product().needs.size());    // 加入预期利润0.5*原材料比例
     }
 
     int empty_flame = 0;
     if (from_station.timeleft > 0)
-        empty_flame = max((from_station.timeleft - __estimated_move_flame(robot.loc, from_station.loc)), 0);
+        empty_flame = max((from_station.timeleft - _estimated_move_flame(robot.loc, from_station.loc)), 0);
     expected_profit -= empty_flame * 10;    // 空转惩罚，假设1000flame(20s)的预期收益是10000
 
     return expected_profit;
 }
 
-int __get_expected_flame_cost(const Robot &robot, const Route &route)
+int _get_expected_flame_cost(const Robot &robot, const Route &route)
 {
     const auto &from_station = meta.station[route.from_station_index];
     const auto &target_station = meta.station[route.to_station_index];
     int expected_flame_cost;
     if (from_station.with_product == 0
-        and from_station.timeleft > __estimated_move_flame(robot.loc, from_station.loc))
+        and from_station.timeleft > _estimated_move_flame(robot.loc, from_station.loc))
     {
         expected_flame_cost
-            = from_station.timeleft + __estimated_move_flame(from_station.loc, target_station.loc);
+            = from_station.timeleft + _estimated_move_flame(from_station.loc, target_station.loc);
     }
     else
     {
-        expected_flame_cost = __estimated_move_flame(robot.loc, from_station.loc, target_station.loc);
+        expected_flame_cost = _estimated_move_flame(robot.loc, from_station.loc, target_station.loc);
     }
     return expected_flame_cost;
 }
 
 /* 抢夺其他机器人任务 */
-int __steal_pointing(int robot_id)
+int _steal_pointing(int robot_id)
 {
     const auto &robot = meta.robot[robot_id];
     for (const auto &p_robot : meta.robot)
@@ -229,20 +231,20 @@ int __steal_pointing(int robot_id)
         if (processing[p_robot.id] == 0) continue;
         if (p_robot.id == robot_id) continue;
         if (p_robot.goods != 0) continue;
-        cerr<<"[info][__steal_pointing] p_robot.id="<<p_robot.id<<endl;
+        cerr << "[info][__steal_pointing] p_robot.id=" << p_robot.id << endl;
 
         auto &route = routes[processing[p_robot.id]];
 
         // XXX 简单策略，距离更近
-        if (__estimated_move_flame(robot.loc, meta.station[route.from_station_index].loc) * 2
-            < __estimated_move_flame(p_robot.loc, meta.station[route.from_station_index].loc))
+        if (_estimated_move_flame(robot.loc, meta.station[route.from_station_index].loc) * 2
+            < _estimated_move_flame(p_robot.loc, meta.station[route.from_station_index].loc))
         {
             // 成功抢夺
             processing[robot_id] = processing[p_robot.id];
             processing[p_robot.id] = 0;
             // 信息更新
-            double expected_profit = __get_expected_profit(robot, route);
-            int expected_flame_cost = __get_expected_flame_cost(robot, route);
+            double expected_profit = _get_expected_profit(robot, route);
+            int expected_flame_cost = _get_expected_flame_cost(robot, route);
             double ppf = expected_profit / expected_flame_cost;
             route.ppf = ppf;
             route.start_flame = meta.current_flame;
@@ -254,9 +256,9 @@ int __steal_pointing(int robot_id)
 }
 
 /* 分配任务 */
-int __give_pointing(int robot_id, double init_ppf = 0.0)
+int _give_pointing(int robot_id, double init_ppf = 0.0)
 {
-    __count_super_demand();
+    _count_super_demand();
     const auto &robot = meta.robot[robot_id];
     struct {
         int route_index = 0;
@@ -287,7 +289,7 @@ int __give_pointing(int robot_id, double init_ppf = 0.0)
 
         int expected_money = meta.current_money;       // 预期到达from点时的money
         int expected_buy_flame = meta.current_flame    // 预期到达from点时的flame
-            + __estimated_move_flame(robot.loc, from_station.loc);
+            + _estimated_move_flame(robot.loc, from_station.loc);
 
 
         int invalid_route = 0;    // NOTE: invalid when [type not in (8&9) and 竞争终点] or [竞争起点]
@@ -325,11 +327,11 @@ int __give_pointing(int robot_id, double init_ppf = 0.0)
 
 
         /*计算、选择最佳ppf*/
-        double expected_profit = __get_expected_profit(robot, route);         // 预期利润
-        int expected_flame_cost = __get_expected_flame_cost(robot, route);    // 预期时间
+        double expected_profit = _get_expected_profit(robot, route);         // 预期利润
+        int expected_flame_cost = _get_expected_flame_cost(robot, route);    // 预期时间
 
         double flame_bias = 0;    // 帧数统计误差,时间越接近重点，越增大帧数误差
-        if (meta.current_flame > 8000) flame_bias = __estimated_bias.get();
+        if (meta.current_flame > 8000) flame_bias = _estimated_bias.get();
         if (meta.current_flame + expected_flame_cost + flame_bias > ConVar::time_limit)
             continue;    // *condition 4
 
@@ -377,7 +379,7 @@ vector<optional<Route>> give_pointing()
     for (int i = 1; i < meta.robot.size(); i++)
     {
         // if (processing[i] == 0) processing[i] = __steal_pointing(i); // 负优化
-        if (processing[i] == 0) processing[i] = __give_pointing(i);
+        if (processing[i] == 0) processing[i] = _give_pointing(i);
         if (processing[i] == 0) continue;
         // 处理任务
         auto &route = routes[processing[i]];
@@ -389,7 +391,7 @@ vector<optional<Route>> give_pointing()
                 cerr << "[info][pointing] [flame=" << meta.current_flame << "] robot " << i << " finished"
                      << routes[processing[i]] << endl;
 
-                __estimated_bias.add(meta.current_flame - routes[processing[i]].finish_flame);
+                _estimated_bias.add(meta.current_flame - routes[processing[i]].finish_flame);
                 routes[processing[i]].clear_state();
                 processing[i] = 0;
                 processing_state[i] = ProcessingState::PICKING;

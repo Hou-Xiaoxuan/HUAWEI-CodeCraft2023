@@ -14,7 +14,7 @@ namespace anticollision
 using namespace std;
 using io::instructions;
 
-void __shelter(const Robot &robot, int RotateDirection)
+void _shelter(const Robot &robot, int RotateDirection)
 {
     Point center;    // 圆心
     center.x = robot.loc.x + RotateDirection * ComVar::max_radius * sin(robot.dirc);
@@ -96,15 +96,15 @@ void anticollision(const vector<optional<route_fool::Route>> &routes)
             cerr << "info: "
                  << "robot " << i << " and robot " << j << " rotate different" << endl;
             int flag = signbit(delta) ? 1 : -1;
-            __shelter(meta.robot[i], flag);
-            __shelter(meta.robot[j], -flag);
+            _shelter(meta.robot[i], flag);
+            _shelter(meta.robot[j], -flag);
         }
         else
         {
             cerr << "info: "
                  << "robot " << i << " and robot " << j << " rotate same" << endl;
-            __shelter(meta.robot[i], 1);
-            __shelter(meta.robot[j], 1);
+            _shelter(meta.robot[i], 1);
+            _shelter(meta.robot[j], 1);
         }
     }
 }
