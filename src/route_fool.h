@@ -151,7 +151,7 @@ void __count_super_demand()
 }
 
 /* 商品价值衰减率 */
-double decrease_factor(int x, int maxX, int minRate = 0.8)
+double decrease_factor(int x, int maxX, double minRate = 0.8)
 {
     if (x < maxX) return (1 - sqrt(1 - pow((1 - static_cast<double>(x) / maxX), 2))) + minRate;
     return minRate;
@@ -191,7 +191,7 @@ double __get_expected_profit(const Robot &robot, const Route &route)
         }
         expected_profit
             += static_cast<double>(target_station.product().price - target_station.product().cost) * 0.5
-            * material_count / target_station.product().needs.size();    // 加入预期利润0.5*原材料比例
+            * material_count / static_cast<double>(target_station.product().needs.size());    // 加入预期利润0.5*原材料比例
     }
 
     int empty_flame = 0;
@@ -226,7 +226,7 @@ int __steal_pointing(int robot_id)
     const auto &robot = meta.robot[robot_id];
     for (const auto &p_robot : meta.robot)
     {
-        if (p_robot == *meta.robot.begin()) continue;
+        if (p_robot.id == meta.robot.begin()->id) continue;
         if (processing[p_robot.id] == 0) continue;
         if (p_robot.id == robot_id) continue;
         if (p_robot.goods != 0) continue;
@@ -243,7 +243,7 @@ int __steal_pointing(int robot_id)
             processing[p_robot.id] = 0;
             // 信息更新
             double expected_profit = __get_expected_profit(robot, route);
-            double expected_flame_cost = __get_expected_flame_cost(robot, route);
+            int expected_flame_cost = __get_expected_flame_cost(robot, route);
             double ppf = expected_profit / expected_flame_cost;
             route.ppf = ppf;
             route.start_flame = meta.current_flame;
