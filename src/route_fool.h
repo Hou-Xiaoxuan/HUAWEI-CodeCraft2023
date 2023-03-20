@@ -137,9 +137,6 @@ void _count_super_demand()
         {
             if (processing[j] == 0) continue;
             const auto &route = routes[processing[j]];
-            if (route.to_station_index == station.id)
-                goods_false.erase(
-                    remove(goods_false.begin(), goods_false.end(), route.goods), goods_false.end());
         }
         double demand_add = static_cast<double>(station.product().price - station.product().cost)
             * static_cast<double>(goods_true.size())
@@ -341,12 +338,14 @@ int _give_pointing(int robot_id, double init_ppf = 0.0)
             best_route = {i, meta.current_flame + expected_flame_cost, ppf};
             cerr << "[info][__pointing] "
                  << " [flame=" << meta.current_flame << "] robot_id: " << robot_id
-                 << " UPDATE best_profit_per_flame: " << best_route.ppf
-                 << " best_route_index: " << best_route.index << " route: " << route << endl;
+                 << " UPDATE best_profit_per_flame: " << best_route.ppf << " profit: " << expected_profit
+                 << " flame_cost: " << expected_flame_cost << " best_route_index: " << best_route.index
+                 << " route: " << route << endl;
         }
         else
         {
             cerr << "[info][__pointing] [flame=" << meta.current_flame << "] robot_id=" << robot_id
+                 << " profit=" << expected_profit << " flame_cost=" << expected_flame_cost
                  << " route=" << route << " valid, but ppf=" << ppf << endl;
         }
 #else
