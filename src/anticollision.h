@@ -2,8 +2,8 @@
 #define __ANTICOLLISION_H__
 
 #include <optional>
+#include <iostream>
 #include <vector>
-using namespace std;
 #include "const.h"
 #include "model.h"
 #include "route_fool.h"
@@ -11,6 +11,7 @@ using namespace std;
 
 namespace anticollision
 {
+using namespace std;
 using io::instructions;
 
 void __shelter(const Robot &robot, int RotateDirection)
@@ -29,7 +30,7 @@ void __shelter(const Robot &robot, int RotateDirection)
     navigate::move_to(robot, shelter_point);
 }
 
-void anticollision(vector<optional<route_fool::Route>> routes)
+void anticollision(const vector<optional<route_fool::Route>> &routes)
 {
 
     set<pair<int, int>> collision_set;
