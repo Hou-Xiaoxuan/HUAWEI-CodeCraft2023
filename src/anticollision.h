@@ -29,8 +29,7 @@ Point _shelter(const Robot &robot, int RotateDirection)
 void anticollision(const vector<optional<route_fool::Route>> &routes)
 {
 
-    set
-    <pair<int, int>> collision_set;
+    set<pair<int, int>> collision_set;
     const auto &robots = meta.robot;
     for (int predict_flame = 15; predict_flame > 0; predict_flame -= 1)
     {
