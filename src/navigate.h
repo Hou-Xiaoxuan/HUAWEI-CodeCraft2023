@@ -80,14 +80,12 @@ void __change_speed(const Robot &robot, const Point &target, const vector<Point>
         return;
     }
 
+    double delta = __get_delta_angle(robot, target);
     // prevent from circle
     if (__is_in_circle(robot, target))
     {
-        double next_v = 0.5 * Point::distance(robot.loc, target) / sin(__get_delta_angle(robot, target))
-            * ConVar::max_robot_angular_speed;
-        instructions.push_back(new io::I_forward(robot.id, next_v));
-        cerr << "info: robot " << robot.id << " in circle: v " << next_v << endl;
-        /// cerr << "info: next target in small circle" << endl;
+        instructions.push_back(new io::I_forward(robot.id, 0));
+        cerr << "info: robot " << robot.id << " in circle: v " << 0 << endl;
         return;
     }
     instructions.push_back(new io::I_forward(robot.id, ConVar::max_robot_forward_speed));
