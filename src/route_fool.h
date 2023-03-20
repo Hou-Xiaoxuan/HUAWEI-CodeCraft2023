@@ -96,7 +96,7 @@ void init()
 }
 
 
-/*TODO 参考navigate的实现，给出准确的移动时间帧数量预估*/
+/*简单时间估计*/
 int _estimated_move_flame(Point from, Point target_one, Point target_two = Point(0, 0))
 {
     const static double stable_bias = 15;
@@ -146,7 +146,7 @@ void _count_super_demand()
     }
 }
 
-/* 商品价值衰减率 */
+/* XXX 暂时未使用 商品价值衰减率 */
 double decrease_factor(int x, int maxX, double minRate = 0.8)
 {
     if (x < maxX) return (1 - sqrt(1 - pow((1 - static_cast<double>(x) / maxX), 2))) + minRate;
@@ -217,7 +217,7 @@ int _get_expected_flame_cost(const Robot &robot, const Route &route)
     return expected_flame_cost;
 }
 
-/* 抢夺其他机器人任务 */
+/* XXX 暂时未使用 抢夺其他机器人任务 */
 int _steal_pointing(int robot_id)
 {
     const auto &robot = meta.robot[robot_id];
@@ -231,7 +231,6 @@ int _steal_pointing(int robot_id)
 
         auto &route = routes[processing[p_robot.id]];
 
-        // XXX 简单策略，距离更近
         if (_estimated_move_flame(robot.loc, meta.station[route.from_station_index].loc) * 2
             < _estimated_move_flame(p_robot.loc, meta.station[route.from_station_index].loc))
         {
@@ -272,6 +271,7 @@ int _give_pointing(int robot_id, double init_ppf = 0.0)
             3. 起点有货物/在生产(*优化可以加上可以预期得到货物*)
             4. 预期可以完成任务
             5. best_profit_per_flame最优
+            6. 没有其他机器人正在前往重点
         *  expected_profit
             如果target已经有部分原材料/已有其他原材料在运输，则计算时要在profit中加入target生产货物利益的一部分
         *  expected_flame
@@ -315,7 +315,8 @@ int _give_pointing(int robot_id, double init_ppf = 0.0)
                 invalid_route = 100;
 
             // [就近原则]
-            if (route.from_station_index == p_route.to_station_index) invalid_route = 100;
+            if (route.from_station_index == p_route.to_station_index)    // *condition 6
+                invalid_route = 100;    
         }
 
         if (target_station.workstation().is_consumer())
@@ -328,7 +329,8 @@ int _give_pointing(int robot_id, double init_ppf = 0.0)
         /*计算、选择最佳ppf*/
         double expected_profit = _get_expected_profit(robot, route);         // 预期利润
         int expected_flame_cost = _get_expected_flame_cost(robot, route);    // 预期时间
-
+        // TODO 考虑加入节点是否限制的影戏那个
+        // TODO 影响因子调参
         double flame_bias = 0;    // 帧数统计误差,时间越接近重点，越增大帧数误差
         if (meta.current_flame > 8000) flame_bias = _estimated_bias.get();
         if (meta.current_flame + expected_flame_cost + flame_bias > ConVar::time_limit)
