@@ -329,14 +329,14 @@ int _give_pointing(int robot_id, double init_ppf = 0.0)
         /*计算、选择最佳ppf*/
         double expected_profit = _get_expected_profit(robot, route);         // 预期利润
         int expected_flame_cost = _get_expected_flame_cost(robot, route);    // 预期时间
-        // TODO 考虑加入节点是否限制的影戏那个
-        // TODO 影响因子调参
+        // TODO 影响因子·调参
         double flame_bias = 0;    // 帧数统计误差,时间越接近重点，越增大帧数误差
         if (meta.current_flame > 8000) flame_bias = _estimated_bias.get();
         if (meta.current_flame + expected_flame_cost + flame_bias > ConVar::time_limit)
             continue;    // *condition 4
 
         double ppf = expected_profit / expected_flame_cost;
+
 #ifdef DEBUG
         if (ppf > best_route.ppf)
         {
@@ -401,8 +401,6 @@ vector<optional<Route>> give_pointing()
                 continue;
             }
             processing_state[i] = ProcessingState::BUY;    // 1->2
-
-            // TODO: 增加“不忠”逻辑，变更目标站点
 
             if (robot.in_station == route.from_station_index)
             {
