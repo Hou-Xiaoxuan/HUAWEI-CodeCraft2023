@@ -186,7 +186,7 @@ double _get_expected_profit(const Robot &robot, const Route &route)
             expected_material >>= 1;
         }
         expected_profit
-            += static_cast<double>(target_station.product().price - target_station.product().cost) * 0.5
+            += static_cast<double>(target_station.product().price - target_station.product().cost) * 0.4
             * material_count
             / static_cast<double>(target_station.product().needs.size());    // 加入预期利润0.5*原材料比例
     }
