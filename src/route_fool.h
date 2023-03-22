@@ -185,10 +185,11 @@ double _get_expected_profit(const Robot &robot, const Route &route)
             material_count += expected_material & 1;
             expected_material >>= 1;
         }
-        expected_profit
-            += static_cast<double>(target_station.product().price - target_station.product().cost) * 0.4
-            * material_count
-            / static_cast<double>(target_station.product().needs.size());    // 加入预期利润0.5*原材料比例
+        auto profit_deeper
+            = static_cast<double>(target_station.product().price - target_station.product().cost) * 0.4
+            * material_count / static_cast<double>(target_station.product().needs.size());
+        if (target_station.timeleft == -1) profit_deeper *= 1.2;
+        expected_profit += profit_deeper;
     }
 
     int empty_flame = 0;
@@ -316,7 +317,7 @@ int _give_pointing(int robot_id, double init_ppf = 0.0)
 
             // [就近原则]
             if (route.from_station_index == p_route.to_station_index)    // *condition 6
-                invalid_route = 100;    
+                invalid_route = 100;
         }
 
         if (target_station.workstation().is_consumer())
@@ -421,7 +422,14 @@ vector<optional<Route>> give_pointing()
 #endif
             }
             else
-                navigate::move_to(robot, meta.station[route.from_station_index].loc);
+            {
+                const auto &target_station = meta.station[route.from_station_index];
+                int wait_flame = 0;
+                if (target_station.with_product == 0 and target_station.timeleft > 0)
+                    wait_flame = target_station.timeleft;
+                navigate::move_to(
+                    robot, target_station.loc, {meta.station[route.to_station_index].loc}, wait_flame);
+            }
         }
         else
         {

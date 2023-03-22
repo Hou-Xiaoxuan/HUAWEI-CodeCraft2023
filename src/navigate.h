@@ -135,7 +135,7 @@ void __change_direction(const Robot &robot, const Point &target, const vector<Po
 void move_to(const Robot &robot,
     Point target,
     vector<Point> follow_target = vector<Point>(),
-    double left_time)
+    int left_flame = 0)
 {
     __change_direction(robot, target, follow_target);
     __change_speed(robot, target, follow_target);
