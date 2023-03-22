@@ -55,10 +55,9 @@ bool __is_in_circle(const Robot &robot, const Point &target)
     center.y = robot.loc.y + flag * ComVar::max_radius * cos(robot.dirc);
 
     double radius = __get_robot_radius(robot);
-    return Point::distance(center, target) <= ComVar::max_radius - radius;
+    return Point::distance(center, target) + ConVar::robot_workstation_check <= ComVar::max_radius;
 }
-
-
+vector<int> stop_flag = vector<int>(ConVar::max_robot + 1);
 /*速度调整*/
 void __change_speed(const Robot &robot,
     const Point &target,
@@ -83,16 +82,35 @@ void __change_speed(const Robot &robot,
     }
 
     // stop_in_target
-    if (Point::distance({stop_x, stop_y}, target) <= ConVar::robot_workstation_check / 2)
+    cerr << "info: robot " << robot.id << " distance to target "
+         << Point::distance({stop_x, stop_y}, target) << endl;
+    cerr << "info: robot " << robot.id << " near target"
+         << " v " << robot.v.len() << " w " << robot.w << endl;
+
+    if (robot.goods == 0 && Point::distance({stop_x, stop_y}, target) < ConVar::robot_workstation_check)
     {
-        if (left_frame * ComVar::flametime >= stop_t)
+
+        if (left_frame * ComVar::flametime > stop_t)
         {
-            instructions.push_back(new io::I_forward(robot.id, 0));
-            cerr << "info: robot " << robot.id << " will stop in target " << target << " left_frame "
-                 << left_frame << " stop_t " << stop_t << endl;
-            return;
+            // instructions.push_back(new io::I_forward(robot.id, 0));
+            cerr << "info: robot " << robot.id << " stop_flag = 1" << endl;
+            stop_flag[robot.id] = 1;
         }
     }
+
+    if (stop_flag[robot.id])
+    {
+        cerr << "info: robot " << robot.id << " will stop in " << Point {stop_x, stop_y} << " target "
+             << target << " left_frame " << left_frame << " stop_t " << stop_t << endl;
+        instructions.push_back(new io::I_forward(robot.id, 0));
+        if (robot.v.len() < 1e-2)
+        {
+            stop_flag[robot.id] = 0;
+        }
+        return;
+    }
+
+
 
     // prevent from circle
     if (__is_in_circle(robot, target))
@@ -110,16 +128,18 @@ void __change_direction(const Robot &robot,
     const vector<Point> &follow_target,
     int left_frame)
 {
+    double angular_acceleration = __get_max_robot_angular_acceleration(robot);
     Point next_target = target;
     if (follow_target.size() != 0 && Point::distance(robot.loc, target) < ConVar::robot_workstation_check
-        && robot.v.len() < ComVar::max_robot_angular_acceleration_with_goods * ComVar::flametime / 2)
+        && robot.v.len() < 1e-2)
     {
         next_target = follow_target[0];
     }
 
     double delta = __get_delta_angle(robot, next_target);
+    cerr << "info: robot " << robot.id << " dir " << robot.dirc << " delta " << delta << endl;
     double delta_dir = signbit(delta) ? -1 : 1;
-    double angular_acceleration = __get_max_robot_angular_acceleration(robot);
+
 
     if (signbit(delta) != signbit(robot.w))    // HACK
     {
@@ -127,25 +147,46 @@ void __change_direction(const Robot &robot,
         return;
     }
 
+    delta = fabs(delta);
+
     double stop_angular = robot.w * robot.w * 0.5 / angular_acceleration;
-    if (stop_angular >= fabs(delta))
+    if (stop_angular >= delta)
     {
         instructions.push_back(new io::I_rotate(robot.id, 0));
         return;
     }
 
-    double t1 = (ConVar::max_robot_angular_speed - fabs(robot.w)) / angular_acceleration;
-    double t2 = ComVar::flametime - t1;
-    double run_delta
-        = (ConVar::max_robot_angular_speed * ConVar::max_robot_angular_speed - robot.w * robot.w) * 0.5
-            / angular_acceleration
-        + ConVar::max_robot_angular_speed * t2;
-    if (run_delta >= fabs(delta))
+
+    if (fabs(robot.w) + angular_acceleration * ComVar::flametime > ConVar::max_robot_angular_speed)
     {
-        double next_v = (2 * ComVar::flametime * robot.w + delta - robot.w * robot.w) * 0.5
-            / (angular_acceleration + 1) / ComVar::flametime;
-        instructions.push_back(new io::I_rotate(robot.id, next_v));
-        return;
+        double t1 = (ConVar::max_robot_angular_speed - fabs(robot.w)) / angular_acceleration;
+        double t2 = ComVar::flametime - t1;
+        double run_delta
+            = (ConVar::max_robot_angular_speed * ConVar::max_robot_angular_speed - robot.w * robot.w) * 0.5
+                / angular_acceleration
+            + ConVar::max_robot_angular_speed * t2
+            + ConVar::max_robot_angular_speed * ConVar::max_robot_angular_speed * 0.5
+                / angular_acceleration;
+        if (run_delta > delta)
+        {
+            double next_w = (2 * ComVar::flametime * robot.w + delta - robot.w * robot.w) * 0.5
+                / (angular_acceleration + 1) / ComVar::flametime;
+            instructions.push_back(new io::I_rotate(robot.id, next_w * delta_dir));
+            return;
+        }
+    }
+    else
+    {
+        double next_w = fabs(robot.w) + angular_acceleration * ComVar::flametime;
+        double run_delta = (next_w * next_w - robot.w * robot.w) * 0.5 / angular_acceleration
+            + next_w * next_w * 0.5 / angular_acceleration;
+        if (run_delta > delta)
+        {
+            double next_w = (2 * ComVar::flametime * robot.w + delta - robot.w * robot.w) * 0.5
+                / (angular_acceleration + 1) / ComVar::flametime;
+            instructions.push_back(new io::I_rotate(robot.id, next_w * delta_dir));
+            return;
+        }
     }
 
     instructions.push_back(new io::I_rotate(robot.id, ConVar::max_robot_angular_speed * delta_dir));
