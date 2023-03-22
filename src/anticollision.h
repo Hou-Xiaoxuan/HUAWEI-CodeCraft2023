@@ -13,8 +13,11 @@ namespace anticollision
 {
 using namespace std;
 using io::instructions;
-Point _shelter(const Robot &robot, int RotateDirection)
+const auto &robots = meta.robot;
+
+Point get_spec_dir_shelter(int robot_id, int RotateDirection)
 {
+    const auto &robot = robots[robot_id];
     Point center;    // 圆心
     center.x = robot.loc.x + RotateDirection * ComVar::max_radius * sin(robot.dirc);
     center.y = robot.loc.y - RotateDirection * ComVar::max_radius * cos(robot.dirc);
@@ -26,16 +29,39 @@ Point _shelter(const Robot &robot, int RotateDirection)
     return shelter_point;
 }
 
+Point get_shelter_aginst_point(int robot_id, Point point)
+{
+    vector<Point> tmp_shelter = {get_spec_dir_shelter(robot_id, 1), get_spec_dir_shelter(robot_id, -1)};
+    return Point::distance(point, tmp_shelter[0]) > Point::distance(point, tmp_shelter[1]) ? tmp_shelter[0]
+                                                                                           : tmp_shelter[1];
+}
+
+vector<Point> shelters(ConVar::max_robot + 1);
+vector<int> left_shelter_cnt = vector<int>(ConVar::max_robot + 1, 0);
+
+void cnt_down_shelter()
+{
+    for (int i = 1; i < shelters.size(); ++i)
+    {
+        if (left_shelter_cnt[i] > 0)
+        {
+            --left_shelter_cnt[i];
+        }
+        cerr << "error: robot " << i << " shelter " << shelters[i] << " left count " << left_shelter_cnt[i]
+             << endl;
+    }
+}
+
 void anticollision(const vector<optional<route_fool::Route>> &routes)
 {
+    int persisitent_flame = 10;
+    int max_predict_flame = 20;
 
-    int max_predict_flame = 15;
-    const auto &robots = meta.robot;
-    vector<pair<int, int>> collision_set;
+    cnt_down_shelter();
+
     vector<vector<Point>> predict_point(max_predict_flame + 1, vector<Point>(robots.size()));
     for (int predict_flame = 1; predict_flame <= max_predict_flame; ++predict_flame)
     {
-
         double predict_time = predict_flame * ComVar::flametime;
         for (int i = 1; i < robots.size(); ++i)
         {
@@ -58,58 +84,95 @@ void anticollision(const vector<optional<route_fool::Route>> &routes)
             predict_point[predict_flame][i].y = center.y - radius * cos(predict_angular);
         }
     }
+
     vector<vector<int>> vis = vector<vector<int>>(robots.size(), vector<int>(robots.size(), 0));
-    for (int predict_flame = max_predict_flame; predict_flame >= 1; predict_flame -= 1)
+    for (int predict_flame = 1; predict_flame <= max_predict_flame; ++predict_flame)
     {
         for (int i = 1; i < robots.size(); ++i)
         {
-            for (int j = i + 1; j < robots.size() and not vis[i][j]; ++j)
+            for (int j = i + 1; j < robots.size(); ++j)
             {
                 if (vis[i][j]) continue;
 
-                double min_distance
-                    = navigate::__get_robot_radius(robots[i]) + navigate::__get_robot_radius(robots[j]);
+                double min_distance = 2 * ConVar::robot_radius_goods + 0.2;
                 if (Point::distance(predict_point[predict_flame][i], predict_point[predict_flame][j])
                     <= min_distance)
                 {
-                    collision_set.push_back({i, j});
-                    vis[i][j] = vis[j][i] = 1;
+                    vis[i][j] = 1;
+                    Point collision_point
+                        = {(predict_point[predict_flame][i].x + predict_point[predict_flame][j].x) / 2,
+                            (predict_point[predict_flame][i].y + predict_point[predict_flame][j].y) / 2};
+
+                    cerr << "info: robot " << i << " and robot " << j << " will collide in "
+                         << predict_flame << " flame(s) at " << collision_point << endl;
+
+                    if (left_shelter_cnt[i] != 0 && left_shelter_cnt[j] != 0)
+                    {
+                        cerr << "info: robot " << i << " and robot " << j
+                             << " have already been assigned shelters." << endl;
+                        cerr << "info: robot fate is decided." << endl;
+                        cerr << "info: robot " << i << " shelter " << shelters[i] << " left count "
+                             << left_shelter_cnt[i] << endl;
+                        cerr << "info: robot " << j << " shelter " << shelters[j] << " left count "
+                             << left_shelter_cnt[j] << endl;
+                    }
+                    else if (left_shelter_cnt[i] != 0 || left_shelter_cnt[j] != 0)
+                    {
+                        int shelter_id = left_shelter_cnt[i] == 0 ? i : j;
+                        int fix_id = left_shelter_cnt[i] == 0 ? j : i;
+                        shelters[shelter_id] = get_shelter_aginst_point(shelter_id, robots[fix_id].loc);
+
+                        double delta_angle = fabs(robots[i].dirc - robots[j].dirc);
+                        if (delta_angle > M_PI)
+                            delta_angle -= 2 * M_PI;
+                        else if (delta_angle < -M_PI)
+                            delta_angle += 2 * M_PI;
+                        if (fabs(delta_angle) < M_PI / 9)
+                        {
+                            left_shelter_cnt[shelter_id] = persisitent_flame;
+                        }
+                        else
+                        {
+                            left_shelter_cnt[shelter_id] = 1;
+                        }
+                    }
+                    else
+                    {
+                        cerr << "info: robot shelter " << 2 << endl;
+                        shelters[i] = get_shelter_aginst_point(i, robots[j].loc);
+                        shelters[j] = get_shelter_aginst_point(j, robots[i].loc);
+                        double delta_angle = fabs(robots[i].dirc - robots[j].dirc);
+                        if (delta_angle > M_PI)
+                            delta_angle -= 2 * M_PI;
+                        else if (delta_angle < -M_PI)
+                            delta_angle += 2 * M_PI;
+                        if (fabs(delta_angle) < M_PI / 9)
+                        {
+                            left_shelter_cnt[i] = persisitent_flame;
+                            left_shelter_cnt[j] = persisitent_flame;
+                        }
+                        else
+                        {
+                            left_shelter_cnt[i] = 1;
+                            left_shelter_cnt[j] = 1;
+                        }
+                    }
                 }
             }
         }
     }
 
-    // bianli collision_set
-    for (const auto &collision : collision_set)
+    for (int i = 1; i < shelters.size(); ++i)
     {
-        int i = collision.first;
-        int j = collision.second;
-
-        cerr << "info: "
-             << "robot " << i << " and robot " << j << " will collide" << endl;
-        vector<Point> shelter_i = {_shelter(robots[i], 1), _shelter(robots[i], -1)};
-        vector<Point> shelter_j = {_shelter(robots[j], 1), _shelter(robots[j], -1)};
-        int shelter_index_i = 0, shelter_index_j = 0;
-        double shelter_dis = 0;
-        for (int k = 0; k < 2; ++k)
+        if (left_shelter_cnt[i] != 0)
         {
-            for (int l = 0; l < 2; ++l)
-            {
-                double tmp_dis = Point::distance(shelter_i[k], shelter_j[l]);
-                if (tmp_dis >= shelter_dis)
-                {
-                    shelter_dis = tmp_dis;
-                    shelter_index_i = k;
-                    shelter_index_j = l;
-                }
-            }
+            cerr << "info: robot " << i << " will be assigned shelter: " << shelters[i] << " left "
+                 << left_shelter_cnt[i] << " flame(s)." << endl;
+
+            cerr << "info: robot " << i << " v " << robots[i].v << " w " << robots[i].w << " pos "
+                 << robots[i].loc << endl;
+            navigate::move_to(robots[i], shelters[i]);
         }
-        navigate::move_to(robots[i], shelter_i[shelter_index_i]);
-        navigate::move_to(robots[j], shelter_j[shelter_index_j]);
-        cerr << "info: "
-             << "robot " << i << " move to " << shelter_i[shelter_index_i] << endl;
-        cerr << "info: "
-             << "robot " << j << " move to " << shelter_j[shelter_index_j] << endl;
     }
 }
 }
