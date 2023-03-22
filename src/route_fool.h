@@ -188,7 +188,6 @@ double _get_expected_profit(const Robot &robot, const Route &route)
         auto profit_deeper
             = static_cast<double>(target_station.product().price - target_station.product().cost) * 0.4
             * material_count / static_cast<double>(target_station.product().needs.size());
-        if (target_station.timeleft == -1) profit_deeper *= 1.2;
         expected_profit += profit_deeper;
     }
 
