@@ -132,7 +132,10 @@ void __change_direction(const Robot &robot, const Point &target, const vector<Po
 /*将i号机器人移动到target点
  * 可选参数follow_target, 考虑后续目标点的航迹优化
  */
-void move_to(const Robot &robot, Point target, vector<Point> follow_target = vector<Point>())
+void move_to(const Robot &robot,
+    Point target,
+    vector<Point> follow_target = vector<Point>(),
+    double left_time)
 {
     __change_direction(robot, target, follow_target);
     __change_speed(robot, target, follow_target);
