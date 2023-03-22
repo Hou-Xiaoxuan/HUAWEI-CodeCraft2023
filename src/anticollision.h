@@ -101,7 +101,6 @@ void anticollision(const vector<optional<route_fool::Route>> &routes)
                     shelter_dis = tmp_dis;
                     shelter_index_i = k;
                     shelter_index_j = l;
-                    break;
                 }
             }
         }

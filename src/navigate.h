@@ -60,15 +60,17 @@ bool __is_in_circle(const Robot &robot, const Point &target)
 
 
 /*速度调整*/
-void __change_speed(const Robot &robot, const Point &target, const vector<Point> &follow_target)
+void __change_speed(const Robot &robot,
+    const Point &target,
+    const vector<Point> &follow_target,
+    int left_frame)
 {
-
     // prevent from wall
     double min_a_x = __get_max_robot_acceleration(robot) * robot.v.x / robot.v.len();
     double min_a_y = __get_max_robot_acceleration(robot) * robot.v.y / robot.v.len();
-    double t = robot.v.len() / __get_max_robot_acceleration(robot);
-    double stop_x = robot.loc.x + robot.v.x * t + 0.5 * min_a_x * t * t;
-    double stop_y = robot.loc.y + robot.v.y * t + 0.5 * min_a_y * t * t;
+    double stop_t = robot.v.len() / __get_max_robot_acceleration(robot);
+    double stop_x = robot.loc.x + robot.v.x * stop_t + 0.5 * min_a_x * stop_t * stop_t;
+    double stop_y = robot.loc.y + robot.v.y * stop_t + 0.5 * min_a_y * stop_t * stop_t;
 
     // XXX
     double adapt = __get_robot_radius(robot);
@@ -80,7 +82,18 @@ void __change_speed(const Robot &robot, const Point &target, const vector<Point>
         return;
     }
 
-    double delta = __get_delta_angle(robot, target);
+    // stop_in_target
+    if (Point::distance({stop_x, stop_y}, target) <= ConVar::robot_workstation_check / 2)
+    {
+        if (left_frame * ComVar::flametime >= stop_t)
+        {
+            instructions.push_back(new io::I_forward(robot.id, 0));
+            cerr << "info: robot " << robot.id << " will stop in target " << target << " left_frame "
+                 << left_frame << " stop_t " << stop_t << endl;
+            return;
+        }
+    }
+
     // prevent from circle
     if (__is_in_circle(robot, target))
     {
@@ -92,11 +105,22 @@ void __change_speed(const Robot &robot, const Point &target, const vector<Point>
 }
 
 /*角度调整*/
-void __change_direction(const Robot &robot, const Point &target, const vector<Point> &follow_target)
+void __change_direction(const Robot &robot,
+    const Point &target,
+    const vector<Point> &follow_target,
+    int left_frame)
 {
-    double delta = __get_delta_angle(robot, target);
+    Point next_target = target;
+    if (follow_target.size() != 0 && Point::distance(robot.loc, target) < ConVar::robot_workstation_check
+        && robot.v.len() < ComVar::max_robot_angular_acceleration_with_goods * ComVar::flametime / 2)
+    {
+        next_target = follow_target[0];
+    }
+
+    double delta = __get_delta_angle(robot, next_target);
     double delta_dir = signbit(delta) ? -1 : 1;
     double angular_acceleration = __get_max_robot_angular_acceleration(robot);
+
     if (signbit(delta) != signbit(robot.w))    // HACK
     {
         instructions.push_back(new io::I_rotate(robot.id, ConVar::max_robot_angular_speed * delta_dir));
@@ -137,8 +161,8 @@ void move_to(const Robot &robot,
     vector<Point> follow_target = vector<Point>(),
     int left_flame = 0)
 {
-    __change_direction(robot, target, follow_target);
-    __change_speed(robot, target, follow_target);
+    __change_direction(robot, target, follow_target, left_flame);
+    __change_speed(robot, target, follow_target, left_flame);
 }
 }
 #endif
