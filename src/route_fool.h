@@ -195,7 +195,7 @@ double _get_expected_profit(const Robot &robot, const Route &route)
     if (from_station.timeleft > 0)
         empty_flame = max((from_station.timeleft - _estimated_move_flame(robot.loc, from_station.loc)), 0);
     expected_profit -= empty_flame * 10;    // 空转惩罚，假设1000flame(20s)的预期收益是10000
-
+    if (route.goods > 3 and target_station.type == 9) expected_profit += 1500;    // 优先生产高等级的原材料F
     return expected_profit;
 }
 
@@ -420,15 +420,12 @@ vector<optional<Route>> give_pointing()
                 }
 #endif
             }
-            else
-            {
-                const auto &target_station = meta.station[route.from_station_index];
-                int wait_flame = 0;
-                if (target_station.with_product == 0 and target_station.timeleft > 0)
-                    wait_flame = target_station.timeleft;
-                navigate::move_to(
-                    robot, target_station.loc, {meta.station[route.to_station_index].loc}, wait_flame);
-            }
+            const auto &target_station = meta.station[route.from_station_index];
+            int wait_flame = 0;
+            if (target_station.with_product == 0 and target_station.timeleft > 0)
+                wait_flame = target_station.timeleft;
+            navigate::move_to(
+                robot, target_station.loc, {meta.station[route.to_station_index].loc}, wait_flame);
         }
         else
         {
@@ -444,8 +441,8 @@ vector<optional<Route>> give_pointing()
                          << robot.goods << endl;
 #endif
             }
-            else
-                navigate::move_to(robot, meta.station[route.to_station_index].loc);
+
+            navigate::move_to(robot, meta.station[route.to_station_index].loc);
         }
     }
 
