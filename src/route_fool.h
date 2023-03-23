@@ -195,7 +195,6 @@ double _get_expected_profit(const Robot &robot, const Route &route)
     if (from_station.timeleft > 0)
         empty_flame = max((from_station.timeleft - _estimated_move_flame(robot.loc, from_station.loc)), 0);
     expected_profit -= empty_flame * 10;    // 空转惩罚，假设1000flame(20s)的预期收益是10000
-    if (route.goods > 3 and target_station.type == 9) expected_profit += 1500;    // 优先生产高等级的原材料F
     return expected_profit;
 }
 
