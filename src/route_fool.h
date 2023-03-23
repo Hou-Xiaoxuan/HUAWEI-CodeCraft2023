@@ -382,7 +382,9 @@ vector<optional<Route>> give_pointing()
     {
         // if (processing[i] == 0) processing[i] = __steal_pointing(i); // 负优化
         if (processing[i] == 0) processing[i] = _give_pointing(i);
-        if (processing[i] == 0) continue;
+        if (processing[i] == 0)    // 留在原地
+            navigate::move_to(meta.robot[i], meta.robot[i].loc);
+        
         // 处理任务
         auto &route = routes[processing[i]];
         auto &robot = meta.robot[i];
