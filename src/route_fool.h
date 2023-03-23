@@ -328,7 +328,7 @@ int _give_pointing(int robot_id, double init_ppf = 0.0)
         /*计算、选择最佳ppf*/
         double expected_profit = _get_expected_profit(robot, route);         // 预期利润
         int expected_flame_cost = _get_expected_flame_cost(robot, route);    // 预期时间
-        // TODO 影响因子·调参
+
         double flame_bias = 0;    // 帧数统计误差,时间越接近重点，越增大帧数误差
         if (meta.current_flame > 8000) flame_bias = _estimated_bias.get();
         if (meta.current_flame + expected_flame_cost + flame_bias > ConVar::time_limit)
@@ -384,7 +384,7 @@ vector<optional<Route>> give_pointing()
         if (processing[i] == 0) processing[i] = _give_pointing(i);
         if (processing[i] == 0)    // 留在原地
             navigate::move_to(meta.robot[i], meta.robot[i].loc);
-        
+
         // 处理任务
         auto &route = routes[processing[i]];
         auto &robot = meta.robot[i];
