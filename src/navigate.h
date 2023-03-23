@@ -57,7 +57,6 @@ bool __is_in_circle(const Robot &robot, const Point &target)
     double radius = __get_robot_radius(robot);
     return Point::distance(center, target) + ConVar::robot_workstation_check <= ComVar::max_radius;
 }
-
 /*速度调整*/
 void __change_speed(const Robot &robot,
     const Point &target,
