@@ -82,12 +82,17 @@ void __change_speed(const Robot &robot,
     }
 
     // stop_in_target
-    cerr << "info: robot " << robot.id << " distance to target "
-         << Point::distance({stop_x, stop_y}, target) << endl;
     cerr << "info: robot " << robot.id << " near target"
          << " v " << robot.v.len() << " w " << robot.w << endl;
+    cerr << "info: robot " << robot.id << " distance to stop "
+         << Point::distance(robot.loc, {stop_x, stop_y}) << endl;
+    cerr << "info: robot " << robot.id << " pos " << robot.loc << " distance to target " << target << " "
+         << Point::distance(robot.loc, target) << endl;
+    cerr << "info: robot " << robot.id << " stop pos " << Point {stop_x, stop_y} << "distance to target "
+         << target << " " << Point::distance({stop_x, stop_y}, target) << endl;
 
-    if (robot.goods == 0 && Point::distance({stop_x, stop_y}, target) < ConVar::robot_workstation_check)
+    if (robot.goods == 0 && stop_flag[robot.id] == 0
+        && Point::distance({stop_x, stop_y}, target) < ConVar::robot_workstation_check)
     {
 
         if (left_frame * ComVar::flametime > stop_t)
