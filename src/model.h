@@ -9,9 +9,9 @@ struct Point;
 
 
 struct Point {
-    double x{};
-    double y{};
-    Point() =default;
+    double x {};
+    double y {};
+    Point() = default;
     Point(double x, double y) : x(x), y(y) { }
 
     double static distance(const Point &a, const Point &b)

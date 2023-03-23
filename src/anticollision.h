@@ -36,6 +36,7 @@ Point get_shelter_aginst_point(int robot_id, Point point)
                                                                                            : tmp_shelter[1];
 }
 
+vector<int> shelter_type(ConVar::max_robot + 1, 0);
 vector<Point> shelters(ConVar::max_robot + 1);
 vector<int> left_shelter_cnt = vector<int>(ConVar::max_robot + 1, 0);
 
@@ -47,6 +48,10 @@ void cnt_down_shelter()
         {
             --left_shelter_cnt[i];
         }
+        if (left_shelter_cnt[i] == 0)
+        {
+            shelter_type[i] = 0;
+        }
         cerr << "error: robot " << i << " shelter " << shelters[i] << " left count " << left_shelter_cnt[i]
              << endl;
     }
@@ -54,8 +59,8 @@ void cnt_down_shelter()
 
 void anticollision(const vector<optional<route_fool::Route>> &routes)
 {
-    int persisitent_flame = 10;
-    int max_predict_flame = 20;
+    int persisitent_flame = 5;
+    int max_predict_flame = 15;
 
     cnt_down_shelter();
 
@@ -94,7 +99,7 @@ void anticollision(const vector<optional<route_fool::Route>> &routes)
             {
                 if (vis[i][j]) continue;
 
-                double min_distance = 2 * ConVar::robot_radius_goods + 0.2;
+                double min_distance = 2 * ConVar::robot_radius_goods + 0.1;
                 if (Point::distance(predict_point[predict_flame][i], predict_point[predict_flame][j])
                     <= min_distance)
                 {
@@ -120,7 +125,38 @@ void anticollision(const vector<optional<route_fool::Route>> &routes)
                     {
                         int shelter_id = left_shelter_cnt[i] == 0 ? i : j;
                         int fix_id = left_shelter_cnt[i] == 0 ? j : i;
-                        shelters[shelter_id] = get_shelter_aginst_point(shelter_id, robots[fix_id].loc);
+
+                        double delta_angle = fabs(robots[i].dirc - robots[j].dirc);
+                        if (delta_angle > M_PI)
+                            delta_angle -= 2 * M_PI;
+                        else if (delta_angle < -M_PI)
+                            delta_angle += 2 * M_PI;
+
+                        if (shelter_type[fix_id] == 2)
+                        {
+                            shelter_type[shelter_id] = 1;
+                            shelters[shelter_id] = get_shelter_aginst_point(shelter_id, robots[fix_id].loc);
+                            left_shelter_cnt[shelter_id] = 1;
+                        }
+
+                        else
+                        {
+                            if (fabs(delta_angle) < M_PI / 9)
+                            {
+                                shelter_type[shelter_id] = 2;
+                                left_shelter_cnt[shelter_id] = persisitent_flame;
+                            }
+                            else
+                            {
+                                shelter_type[shelter_id] = 1;
+                                shelters[shelter_id]
+                                    = get_shelter_aginst_point(shelter_id, robots[fix_id].loc);
+                                left_shelter_cnt[shelter_id] = 1;
+                            }
+                        }
+                    }
+                    else
+                    {
 
                         double delta_angle = fabs(robots[i].dirc - robots[j].dirc);
                         if (delta_angle > M_PI)
@@ -129,30 +165,16 @@ void anticollision(const vector<optional<route_fool::Route>> &routes)
                             delta_angle += 2 * M_PI;
                         if (fabs(delta_angle) < M_PI / 9)
                         {
-                            left_shelter_cnt[shelter_id] = persisitent_flame;
+                            int stop_index = robots[i].v.len() < robots[j].v.len() ? i : j;
+                            shelter_type[stop_index] = 2;
+                            left_shelter_cnt[stop_index] = persisitent_flame;
                         }
                         else
                         {
-                            left_shelter_cnt[shelter_id] = 1;
-                        }
-                    }
-                    else
-                    {
-                        cerr << "info: robot shelter " << 2 << endl;
-                        shelters[i] = get_shelter_aginst_point(i, robots[j].loc);
-                        shelters[j] = get_shelter_aginst_point(j, robots[i].loc);
-                        double delta_angle = fabs(robots[i].dirc - robots[j].dirc);
-                        if (delta_angle > M_PI)
-                            delta_angle -= 2 * M_PI;
-                        else if (delta_angle < -M_PI)
-                            delta_angle += 2 * M_PI;
-                        if (fabs(delta_angle) < M_PI / 9)
-                        {
-                            left_shelter_cnt[i] = persisitent_flame;
-                            left_shelter_cnt[j] = persisitent_flame;
-                        }
-                        else
-                        {
+                            shelter_type[i] = 1;
+                            shelter_type[j] = 1;
+                            shelters[i] = get_shelter_aginst_point(i, robots[j].loc);
+                            shelters[j] = get_shelter_aginst_point(j, robots[i].loc);
                             left_shelter_cnt[i] = 1;
                             left_shelter_cnt[j] = 1;
                         }
@@ -164,14 +186,26 @@ void anticollision(const vector<optional<route_fool::Route>> &routes)
 
     for (int i = 1; i < shelters.size(); ++i)
     {
-        if (left_shelter_cnt[i] != 0)
+        if (left_shelter_cnt[i] == 0)
+        {
+            continue;
+        }
+        cerr << "info: robot " << i << " v " << robots[i].v << " w " << robots[i].w << " pos "
+             << robots[i].loc << endl;
+        if (shelter_type[i] == 2)
+        {
+
+            cerr << "info robot " << i << " will stop" << endl;
+            instructions.push_back(new io::I_forward(i, 0));
+            continue;
+        }
+        if (shelter_type[i] == 1)
         {
             cerr << "info: robot " << i << " will be assigned shelter: " << shelters[i] << " left "
                  << left_shelter_cnt[i] << " flame(s)." << endl;
 
-            cerr << "info: robot " << i << " v " << robots[i].v << " w " << robots[i].w << " pos "
-                 << robots[i].loc << endl;
             navigate::move_to(robots[i], shelters[i]);
+            continue;
         }
     }
 }
