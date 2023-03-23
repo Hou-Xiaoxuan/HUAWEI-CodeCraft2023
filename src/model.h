@@ -72,6 +72,9 @@ struct Station {
 
     // 判断是否有物品
     inline bool goods_exist(int goods_id) const { return (material & (1 << goods_id)) != 0; }
+
+    inline std::vector<int> missing_goods() const;
+
     inline int product_id() const;
     inline const Goods &product() const;
     inline const WorkStation &workstation() const;
@@ -148,4 +151,11 @@ const Map &meta = model::meta;
 int Station::product_id() const { return model::workstations[type].produce; }
 const Goods &Station::product() const { return model::goods[product_id()]; }
 const WorkStation &Station::workstation() const { return model::workstations[type]; }
+std::vector<int> Station::missing_goods() const
+{
+    std::vector<int> res;
+    for (auto &i : model::workstations[type].needs)
+        if (!goods_exist(i)) res.push_back(i);
+    return res;
+}
 #endif
