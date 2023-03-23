@@ -57,7 +57,7 @@ bool __is_in_circle(const Robot &robot, const Point &target)
     double radius = __get_robot_radius(robot);
     return Point::distance(center, target) + ConVar::robot_workstation_check <= ComVar::max_radius;
 }
-vector<int> stop_flag = vector<int>(ConVar::max_robot + 1);
+
 /*速度调整*/
 void __change_speed(const Robot &robot,
     const Point &target,
@@ -91,28 +91,15 @@ void __change_speed(const Robot &robot,
     cerr << "info: robot " << robot.id << " stop pos " << Point {stop_x, stop_y} << "distance to target "
          << target << " " << Point::distance({stop_x, stop_y}, target) << endl;
 
-    if (robot.goods == 0 && stop_flag[robot.id] == 0
-        && Point::distance({stop_x, stop_y}, target) < ConVar::robot_workstation_check)
+    if (robot.goods == 0 && Point::distance({stop_x, stop_y}, target) < ConVar::robot_workstation_check)
     {
 
         if (left_frame * ComVar::flametime > stop_t)
         {
-            // instructions.push_back(new io::I_forward(robot.id, 0));
-            cerr << "info: robot " << robot.id << " stop_flag = 1" << endl;
-            stop_flag[robot.id] = 1;
+            cerr << "info: robot " << robot.id
+                 << " stop in target!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
+            instructions.push_back(new io::I_forward(robot.id, 0));
         }
-    }
-
-    if (stop_flag[robot.id])
-    {
-        cerr << "info: robot " << robot.id << " will stop in " << Point {stop_x, stop_y} << " target "
-             << target << " left_frame " << left_frame << " stop_t " << stop_t << endl;
-        instructions.push_back(new io::I_forward(robot.id, 0));
-        if (robot.v.len() < 1e-2)
-        {
-            stop_flag[robot.id] = 0;
-        }
-        return;
     }
 
 
