@@ -21,6 +21,10 @@ void robot()
         cerr << "info: flame read end, flame:" << meta.current_flame << endl;
         auto routes = route_fool::give_pointing();
         anticollision::anticollision(routes);
+        for (auto in : io::instructions)
+        {
+            in->print(cerr);
+        }
         io::print_instructions(io::instructions, cout, meta.current_flame);
     }
 }
