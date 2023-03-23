@@ -43,6 +43,18 @@ double __get_delta_angle(const Robot &robot, const Point &target)
     return delta;
 }
 
+Point __stop_with_spec_w(const Robot &robot)
+{
+    double w = robot.w;
+    double a = __get_max_robot_angular_acceleration(robot);
+    double v_0 = robot.v.len();
+    double t = v_0 / a;
+    double p_0 = robot.dirc;
+
+    double x = robot.loc.x - (a * (cos(t * w + p_0) - cos(p_0)) + robot.v.y * w) / (w * w);
+    double y = robot.loc.y + (a * (sin(p_0) - sin(t * w + p_0)) + robot.v.x * w) / (w * w);
+    return {x, y};
+}
 
 bool __is_in_circle(const Robot &robot, const Point &target)
 {
@@ -70,8 +82,7 @@ void __change_speed(const Robot &robot,
     double stop_x = robot.loc.x + robot.v.x * stop_t + 0.5 * min_a_x * stop_t * stop_t;
     double stop_y = robot.loc.y + robot.v.y * stop_t + 0.5 * min_a_y * stop_t * stop_t;
 
-    // XXX
-    double adapt = __get_robot_radius(robot);
+    double adapt = __get_robot_radius(robot);    // XXX
     if (stop_x - adapt <= 0 || stop_x + adapt >= ConVar::map_weight || stop_y - adapt <= 0
         || stop_y + adapt >= ConVar::map_height)
     {
@@ -90,25 +101,22 @@ void __change_speed(const Robot &robot,
     // cerr << "info: robot " << robot.id << " stop pos " << Point {stop_x, stop_y} << "distance to target "
     //      << target << " " << Point::distance({stop_x, stop_y}, target) << endl;
 
-    if (robot.goods == 0 && Point::distance({stop_x, stop_y}, target) < ConVar::robot_workstation_check)
+    Point stop_point = __stop_with_spec_w(robot);
+    if (robot.goods == 0 && Point::distance(stop_point, target) < ConVar::robot_workstation_check)
     {
 
         if (left_frame * ComVar::flametime > stop_t)
         {
-            // cerr << "info: robot " << robot.id
-            //      << " stop in target!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
             instructions.push_back(new io::I_forward(robot.id, 0));
             return;
         }
     }
 
 
-
     // prevent from circle
     if (__is_in_circle(robot, target))
     {
         instructions.push_back(new io::I_forward(robot.id, 0));
-        // cerr << "info: robot " << robot.id << " in circle: v " << 0 << endl;
         return;
     }
     instructions.push_back(new io::I_forward(robot.id, ConVar::max_robot_forward_speed));

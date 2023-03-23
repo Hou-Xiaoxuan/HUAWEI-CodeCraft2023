@@ -29,3 +29,6 @@ Robot -m <地图> <可执行文件>
 
 ==这样似乎没办法调试，毕竟Robot没办法暂停==
 
+![image-20230323171518776](/home/xv_rong/.config/Typora/typora-user-images/image-20230323171518776.png)
+
+![image-20230323171544179](/home/xv_rong/.config/Typora/typora-user-images/image-20230323171544179.png)
