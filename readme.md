@@ -46,13 +46,30 @@ Robot -m <地图> <可执行文件>
 
 `map4`:有7，只有一个4，在远处
 
-**route_fool**参数：
+**有提升的参数与表现**：
 
-| material | wai t_flame | demand | map1                            | map2   | map3                            | map4   | 总分                             | 其他逻辑 |
-| -------- | ----------- | ------ | ------------------------------- | ------ | ------------------------------- | ------ | -------------------------------- | -------- |
-| 0.4      | 10          | 0.35   | 509367                          | 741760 | 872447                          | 578181 | <font color='red'>2701755</font> |          |
-| 0.5      | 10          | 0.35   | <font color='red'>551353</font> | 727208 | 857851                          | 571735 | 2708147                          |          |
-| 0.4      | 10          | 0.5    | -                               | -      | <font color='red'>875388</font> | -      | 26-                              |          |
+```cpp
+// map2: 730522
+int _estimated_move_stable_bias = 15;    // 估计的移动稳定误差，默认15
+double deeper_profit_ratio = 0.5;        // 下一层需求影响，默认0.4
+double super_demand_ratio = 0.35;        // 高层需求影响，默认0.35
+int wait_blame = 10;                     // 空等惩罚，默认10
+int persisitent_flame = 10;              // 躲避持续时间
+int max_predict_flame = 20;              // 躲避预测时间
+};
+```
+
+```cpp
+// map1: 543952
+int _estimated_move_stable_bias = 15;    // 估计的移动稳定误差，默认15
+double deeper_profit_ratio = 0.5;        // 下一层需求影响，默认0.4
+double super_demand_ratio = 0.35;        // 高层需求影响，默认0.35
+int wait_blame = 10;                     // 空等惩罚，默认10
+int persisitent_flame = 5;              // 躲避持续时间
+int max_predict_flame = 15;              // 躲避预测时间
+```
+
+
 
 
 
