@@ -3,6 +3,7 @@
 #include "model.h"
 #include "navigate.h"
 #include "route_fool.h"
+#include "args.h"
 #include <fstream>
 #include <iostream>
 /*clangd的傻逼bug，main.cpp里的第一个函数不能被识别*/
@@ -19,17 +20,21 @@ int map_recognize()
 
     return 0;
 }
-
-void robot()
+void specific_args()
 {
-    io::init(std::cin);
-
-    // XXX 参数更改
     int map_type = map_recognize();
     if (map_type == 1)
-    { }
+    {
+        // 543953
+        Args::deeper_profit_ratio = 0.5;
+        Args::persisitent_flame = 5;
+        Args::max_predict_flame = 15;
+    }
     else if (map_type == 2)
-    { }
+    {
+        // 730522
+        Args::deeper_profit_ratio = 0.5;
+    }
     else if (map_type == 3)
     { }
     else if (map_type == 4)
@@ -38,6 +43,13 @@ void robot()
     {
         std::cerr << "[error]map_type error" << std::endl;
     }
+}
+void robot()
+{
+    io::init(std::cin);
+
+    specific_args();    // XXX 参数更改
+
     route_fool::init();
     puts("OK");
     fflush(stdout);
