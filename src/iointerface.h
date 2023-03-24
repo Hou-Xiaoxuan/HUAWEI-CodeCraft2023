@@ -12,7 +12,6 @@ namespace io
 {
 void init(std::istream &io_in)
 {
-
     using model::goods;
     using model::meta;
     using model::workstations;
@@ -28,14 +27,14 @@ void init(std::istream &io_in)
                 // robot
                 Robot rob;
                 rob.loc = Point(x * 0.5 - 0.25, y * 0.5 - 0.25);
-                rob.id = meta.robot.size();
+                rob.id = static_cast<int>(meta.robot.size());
                 meta.robot.emplace_back(rob);
             }
             else if (meta.map[x][y] >= '0' && meta.map[x][y] <= '9')
             {
                 // 1=0.5m,坐标为中心坐标
                 meta.station.emplace_back(meta.map[x][y] - '0', x * 0.5 - 0.25, y * 0.5 - 0.25);
-                meta.station.back().id = meta.station.size() - 1;
+                meta.station.back().id = static_cast<int>(meta.station.size() - 1);
             }
             else
             {
@@ -90,7 +89,7 @@ struct Instruction {
     int robot_id;
     Instruction(int robot_id) : robot_id(robot_id) { }
     virtual void print(std::ostream &io_out) const = 0;
-    virtual ~Instruction() { }
+    virtual ~Instruction() = default;
 };
 struct I_forward : public Instruction {
     double v;    // 设置前进速度
