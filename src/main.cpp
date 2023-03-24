@@ -8,9 +8,36 @@
 /*clangd的傻逼bug，main.cpp里的第一个函数不能被识别*/
 void sb_clangd() { }
 
+
+/*硬编码，识别是几号地图*/
+int map_recognize()
+{
+    if (Point::distance(meta.station[1].loc, {24.75, 49.25}) < 1e-5) return 1;
+    if (Point::distance(meta.station[1].loc, {0.75, 49.25}) < 1e-5) return 2;
+    if (Point::distance(meta.station[1].loc, {23.25, 49.25}) < 1e-5) return 3;
+    if (Point::distance(meta.station[1].loc, {24.75, 46.25}) < 1e-5) return 4;
+
+    return 0;
+}
+
 void robot()
 {
     io::init(std::cin);
+
+    // XXX 参数更改
+    int map_type = map_recognize();
+    if (map_type == 1)
+    { }
+    else if (map_type == 2)
+    { }
+    else if (map_type == 3)
+    { }
+    else if (map_type == 4)
+    { }
+    else
+    {
+        std::cerr << "[error]map_type error" << std::endl;
+    }
     route_fool::init();
     puts("OK");
     fflush(stdout);
@@ -30,17 +57,6 @@ void robot()
     }
 }
 
-
-/*硬编码，识别是几号地图*/
-int map_recognize()
-{
-    if (Point::distance(meta.station[1].loc, {24.75, 49.25}) < 1e-5) return 1;
-    if (Point::distance(meta.station[1].loc, {0.75, 49.25}) < 1e-5) return 2;
-    if (Point::distance(meta.station[1].loc, {23.25, 49.25}) < 1e-5) return 3;
-    if (Point::distance(meta.station[1].loc, {24.75, 46.25}) < 1e-5) return 4;
-
-    return 0;
-}
 void local()
 {
 

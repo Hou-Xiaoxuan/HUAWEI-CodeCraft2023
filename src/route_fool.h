@@ -1,5 +1,6 @@
 #ifndef __ROUT_FOOL_H__
 #define __ROUT_FOOL_H__
+#include "args.h"
 #include "model.h"
 #include "navigate.h"
 #include <algorithm>
@@ -99,12 +100,11 @@ void init()
 /*简单时间估计*/
 int _estimated_move_flame(Point from, Point target_one, Point target_two = Point(0, 0))
 {
-    const static double stable_bias = 15;
     double time = 0;
     time += Point::distance(from, target_one) / ConVar::max_robot_forward_speed;
     if (target_two.x != 0 and target_two.y != 0)
         time += Point::distance(target_one, target_two) / ConVar::max_robot_forward_speed;
-    return static_cast<int>(time * 50.0 + stable_bias);
+    return static_cast<int>(time * 50.0 + Args::_estimated_move_stable_bias);
 }
 
 /* 全局统计demand需求 */
@@ -140,7 +140,7 @@ void _count_super_demand()
         }
         double demand_add = static_cast<double>(station.product().price - station.product().cost)
             * static_cast<double>(goods_true.size())
-            / static_cast<double>(goods_true.size() + goods_false.size()) * 0.35;
+            / static_cast<double>(goods_true.size() + goods_false.size()) * Args::super_demand_ratio;
         for (auto good : goods_false)
             super_demand[good] += demand_add;
     }
@@ -186,15 +186,16 @@ double _get_expected_profit(const Robot &robot, const Route &route)
             expected_material >>= 1;
         }
         auto profit_deeper
-            = static_cast<double>(target_station.product().price - target_station.product().cost) * 0.4
-            * material_count / static_cast<double>(target_station.product().needs.size());
+            = static_cast<double>(target_station.product().price - target_station.product().cost)
+            * Args::deeper_profit_ratio * material_count
+            / static_cast<double>(target_station.product().needs.size());
         expected_profit += profit_deeper;
     }
 
     int empty_flame = 0;
     if (from_station.timeleft > 0)
         empty_flame = max((from_station.timeleft - _estimated_move_flame(robot.loc, from_station.loc)), 0);
-    expected_profit -= empty_flame * 10;    // 空转惩罚，假设1000flame(20s)的预期收益是10000
+    expected_profit -= empty_flame * Args::wait_blame;    // 空转惩罚，假设1000flame(20s)的预期收益是10000
     return expected_profit;
 }
 
