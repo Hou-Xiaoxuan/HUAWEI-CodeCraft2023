@@ -25,15 +25,15 @@ void specific_args()
     int map_type = map_recognize();
     if (map_type == 1)
     {
-        // 543953
-        Args::deeper_profit_ratio = 0.5;
-        Args::persisitent_flame = 5;
-        Args::max_predict_flame = 15;
+        // 550688
+        Args::deeper_profit_ratio = 0.6;
+        Args::super_demand_ratio = 0.5;
     }
     else if (map_type == 2)
     {
-        // 730522
-        Args::deeper_profit_ratio = 0.5;
+        // 761839
+        Args::deeper_profit_ratio = 0.6;
+        Args::super_demand_ratio = 0.5;
     }
     else if (map_type == 3)
     { }

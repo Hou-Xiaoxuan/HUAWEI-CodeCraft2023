@@ -48,10 +48,15 @@ Robot -m <地图> <可执行文件>
 
 **有提升的参数与表现**：
 
+
+
 ```cpp
-// map2: 730522
+// defaut
+namespace Args
+{
+/*route_fool 参数*/
 int _estimated_move_stable_bias = 15;    // 估计的移动稳定误差，默认15
-double deeper_profit_ratio = 0.5;        // 下一层需求影响，默认0.4
+double deeper_profit_ratio = 0.4;        // 下一层需求影响，默认0.4
 double super_demand_ratio = 0.35;        // 高层需求影响，默认0.35
 int wait_blame = 10;                     // 空等惩罚，默认10
 int persisitent_flame = 10;              // 躲避持续时间
@@ -59,14 +64,31 @@ int max_predict_flame = 20;              // 躲避预测时间
 };
 ```
 
+
+
+```cpp
+// map2: 730522
+Args:: deeper_profit_ratio = 0.5;        // 下一层需求影响，默认0.4
+
+
+// 745225
+Args::deeper_profit_ratio = 0.5;
+Args::super_demand_ratio = 0.5;
+
+// 761839
+Args::deeper_profit_ratio = 0.6;
+Args::super_demand_ratio = 0.5;
+```
+
 ```cpp
 // map1: 543952
-int _estimated_move_stable_bias = 15;    // 估计的移动稳定误差，默认15
-double deeper_profit_ratio = 0.5;        // 下一层需求影响，默认0.4
-double super_demand_ratio = 0.35;        // 高层需求影响，默认0.35
-int wait_blame = 10;                     // 空等惩罚，默认10
-int persisitent_flame = 5;              // 躲避持续时间
-int max_predict_flame = 15;              // 躲避预测时间
+ARgs:: deeper_profit_ratio = 0.5;
+Args:: persisitent_flame = 5;
+Args:: max_predict_flame = 15;
+
+// 550688
+Args::deeper_profit_ratio = 0.6;
+Args::super_demand_ratio = 0.5;
 ```
 
 
