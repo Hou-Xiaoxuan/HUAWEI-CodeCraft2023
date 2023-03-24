@@ -59,7 +59,7 @@ void cnt_down_shelter()
 
 void anticollision(const vector<optional<route_fool::Route>> &routes)
 {
-    int persisitent_flame = 5;
+    int persisitent_flame = 7;
     int max_predict_flame = 15;
 
     cnt_down_shelter();
