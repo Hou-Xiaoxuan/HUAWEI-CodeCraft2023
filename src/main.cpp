@@ -45,8 +45,10 @@ void specific_args()
     }
     else if (map_type == 4)
     {
-        // 613391
-        Args::persisitent_flame = 11;
+        // 616228
+        Args::deeper_profit_ratio = 0.5;
+        Args::super_demand_ratio = 0.4;
+        Args::persisitent_flame = 7;
         Args::max_predict_flame = 20;
     }
     else
