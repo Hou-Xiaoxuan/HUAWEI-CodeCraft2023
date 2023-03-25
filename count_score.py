@@ -8,10 +8,24 @@ import json
 import threading
 
 result = [None]*5
-
+# 判断系统是macos还是linux
+def judge_os():
+    import platform
+    system = platform.system()
+    if system == "Darwin":
+        return "macos"
+    elif system == "Linux":
+        return "linux"
+    else:
+        return "windows"
 
 def excute_test(index: int):
-    cmd = f'cd ./Robot && ./Robot -m ./maps/{index}.txt ../build/main'
+    if judge_os() == "macos":
+        cmd = f'cd ./Robot && ./Mac-Robot -m ./maps/{index}.txt ../build/main'
+    elif judge_os() == "linux":
+        cmd = f'cd ./Robot && ./Robot -m ./maps/{index}.txt ../build/main'
+    else:
+        raise Exception("not support os")
     print(f"cmd: {cmd} start")
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     data = p.stdout.readlines()
