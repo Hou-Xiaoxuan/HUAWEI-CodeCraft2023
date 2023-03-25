@@ -25,9 +25,11 @@ void specific_args()
     int map_type = map_recognize();
     if (map_type == 1)
     {
-        // 550688
+        // 575217
         Args::deeper_profit_ratio = 0.6;
         Args::super_demand_ratio = 0.5;
+        Args::persisitent_flame = 7;
+        Args::max_predict_flame = 15;
     }
     else if (map_type == 2)
     {
@@ -36,9 +38,17 @@ void specific_args()
         Args::super_demand_ratio = 0.5;
     }
     else if (map_type == 3)
-    { }
+    {
+        // 906590
+        Args::persisitent_flame = 7;
+        Args::max_predict_flame = 20;
+    }
     else if (map_type == 4)
-    { }
+    {
+        // 613391
+        Args::persisitent_flame = 11;
+        Args::max_predict_flame = 20;
+    }
     else
     {
         std::cerr << "[error]map_type error" << std::endl;
