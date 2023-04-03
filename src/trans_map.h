@@ -59,7 +59,7 @@ bool is_clockwise(const Polygon &poly)
         int j = (i + 1) % poly.vertices.size();
         sum += poly.vertices[i].x * poly.vertices[j].y - poly.vertices[j].x * poly.vertices[i].y;
     }
-    return sum > 0;
+    return sum < 0;
 }
 
 

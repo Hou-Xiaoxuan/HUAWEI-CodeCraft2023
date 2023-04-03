@@ -6,17 +6,22 @@ namespace navmesh
 class EarClipping
 {
     Polygon polygon;
-    // 是否是折耳法可以切割的点：凸点，且除cur点外，其余点都在pre->next的右侧
+    // 是否是折耳法可以切割的点：凸点，且不与多边形内部的任何边相交
     bool can_cut(const Vertex &pre, const Vertex &cur, const Vertex &next)
     {
         // XXX 可优化
         if (point_right_line(cur, pre, next)) return false;
 
-        for (auto &v : polygon.vertices)
+        // 判断是否与其他边相交
+        for (int i = 0; i < polygon.vertices.size(); i++)
         {
-            if (v == pre || v == cur || v == next) continue;
-            if (!point_right_line(v, pre, next)) return false;
+            int j = i + 1;
+            const Vertex &p1 = polygon.vertices[i];
+            const Vertex &p2 = polygon.vertices[j];
+            if (p1 == pre and p1 == next and p2 == pre and p2 == next)
+                if (Segment::is_cross({pre, next}, {p1, p2})) return false;
         }
+
         return true;
     }
 
@@ -61,6 +66,7 @@ public:
         vector<Triangle> triangles;
         while (node_count > 3u)
         {
+            bool cut = false;
             for (auto &node : node_list)
             {
                 if (node.is_processed) continue;
@@ -69,6 +75,7 @@ public:
                     triangles.emplace_back(polygon.vertices[node.prev_index],
                         polygon.vertices[node.index],
                         polygon.vertices[node.next_index]);
+                    cut = true;
                     node.is_processed = true;
                     node_count--;
                     // 更新相邻节点
@@ -85,6 +92,24 @@ public:
                             polygon.vertices[node_list[node.next_index].next_index]);
                     if (node_count <= 3u) break;
                 }
+            }
+            if (node_count > 3 && !cut)
+            {
+                // 无法剪切，说明有问题
+                throw std::runtime_error("cut_data_faild");
+                // cerr << "cut_data_faild" << endl;
+                // // 输出所有点
+                // cerr << "points = [";
+                // for (auto p : this->polygon.vertices)
+                //     cerr << p << ',';
+                // cerr << ']' << endl;
+                // // 输出所有三角形
+                // cerr << "trangles = [";
+                // for (auto t : triangles)
+                //     cerr << "(" << t.a << "," << t.b << "," << t.c << "),";
+                // cerr << ']' << endl;
+                // cerr << "cut_data_faild_over" << node_count << endl;
+                return {};
             }
         }
         // 剩下的三个点组成一个三角形

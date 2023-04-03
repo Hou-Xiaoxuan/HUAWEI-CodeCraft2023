@@ -46,6 +46,21 @@ struct Vec2 {
         return acos((v1 * v2) / (v1.length() * v2.length()));
     }
 };
+// 线段
+struct Segment {
+    Vertex a;
+    Vertex b;
+    Segment() = default;
+    Segment(const Vertex &a, const Vertex &b) : a(a), b(b) { }
+
+    // 判断是否相交
+    static bool is_cross(const Segment &s1, const Segment &s2)
+    {
+        Vec2 v1 {s1.a, s1.b}, v2 {s1.a, s2.a}, v3 {s1.a, s2.b};
+        Vec2 v4 {s2.a, s2.b}, v5 {s2.a, s1.a}, v6 {s2.a, s1.b};
+        return (v1 ^ v2) * (v1 ^ v3) <= 0 and (v4 ^ v5) * (v4 ^ v6) <= 0;
+    }
+};
 // 三角形
 struct Triangle {
     Vertex a;
@@ -54,15 +69,26 @@ struct Triangle {
 
     Triangle() = default;
     Triangle(const Vertex &a, const Vertex &b, const Vertex &c) : a(a), b(b), c(c) { }
-
-    // 一个点是否在三角形内部
+    // 三角形面积
+    double area() const
+    {
+        Vec2 v1 {a, b}, v2 {a, c};
+        return fabs(v1 ^ v2) / 2;
+    }
+    // 顺时针
+    void clockwise()
+    {
+        Vec2 v1 {a, b}, v2 {a, c};
+        if ((v1 ^ v2) < 0) std::swap(b, c);
+    }
+    // 点p是否在三角形内部(精度要求高)
     inline bool in_triangle(Vertex p) const
     {
-        double s = a.x * b.y + b.x * c.y + c.x * a.y - a.y * b.x - b.y * c.x - c.y * a.x;
-        double s1 = p.x * b.y + b.x * c.y + c.x * p.y - p.y * b.x - b.y * c.x - c.y * p.x;
-        double s2 = a.x * p.y + p.x * c.y + c.x * a.y - a.y * p.x - p.y * c.x - c.y * a.x;
-        double s3 = a.x * b.y + b.x * p.y + p.x * a.y - a.y * b.x - b.y * p.x - p.y * a.x;
-        return fabs(s - s1 - s2 - s3) < EPS;
+        Vec2 v1 {a, b}, v2 {a, c}, v3 {a, p};
+        double s1 = fabs(v1 ^ v3) / 2;
+        double s2 = fabs(v2 ^ v3) / 2;
+        double s3 = area();
+        return fabs(s1 + s2 - s3) < EPS;
     }
     friend ostream &operator<<(ostream &os, const Triangle &t)
     {
@@ -76,9 +102,9 @@ struct Polygon {
     std::vector<Vertex> vertices;    // 默认顺时针
     std::vector<Polygon> holes;      // 默认逆时针
     Polygon() = default;
-    Polygon(const std::vector<Vertex> &vertices) : vertices(vertices) { }
-    Polygon(const std::vector<Vertex> &vertices, const std::vector<Polygon> &holes) :
-        vertices(vertices), holes(holes)
+    Polygon(std::vector<Vertex> vertices) : vertices(std::move(vertices)) { }
+    Polygon(std::vector<Vertex> vertices, std::vector<Polygon> holes) :
+        vertices(std::move(vertices)), holes(std::move(holes))
     { }
 };
 
