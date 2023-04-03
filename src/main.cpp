@@ -96,6 +96,20 @@ void local()
     route_fool::init();
     // route_fool::give_pointing();
     std::vector<navmesh::Polygon> polys = trans_map::solve();
+    int i = 0;
+    for (auto &poly : polys)
+    {
+        auto tris = navmesh::EarClipping(poly).triangulate();
+        auto fout = std::fstream("../" + std::to_string(i++) + ".txt", std::ios::out);
+        fout << "[";
+        for (auto &tri : tris)
+        {
+            fout << "(";
+            fout << tri.a << ", " << tri.b << "," << tri.c;
+            fout << "),";
+        }
+        fout << "]";
+    }
 }
 
 int main()
