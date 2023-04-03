@@ -91,7 +91,12 @@ void robot()
 void local()
 {
 
-    auto fin = std::fstream("../Robot/maps/1.txt");
+    auto fin = std::fstream("./Robot/maps/2.txt");
+    if (fin.is_open() == false)
+    {
+        std::cerr << "[error] map file open failed" << std::endl;
+        return;
+    }
     io::init(fin);
     route_fool::init();
     // route_fool::give_pointing();
@@ -100,22 +105,23 @@ void local()
     for (auto &poly : polys)
     {
         auto tris = navmesh::EarClipping(poly).triangulate();
-        auto fout = std::fstream("../" + std::to_string(i++) + ".txt", std::ios::out);
-        fout << "[";
+
+        auto fout = std::fstream("./" + std::to_string(i++) + ".txt", std::ios::out);
+        fout << "triangles = [";
         for (auto &tri : tris)
-        {
-            fout << "(";
-            fout << tri.a << ", " << tri.b << "," << tri.c;
-            fout << "),";
-        }
-        fout << "]";
+            fout << "(" << tri.a << "," << tri.b << "," << tri.c << "),";
+        fout << "]" << std::endl;
+        fout << "points = [";
+        for (auto &p : poly.vertices)
+            fout << "(" << p.x << "," << p.y << "),";
+        fout << "]" << std::endl;
     }
 }
 
 int main()
 {
     // cerror重定向到文件
-    std::fstream fout("../log.txt", std::ios::out);
+    std::fstream fout("./log.txt", std::ios::out);
     if (fout.is_open())
         std::cerr.rdbuf(fout.rdbuf());
     else
