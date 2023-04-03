@@ -6,6 +6,7 @@
 #include "args.h"
 #include <fstream>
 #include <iostream>
+#include "nav_ear_clipping.h"
 /*clangd的傻逼bug，main.cpp里的第一个函数不能被识别*/
 void sb_clangd() { }
 
@@ -82,24 +83,25 @@ void robot()
 }
 
 void local()
-{
-
-    auto fin = std::fstream("Robot/maps/3.txt");
-    io::init(fin);
-    std::cerr << "[start] map recognize: " << map_recognize() << std::endl;
-    route_fool::init();
-    route_fool::give_pointing();
+{   
+    navmesh::Polygon poly({{0, 0}, {50, 100}, {100, 0}, {50, 50}});
+    navmesh::EarClipping ec(poly);
+    auto rt = ec.triangulate();
+    for (auto &p : rt)
+    {
+        std::cerr <<p;
+    }
 }
 int main()
 {
     // cerror重定向到文件
-    std::fstream fout("../log.txt", std::ios::out);
-    if (fout.is_open())
-        std::cerr.rdbuf(fout.rdbuf());
-    else
-        std::cerr << "[error] log file open failed" << std::endl;
+    // std::fstream fout("../log.txt", std::ios::out);
+    // if (fout.is_open())
+    //     std::cerr.rdbuf(fout.rdbuf());
+    // else
+    //     std::cerr << "[error] log file open failed" << std::endl;
     // local();
-    robot();
+    local();
 
     return 0;
 }

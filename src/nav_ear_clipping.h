@@ -10,12 +10,12 @@ class EarClipping
     bool can_cut(const Vertex &pre, const Vertex &cur, const Vertex &next)
     {
         // XXX 可优化
-        if (point_right_line(pre, cur, next)) return false;
+        if (point_right_line(cur, pre, next)) return false;
 
         for (auto &v : polygon.vertices)
         {
             if (v == pre || v == cur || v == next) continue;
-            if (point_left_line(v, pre, next)) return false;
+            if (!point_right_line(v, pre, next)) return false;
         }
         return true;
     }
@@ -47,9 +47,9 @@ public:
         {
             int prev_index = i - 1;
             int next_index = i + 1;
-            if (prev_index < 0) prev_index = polygon.vertices.size() - 1;
+            if (prev_index < 0) prev_index = static_cast<int>(polygon.vertices.size()) - 1;
             if (next_index >= polygon.vertices.size()) next_index = 0;
-            node_list.push_back(Node(i, prev_index, next_index));
+            node_list.emplace_back(i, prev_index, next_index);
             node_list.back().is_ear
                 = can_cut(polygon.vertices[prev_index], polygon.vertices[i], polygon.vertices[next_index]);
         }
@@ -87,9 +87,21 @@ public:
                 }
             }
         }
+        // 剩下的三个点组成一个三角形
+        for (auto &node : node_list)
+        {
+            if (!node.is_processed)
+            {
+                triangles.emplace_back(polygon.vertices[node.prev_index],
+                    polygon.vertices[node.index],
+                    polygon.vertices[node.next_index]);
+                break;
+            }
+        }
         return triangles;
     }
 };
+
 }
 
 #endif
