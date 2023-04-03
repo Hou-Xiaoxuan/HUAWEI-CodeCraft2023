@@ -2,6 +2,7 @@
 #include "args.h"
 #include "iointerface.h"
 #include "model.h"
+#include "nav_ear_clipping.h"
 #include "nav_model.h"
 #include "navigate.h"
 #include "route_fool.h"
