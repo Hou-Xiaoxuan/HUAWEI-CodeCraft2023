@@ -289,6 +289,33 @@ void get_result(const Polygon &p, int step)
     }
 }
 
+
+void test_print()
+{
+    for (const auto &p : result)
+    {
+        cerr << p.holes.size() << endl;
+        cerr << p.vertices.size() << endl;
+        for (auto &v : p.vertices)
+        {
+            cerr << v.x << endl;
+            cerr << v.y << endl;
+        }
+        for (auto hole : p.holes)
+        {
+            cerr << 0 << endl;
+            cerr << hole.vertices.size() << endl;
+            for (auto &v : hole.vertices)
+            {
+                cerr << v.x << endl;
+                cerr << v.y << endl;
+            }
+        }
+    }
+}
+vector<Vertex> danger_line;
+
+
 vector<Polygon> solve()
 {
     auto polys = trans_map(meta.map);
@@ -307,6 +334,7 @@ vector<Polygon> solve()
     });
     get_polygon(polys);
     get_result(tree.back(), 0);
+    test_print();
 
     return result;
 }
