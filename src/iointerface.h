@@ -20,8 +20,10 @@ void init(std::istream &io_in)
         for (int x = 1; x <= Map::height; x++)
         {
             io_in >> meta.map[x][y];
-            if (meta.map[x][y] == '.')
+            if (meta.map[x][y] == '.') continue;
+            if (meta.map[x][y] == '#')
                 continue;
+
             else if (meta.map[x][y] == 'A')
             {
                 // robot

@@ -1,7 +1,8 @@
 #ifndef _NVV_MODEL_H_
- #include <cmath>
- #include <iostream>
- #include <vector>
+#define _NVV_MODEL_H_
+#include <cmath>
+#include <iostream>
+#include <vector>
 namespace navmesh
 {
 const double EPS = 1e-6;
