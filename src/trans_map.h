@@ -10,6 +10,7 @@ using namespace std;
 
 struct Poly {
     vector<Vertex> points;
+    Poly() = default;
     Poly(Polygon poly) { points = poly.vertices; }
 };
 
