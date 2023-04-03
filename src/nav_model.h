@@ -1,5 +1,6 @@
 #ifndef _NVV_MODEL_H_
  #include <cmath>
+ #include <iostream>
  #include <vector>
 namespace navmesh
 {
@@ -15,8 +16,35 @@ struct Vertex {
     {
         return fabs(x - other.x) < EPS && fabs(y - other.y) < EPS;
     }
+    friend ostream &operator<<(ostream &os, const Vertex &v)
+    {
+        os << "(" << v.x << ", " << v.y << ")";
+        return os;
+    }
 };
 
+// 二维向量
+struct Vec2 {
+    double x;
+    double y;
+    Vec2() = default;
+    Vec2(double x, double y) : x(x), y(y) { }
+    Vec2(const Vertex &v1, const Vertex &v2) : x(v2.x - v1.x), y(v2.y - v1.y) { }
+    // 向量
+    double length() const { return sqrt(x * x + y * y); }
+    friend double operator^(const Vec2 &v1, const Vec2 &v2) { return v1.x * v2.y - v1.y * v2.x; }
+    // 点乘
+    friend double operator*(const Vec2 &v1, const Vec2 &v2) { return v1.x * v2.x + v1.y * v2.y; }
+    // 加
+    friend Vec2 operator+(const Vec2 &v1, const Vec2 &v2) { return {v1.x + v2.x, v1.y + v2.y}; }
+    // 减
+    friend Vec2 operator-(const Vec2 &v1, const Vec2 &v2) { return {v1.x - v2.x, v1.y - v2.y}; }
+    // 夹角
+    static double angle(const Vec2 &v1, const Vec2 &v2)
+    {
+        return acos((v1 * v2) / (v1.length() * v2.length()));
+    }
+};
 // 三角形
 struct Triangle {
     Vertex a;
@@ -34,6 +62,11 @@ struct Triangle {
         double s2 = a.x * p.y + p.x * c.y + c.x * a.y - a.y * p.x - p.y * c.x - c.y * a.x;
         double s3 = a.x * b.y + b.x * p.y + p.x * a.y - a.y * b.x - b.y * p.x - p.y * a.x;
         return fabs(s - s1 - s2 - s3) < EPS;
+    }
+    friend ostream &operator<<(ostream &os, const Triangle &t)
+    {
+        os << "<" << t.a << " " << t.b << " " << t.c << ">";
+        return os;
     }
 };
 
