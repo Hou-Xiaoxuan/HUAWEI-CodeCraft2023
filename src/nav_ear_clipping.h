@@ -20,38 +20,28 @@ class EarClipping
         const Vertex &point() const { return *this; }
     };
     vector<Node> node_list;
-    bool _interior(const Node &v1, const Node &v2)
-    {
-        // pre点是凸点，则与起点相连的两个点应该在line两侧。如果pre点是凹点，则……
-        //  convex point
-        if (!point_right_line(v1.prev->point(), {v1.point(), v1.next->point()}))
-        {
-            return point_left_line(v1.prev->point(), {v1.point(), v2.point()})
-                and point_right_line(v1.next->point(), {v1.point(), v2.point()});
-        }
-        // reflex point
-        // XXX 需要理解
-        return !(point_right_line(v1.next->point(), {v1.point(), v2.point()})
-            and point_right_line(v1.prev->point(), {v1.point(), v2.point()}));
-    }
     bool can_cut(const Node &pre, const Node &cur, const Node &next)
     {
         // 凸点
         if (point_right_line(cur, {pre, next})) return false;
 
-        // 判断是否与其他边相交
-        for (int i = 0; i < polygon.vertices.size(); i++)
+        // // 判断是否与其他边相交 // 似乎不太好用
+        // for (int i = 0; i < polygon.vertices.size(); i++)
+        // {
+        //     int j = i + 1;
+        //     const Vertex &p1 = polygon.vertices[i];
+        //     const Vertex &p2 = polygon.vertices[j];
+        //     if (p1 == pre or p1 == next or p2 == pre or p2 == next) continue;
+        //     if (Segment::is_cross({pre, next}, {p1, p2})) return false;
+        // }
+        Triangle tmp = {pre, cur, next};
+        tmp.clockwise();
+        for(auto node: node_list)
         {
-            int j = i + 1;
-            const Vertex &p1 = polygon.vertices[i];
-            const Vertex &p2 = polygon.vertices[j];
-            if (p1 == pre or p1 == next or p2 == pre or p2 == next) continue;
-            if (Segment::is_cross({pre, next}, {p1, p2})) return false;
+            if(node == pre or node == cur or node == next) continue;
+            if(tmp.in_triangle(node)) return false;
         }
-
-        // 判断是完全在内部还是在外部
-        Vertex tmp = {(pre.x + next.x) / 2, (pre.y + next.y) / 2};
-        return point_right_line(tmp, {pre, cur}) and point_right_line(tmp, {cur, next});
+        return true;
     }
     void process_hole()
     {
