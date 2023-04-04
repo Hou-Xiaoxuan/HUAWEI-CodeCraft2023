@@ -384,13 +384,13 @@ void test_print()
     cerr << result.size() << endl;
     for (const auto &p : result)
     {
-        cerr << p.holes.size() << endl;
         cerr << p.vertices.size() << endl;
         for (auto &v : p.vertices)
         {
             cerr << v.x << endl;
             cerr << v.y << endl;
         }
+        cerr << p.holes.size() << endl;
         for (auto hole : p.holes)
         {
             cerr << hole.vertices.size() << endl;
