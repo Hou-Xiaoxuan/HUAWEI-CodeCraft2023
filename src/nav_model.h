@@ -63,7 +63,20 @@ struct Segment {
     {
         Vec2 v1 {s1.a, s1.b}, v2 {s1.a, s2.a}, v3 {s1.a, s2.b};
         Vec2 v4 {s2.a, s2.b}, v5 {s2.a, s1.a}, v6 {s2.a, s1.b};
-        return (v1 ^ v2) * (v1 ^ v3) <= 0 and (v4 ^ v5) * (v4 ^ v6) <= 0;
+        double cross_1 = (v1 ^ v2) * (v1 ^ v3);
+        double cross_2 = (v4 ^ v5) * (v4 ^ v6);
+        if (fabs(cross_1) < EPS and fabs(cross_2) < EPS)
+        {
+            // 共线,根据x大小交换点坐标
+            auto _s1 = s1;
+            auto  _s2 = s2;
+            if (_s1.a.x > _s1.b.x) std::swap(_s1.a, _s1.b);
+            if (_s2.a.x > _s2.b.x) std::swap(_s2.a, _s2.b);
+            if (_s1.a.x < _s2.a.x and _s1.b.x >= _s2.b.x) return true;
+            if (_s2.a.x < _s1.a.x and _s2.b.x >= _s1.b.x) return true;
+            return false;
+        }
+        return cross_1 <= 0 && cross_2 <= 0;
     }
     friend bool operator<(const Segment &s1, const Segment &s2)
     {
@@ -99,9 +112,9 @@ struct Triangle {
     inline bool in_triangle(Vertex p)
     {
         this->clockwise();
-        if((Vec2{a, b} ^ Vec2{a, p}) < 0) return false;
-        if((Vec2{b, c} ^ Vec2{b, p}) < 0) return false;
-        if((Vec2{c, a} ^ Vec2{c, p}) < 0) return false;
+        if ((Vec2 {a, b} ^ Vec2 {a, p}) < 0) return false;
+        if ((Vec2 {b, c} ^ Vec2 {b, p}) < 0) return false;
+        if ((Vec2 {c, a} ^ Vec2 {c, p}) < 0) return false;
         return true;
     }
     friend ostream &operator<<(ostream &os, const Triangle &t)
