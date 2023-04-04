@@ -82,13 +82,13 @@ struct Triangle {
         if ((v1 ^ v2) < 0) std::swap(b, c);
     }
     // 点p是否在三角形内部(精度要求高)
-    inline bool in_triangle(Vertex p) const
+    inline bool in_triangle(Vertex p)
     {
-        Vec2 v1 {a, b}, v2 {a, c}, v3 {a, p};
-        double s1 = fabs(v1 ^ v3) / 2;
-        double s2 = fabs(v2 ^ v3) / 2;
-        double s3 = area();
-        return fabs(s1 + s2 - s3) < EPS;
+        this->clockwise();
+        if((Vec2{a, b} ^ Vec2{a, p}) < 0) return false;
+        if((Vec2{b, c} ^ Vec2{b, p}) < 0) return false;
+        if((Vec2{c, a} ^ Vec2{c, p}) < 0) return false;
+        return true;
     }
     friend ostream &operator<<(ostream &os, const Triangle &t)
     {
