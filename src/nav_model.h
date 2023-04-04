@@ -123,20 +123,19 @@ struct Polygon {
 };
 
 // 点是否在line, line方向为from->to右侧
-inline bool point_right_line(const Vertex &p, const Vertex &from, const Vertex &to)
+inline bool point_right_line(const Vertex &p, const Segment &line)
 {
-    return (Vec2(from, to) ^ Vec2(from, p)) < 0;
+    return (Vec2(line.a, line.b) ^ Vec2(line.a, p)) < 0;
 }
 // 点是否在line 左侧
-inline bool point_left_line(const Vertex &p, const Vertex &from, const Vertex &to)
+inline bool point_left_line(const Vertex &p, const Segment &line)
 {
-    auto rt = (Vec2(from, to) ^ Vec2(from, p));
-    return rt > 0;
+    return (Vec2(line.a, line.b) ^ Vec2(line.a, p)) > 0;
 }
 // 点是否在line上
-inline bool point_on_line(const Vertex &p, const Vertex &from, const Vertex &to)
+inline bool point_on_line(const Vertex &p, const Segment &line)
 {
-    return fabs(Vec2(from, to) ^ Vec2(from, p)) < EPS;
+    return fabs(Vec2(line.a, line.b) ^ Vec2(line.a, p)) < EPS;
 }
 
 

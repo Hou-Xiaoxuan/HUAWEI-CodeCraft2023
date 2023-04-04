@@ -91,7 +91,7 @@ void robot()
 void local()
 {
 
-    auto fin = std::fstream("./Robot/maps/2.txt");
+    auto fin = std::fstream("./Robot/maps/4.txt");
     if (fin.is_open() == false)
     {
         std::cerr << "[error] map file open failed" << std::endl;
