@@ -22,6 +22,11 @@ struct Vertex {
         os << "(" << v.x << ", " << v.y << ")";
         return os;
     }
+
+    friend bool operator<(const Vertex &v1, const Vertex &v2)
+    {
+        return v1.x < v2.x or (v1.x == v2.x and v1.y < v2.y);
+    }
 };
 
 // 二维向量
@@ -59,6 +64,15 @@ struct Segment {
         Vec2 v1 {s1.a, s1.b}, v2 {s1.a, s2.a}, v3 {s1.a, s2.b};
         Vec2 v4 {s2.a, s2.b}, v5 {s2.a, s1.a}, v6 {s2.a, s1.b};
         return (v1 ^ v2) * (v1 ^ v3) <= 0 and (v4 ^ v5) * (v4 ^ v6) <= 0;
+    }
+    friend bool operator<(const Segment &s1, const Segment &s2)
+    {
+        return s1.a < s2.a or (s1.a == s2.a and s1.b < s2.b);
+    }
+
+    friend bool operator==(const Segment &s1, const Segment &s2)
+    {
+        return (s1.a == s2.a and s1.b == s2.b) or (s1.a == s2.b and s1.b == s2.a);
     }
 };
 // 三角形
@@ -123,6 +137,28 @@ inline bool point_left_line(const Vertex &p, const Vertex &from, const Vertex &t
 inline bool point_on_line(const Vertex &p, const Vertex &from, const Vertex &to)
 {
     return fabs(Vec2(from, to) ^ Vec2(from, p)) < EPS;
+}
+
+
+// 点到线段距离
+inline double dis_point_to_segment(const Vertex &p, const Segment &line)
+{
+    Vec2 v1 {line.a, line.b}, v2 {line.a, p};
+    if (v1 * v2 < 0) return v2.length();
+    Vec2 v3 {line.b, line.a}, v4 {line.b, p};
+    if (v3 * v4 < 0) return v4.length();
+    return fabs(v1 ^ v2) / v1.length();
+}
+
+inline Vertex point_point_to_segment(const Vertex &p, const Segment &line)
+{
+    Vec2 v1 {line.a, line.b}, v2 {line.a, p};
+    if (v1 * v2 < 0) return line.a;
+    Vec2 v3 {line.b, line.a}, v4 {line.b, p};
+    if (v3 * v4 < 0) return line.b;
+    // p 到 line 的垂足
+    double t = (v1 * v2) / (v1 * v1);
+    return {line.a.x + t * v1.x, line.a.y + t * v1.y};
 }
 }
 #endif

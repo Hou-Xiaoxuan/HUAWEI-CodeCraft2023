@@ -290,8 +290,98 @@ void get_result(const Polygon &p, int step)
 }
 
 
+vector<Segment> danger_line;
+
+void get_danger_line()
+{
+    double danger_dis = 1.5 + 1e-6;
+    for (auto &poly : result)
+    {
+        vector<Vertex> all_point = poly.vertices;
+        vector<Segment> all_segment;
+        vector<Segment> tmp_danger_line;
+        for (auto &hole : poly.holes)
+        {
+            all_point.insert(all_point.end(), hole.vertices.begin(), hole.vertices.end());
+        }
+        for (int i = 0; i < poly.vertices.size(); ++i)
+        {
+            all_segment.push_back(Segment(poly.vertices[i], poly.vertices[(i + 1) % poly.vertices.size()]));
+        }
+        for (auto &hole : poly.holes)
+        {
+            for (int i = 0; i < hole.vertices.size(); ++i)
+            {
+                all_segment.push_back(
+                    Segment(hole.vertices[i], hole.vertices[(i + 1) % hole.vertices.size()]));
+            }
+        }
+
+
+        for (int i = 0; i < all_point.size(); ++i)
+        {
+            for (int j = i + 1; j < all_point.size(); ++j)
+            {
+                if (Vec2(all_point[i], all_point[j]).length() <= danger_dis)
+                {
+                    tmp_danger_line.push_back(all_point[i] < all_point[j]
+                            ? Segment(all_point[i], all_point[j])
+                            : Segment(all_point[j], all_point[i]));
+                }
+            }
+        }
+
+        for (int i = 0; i < all_point.size(); ++i)
+        {
+            for (int j = 0; j < all_segment.size(); ++j)
+            {
+                Vertex p = point_point_to_segment(all_point[i], all_segment[j]);
+                if (not point_on_line(all_point[i], all_segment[j].a, all_segment[j].b)
+                    and Vec2(all_point[i], p).length() <= danger_dis)
+                {
+                    tmp_danger_line.push_back(
+                        all_point[i] < p ? Segment(all_point[i], p) : Segment(p, all_point[i]));
+                }
+            }
+        }
+
+        // 去重
+        sort(tmp_danger_line.begin(), tmp_danger_line.end());
+        tmp_danger_line.erase(
+            unique(tmp_danger_line.begin(), tmp_danger_line.end()), tmp_danger_line.end());
+
+        for (auto &line : tmp_danger_line)
+        {
+            // 取三等分点
+            for (int i = 1; i < 3; ++i)
+            {
+                Vertex p
+                    = {line.a.x + (line.b.x - line.a.x) * i / 3, line.a.y + (line.b.y - line.a.y) * i / 3};
+                bool flag = true;
+                if (not is_in_polygon(poly, p))
+                {
+                    flag = false;
+                }
+                if (not flag) continue;
+                for (auto &hole : poly.holes)
+                {
+                    if (is_in_polygon(hole, p))
+                    {
+                        flag = false;
+                        break;
+                    }
+                }
+                if (not flag) continue;
+                danger_line.push_back(line);
+                break;
+            }
+        }
+    }
+}
+
 void test_print()
 {
+    cerr << result.size() << endl;
     for (const auto &p : result)
     {
         cerr << p.holes.size() << endl;
@@ -303,7 +393,6 @@ void test_print()
         }
         for (auto hole : p.holes)
         {
-            cerr << 0 << endl;
             cerr << hole.vertices.size() << endl;
             for (auto &v : hole.vertices)
             {
@@ -312,10 +401,16 @@ void test_print()
             }
         }
     }
+
+    cerr << danger_line.size() << endl;
+    for (auto &line : danger_line)
+    {
+        cerr << line.a.x << endl;
+        cerr << line.a.y << endl;
+        cerr << line.b.x << endl;
+        cerr << line.b.y << endl;
+    }
 }
-vector<Vertex> danger_line;
-
-
 vector<Polygon> solve()
 {
     auto polys = trans_map(meta.map);
@@ -334,6 +429,7 @@ vector<Polygon> solve()
     });
     get_polygon(polys);
     get_result(tree.back(), 0);
+    get_danger_line();
     test_print();
 
     return result;
