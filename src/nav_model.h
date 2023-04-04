@@ -60,7 +60,7 @@ struct Segment {
         Vec2 v4 {s2.a, s2.b}, v5 {s2.a, s1.a}, v6 {s2.a, s1.b};
         double cross_1 = (v1 ^ v2) * (v1 ^ v3);
         double cross_2 = (v4 ^ v5) * (v4 ^ v6);
-        if (fabs(cross_1) < EPS and fabs(cross_2) < EPS)
+        if (fabs(cross_1) <=0 and fabs(cross_2) <=0)
         {
             // 共线,根据x大小交换点坐标
             auto _s1 = s1;
