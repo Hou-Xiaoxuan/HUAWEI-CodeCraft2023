@@ -106,7 +106,7 @@ struct Map {
     std::vector<Robot> robot;              // 从1开始
     int current_flame;
     int current_money;
-    Map() : map(width + 1, std::vector<char>(height, +1))
+    Map() : map(width + 2, std::vector<char>(height + 2, '#'))
     {
         station.reserve(50);
         robot.reserve(5);

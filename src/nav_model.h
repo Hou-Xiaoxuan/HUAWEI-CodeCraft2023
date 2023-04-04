@@ -58,6 +58,8 @@ struct Segment {
     Segment() = default;
     Segment(const Vertex &a, const Vertex &b) : a(a), b(b) { }
 
+    double length() { return Vec2(a, b).length(); }
+
     // 判断是否相交
     static bool is_cross(const Segment &s1, const Segment &s2)
     {
@@ -69,7 +71,7 @@ struct Segment {
         {
             // 共线,根据x大小交换点坐标
             auto _s1 = s1;
-            auto  _s2 = s2;
+            auto _s2 = s2;
             if (_s1.a.x > _s1.b.x) std::swap(_s1.a, _s1.b);
             if (_s2.a.x > _s2.b.x) std::swap(_s2.a, _s2.b);
             if (_s1.a.x < _s2.a.x and _s1.b.x >= _s2.b.x) return true;
@@ -78,6 +80,10 @@ struct Segment {
         }
         return cross_1 <= 0 && cross_2 <= 0;
     }
+
+
+    static bool is_cross_2(const Segment &s1, const Segment &s2);
+
     friend bool operator<(const Segment &s1, const Segment &s2)
     {
         return s1.a < s2.a or (s1.a == s2.a and s1.b < s2.b);
@@ -171,6 +177,19 @@ inline Vertex point_point_to_segment(const Vertex &p, const Segment &line)
     // p 到 line 的垂足
     double t = (v1 * v2) / (v1 * v1);
     return {line.a.x + t * v1.x, line.a.y + t * v1.y};
+}
+
+
+bool Segment::is_cross_2(const Segment &s1, const Segment &s2)
+{
+    if (Segment::is_cross(s1, s2))
+    {
+        if (point_on_line(s1.a, s2) or point_on_line(s1.b, s2) or point_on_line(s2.a, s1)
+            or point_on_line(s2.b, s1))
+            return false;
+        return true;
+    }
+    return false;
 }
 }
 #endif
