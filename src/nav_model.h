@@ -134,7 +134,7 @@ inline bool point_left_line(const Vertex &p, const Segment &line)
 // 点是否在line上
 inline bool point_on_line(const Vertex &p, const Segment &line)
 {
-    return fabs(Vec2(line.a, line.b) ^ Vec2(line.a, p)) < EPS;
+    return fabs(Vec2(line.a, line.b) ^ Vec2(line.a, p)) == 0;
 }
 }
 #endif

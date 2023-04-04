@@ -171,10 +171,15 @@ class EarClipping
             // 拼接p和connect_point
             vector<Vertex> new_vertices;
             new_vertices.reserve(this->polygon.vertices.size() + hole.vertices.size());
+            int index = 0;
+            for (int j = 0; j < this->polygon.vertices.size(); j++)
+                if (this->polygon.vertices[j] == connect_point)
+                    index = j;
+            
             for (int j = 0; j < this->polygon.vertices.size(); j++)
             {
                 new_vertices.push_back(this->polygon.vertices[j]);
-                if (this->polygon.vertices[j] == connect_point)
+                if (j == index)
                 {
                     auto ite = find(hole.vertices.begin(), hole.vertices.end(), p);
                     if (ite == hole.vertices.end()) throw std::runtime_error("error");
@@ -251,18 +256,6 @@ public:
                     node.is_processed = true;
                     node_count--;
                     is_cut = true;
-                    // // 更新相邻节点
-                    // node_list[node.prev_index].next_index = node.next_index;
-                    // node_list[node.next_index].prev_index = node.prev_index;
-                    // // 更新相邻节点的is_ear
-                    // node_list[node.prev_index].is_ear
-                    //     = can_cut(polygon.vertices[node_list[node.prev_index].prev_index],
-                    //         polygon.vertices[node_list[node.prev_index].index],
-                    //         polygon.vertices[node_list[node.prev_index].next_index]);
-                    // node.is_ear
-                    //     = can_cut(polygon.vertices[node_list[node.next_index].prev_index],
-                    //         polygon.vertices[node_list[node.next_index].index],
-                    //         polygon.vertices[node_list[node.next_index].next_index]);
                     node.prev->next = node.next;
                     node.next->prev = node.prev;
                     node.prev->is_ear = can_cut(*node.prev->prev, *node.prev, *node.prev->next);
