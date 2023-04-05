@@ -327,14 +327,14 @@ void init()
     vector<int> fa(meta.station.size());
     for (int i = 1; i < meta.station.size(); i++)
         fa[i] = i;
-    function<int(int)> find;
-    find = [&fa, &find](int x) -> int {
+    function<int(int)> find_fa;
+    find_fa = [&fa, &find_fa](int x) -> int {
         if (fa[x] == x) return x;
-        return fa[x] = find(fa[x]);
+        return fa[x] = find_fa(fa[x]);
     };
-    auto merge = [&fa, &find](int x, int y) {
-        x = find(x);
-        y = find(y);
+    auto merge = [&fa, &find_fa](int x, int y) {
+        x = find_fa(x);
+        y = find_fa(y);
         if (x == y) return;
         fa[x] = y;
     };
@@ -362,7 +362,7 @@ void init()
     areas.emplace_back();
     for (int i = 1; i < meta.station.size(); i++)
     {
-        int x = find(i);
+        int x = find_fa(i);
         if (x == i)
         {
             Area area;
@@ -370,7 +370,7 @@ void init()
             area.routes.emplace_back();
             // 将包含x的所有route加入sub_area
             for (int j = 1; j < routes.size(); j++)
-                if (x == find(routes[j].from_station_index) or x == find(routes[j].target_station_index))
+                if (x == find_fa(routes[j].from_station_index) or x == find_fa(routes[j].target_station_index))
                 {
                     area.routes.emplace_back(routes[j]);
                     area.stations.insert(routes[j].from_station_index);
