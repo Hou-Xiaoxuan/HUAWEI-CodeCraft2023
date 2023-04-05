@@ -76,9 +76,9 @@ enum ProcessingState {
     BUY = 1,        // 运输中
     SELL = 2,       // 卖货中
 };
-static vector<int> area_index;                      // 机器人[i]所在区域编号，从1开始
-static vector<int> processing;                      // 机器人[i]正在处理的route
-static vector<ProcessingState> processing_state;    // 机器人[i]正在处理的root的状态
+static vector<int> area_index{};                      // 机器人[i]所在区域编号，从1开始
+static vector<int> processing{};                      // 机器人[i]正在处理的route
+static vector<ProcessingState> processing_state{};    // 机器人[i]正在处理的root的状态
 /*区域划分与算法*/
 class Area
 {
@@ -325,7 +325,6 @@ void init()
     }
 #endif
 
-    area_index = {};
     vector<Route> routes;    // 路径，从1开始
     routes.reserve(1000);
     routes.emplace_back();
@@ -398,8 +397,6 @@ void init()
             if (path.empty()) continue;
             area_index[i] = j;
         }
-        // DEBUG
-        if (area_index[i] == 0) throw std::runtime_error("area_index[i] == 0");
     }
     processing.assign(meta.robot.size(), 0);
     processing_state.assign(meta.robot.size(), ProcessingState::PICKING);
@@ -414,6 +411,7 @@ void give_pointing()
     {    // 得到path
         for (int i = 1; i < meta.robot.size(); i++)
         {
+            if(area_index[i] == 0) continue;
             auto &area = areas[area_index[i]];
             auto &route = area.routes[processing[i]];
             auto &robot = meta.robot[i];
