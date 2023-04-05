@@ -182,6 +182,10 @@ void move_to(const Robot &robot, vector<Vertex> path)
 {
     if (not path.empty())
     {
+        cerr<<"info: robot "<<robot.id<<" move to ";
+        for(auto &p:path)
+            cerr<<p<<"->";
+        cerr<<endl;
         __change_direction(robot, path);
         __change_speed(robot, path);
     }
