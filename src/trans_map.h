@@ -81,12 +81,7 @@ void trans_map(const vector<vector<char>> &ori_map)
     }
 
     // 顺时针 四向
-    vector<pair<int, int>> dirs = {
-        { 0,  1},
-        { 1,  0},
-        { 0, -1},
-        {-1,  0},
-    };
+    vector<pair<int, int>> dirs = {{ 0,  1},{ 1,  0},{ 0, -1},{-1,  0}};
 
     vector<vector<vector<int>>> map_status = vector<vector<vector<int>>>(
         Map::width + 2, vector<vector<int>>(Map::height + 2, vector<int>(4, 0)));
@@ -502,6 +497,22 @@ void test_print()
 }
 vector<Polygon> solve()
 {
+    /*识别 .#  #.
+          #.  .#
+    两种情况，填上一个.
+    */
+   /* 识别 
+   
+   */
+    for(int i=2; i<=100; i++)
+        for(int j=1; j<=100; j++)
+        {
+            if(meta.map[i][j]=='#' and meta.map[i-1][j]=='.' and meta.map[i][j-1]=='.' and meta.map[i-1][j-1]=='#')
+                model::meta.map[i-1][j]='#';
+            if(meta.map[i][j]=='.' and meta.map[i-1][j]=='#' and meta.map[i][j-1]=='#' and meta.map[i-1][j-1]=='.')
+                model::meta.map[i-1][j-1]='#';
+        }
+
     trans_map(meta.map);
     sort(polys.begin(), polys.end(), [](const Poly &b, const Poly &a) {
         Vertex a_p = a.points[0];
@@ -521,6 +532,33 @@ vector<Polygon> solve()
     get_danger_line();
     get_nearest_obstacle();
     test_print();
+
+    // // 根据danger_line填充修改地图
+    // for (auto &line : danger_line)
+    // {
+    //     // 填充a->b上，很纵坐标为0.25倍数的点
+    //     double x = line.a.x;
+    //     double y = line.a.y;
+    //     double k = (line.b.y - line.a.y) / (line.b.x - line.a.x);
+    //     double b = line.a.y - k * line.a.x;
+    //     do{
+    //         int x1 = (int)(x * 2);
+    //         int y1 = (int)(y * 2);
+    //         if(meta.map[x1][y1] == '.')
+    //             model::meta.map[x1][y1] = '&';
+    //         x += 0.25;
+    //         y = k * x + b;
+    //     }while(x < line.b.x);
+    // }
+    // 打印修改后的地图
+    for (int i = 0; i < model::meta.map.size(); ++i)
+    {
+        for (int j = 0; j < model::meta.map[i].size(); ++j)
+        {
+            cerr << model::meta.map[i][j];
+        }
+        cerr << endl;
+    }
 
     return result;
 }

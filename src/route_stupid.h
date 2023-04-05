@@ -460,6 +460,8 @@ void give_pointing()
                 robot_path[i] = find_path_pri(robot.loc, route.from_station().loc, false);
                 // navigate::move_to(
                 //     robot, target_station.loc, {meta.station[route.to_station_index].loc}, wait_flame);
+                if (robot_path[i].empty())
+                    cerr << "[error][__pointing] robot " << i << " 没有得到取from的路径" << endl;
             }
             else
             {
@@ -476,7 +478,9 @@ void give_pointing()
                     //                          << robot.goods << endl;
                     // #endif
                 }
-                robot_path[i] = find_path_pri(robot.loc, route.target_station().loc, true);
+                robot_path[i] = find_path(robot.loc, route.target_station().loc, true);
+                if(robot_path[i].empty())
+                    cerr<<"[error][__pointing] robot "<<i<<" 没有得到至target的path！"<<endl;
             }
         }
     }
