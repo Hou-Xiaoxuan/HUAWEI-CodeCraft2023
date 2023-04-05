@@ -227,15 +227,16 @@ struct Find_path {
     {
         double limit_dis = have_good ? ConVar::robot_radius_goods : ConVar::robot_radius;
         int start_index = 0;
-        if (fix_path.empty()) return;
-        smooth_path.push_back(fix_path[start_index]);
-        while (start_index < int(fix_path.size()) - 1)
+        const auto &tmp_path = fix_path;
+        if (tmp_path.empty()) return;
+        smooth_path.push_back(tmp_path[start_index]);
+        while (start_index < int(tmp_path.size()) - 1)
         {
             int end_index = 0;
-            for (int i = start_index + 1; i < fix_path.size(); ++i)
+            for (int i = start_index + 1; i < tmp_path.size(); ++i)
             {
                 bool is_valid = true;
-                Segment tmp = {fix_path[start_index], fix_path[i]};
+                Segment tmp = {tmp_path[start_index], tmp_path[i]};
                 for (const auto poly : trans_map::polys)
                 {
                     const auto points = poly.points;
@@ -251,7 +252,7 @@ struct Find_path {
                     if (not is_valid) break;
                 }
 
-                if (i == int(fix_path.size()) - 1)
+                if (i == int(tmp_path.size()) - 1)
                 {
                     end_index = i;
                 }
@@ -270,10 +271,18 @@ struct Find_path {
                     }
                     else
                     {
-                        end_index = i - 1;
+                        if (i == 1)
+                        {
+                            end_index = i;
+                            bool is_valid_2 = true;
+                        }
+                        else
+                        {
+                            end_index = i - 1;
+                        }
                     }
                 }
-                smooth_path.push_back(fix_path[end_index]);
+                smooth_path.push_back(tmp_path[end_index]);
                 start_index = end_index;
             }
         }
@@ -282,9 +291,37 @@ struct Find_path {
     void get_path()
     {
         get_ori_path();
+        if (ori_path.size() >= 3)
+        {
+            if (ori_path[0] == ori_path[1])
+            {
+                throw "start == target";
+            }
+        }
         get_proper_path();
+        if (proper_path.size() >= 3)
+        {
+            if (proper_path[0] == proper_path[1])
+            {
+                throw "start == target";
+            }
+        }
         get_fix_path();
+        if (fix_path.size() >= 3)
+        {
+            if (fix_path[0] == fix_path[1])
+            {
+                throw "start == target";
+            }
+        }
         get_smooth_path();
+        if (smooth_path.size() >= 3)
+        {
+            if (smooth_path[0] == smooth_path[1])
+            {
+                throw "start == target";
+            }
+        }
     }
 
     Find_path(const Vertex &start, const Vertex &target, bool have_good) :
