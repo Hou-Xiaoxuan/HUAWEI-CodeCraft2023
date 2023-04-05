@@ -69,7 +69,7 @@ struct Segment {
         Vec2 v4 {s2.a, s2.b}, v5 {s2.a, s1.a}, v6 {s2.a, s1.b};
         double cross_1 = (v1 ^ v2) * (v1 ^ v3);
         double cross_2 = (v4 ^ v5) * (v4 ^ v6);
-        if (fabs(cross_1) <=0 and fabs(cross_2) <=0)
+        if (fabs(cross_1) <= 0 and fabs(cross_2) <= 0)
         {
             // 共线,根据x大小交换点坐标
             auto _s1 = s1;
@@ -87,12 +87,7 @@ struct Segment {
     static bool is_cross_2(const Segment &s1, const Segment &s2);
 
     // 两条线段最短距离
-    static double distance(const Segment &s1, const Segment &s2)
-    {
-        if (is_cross(s1, s2)) return 0;
-        return min({dis_point_to_segment(s1.a, s2), dis_point_to_segment(s1.b, s2),
-            dis_point_to_segment(s2.a, s1), dis_point_to_segment(s2.b, s1)});
-    }
+    static double distance(const Segment &s1, const Segment &s2);
 
     static Vertex get_mid(const Segment &s) { return {(s.a.x + s.b.x) / 2, (s.a.y + s.b.y) / 2}; }
 
@@ -180,6 +175,8 @@ inline double dis_point_to_segment(const Vertex &p, const Segment &line)
     return fabs(v1 ^ v2) / v1.length();
 }
 
+
+// 点到线段最短距离 对应线段上的点
 inline Vertex point_point_to_segment(const Vertex &p, const Segment &line)
 {
     Vec2 v1 {line.a, line.b}, v2 {line.a, p};
@@ -191,6 +188,12 @@ inline Vertex point_point_to_segment(const Vertex &p, const Segment &line)
     return {line.a.x + t * v1.x, line.a.y + t * v1.y};
 }
 
+double Segment::distance(const Segment &s1, const Segment &s2)
+{
+    if (is_cross(s1, s2)) return 0;
+    return min({dis_point_to_segment(s1.a, s2), dis_point_to_segment(s1.b, s2),
+        dis_point_to_segment(s2.a, s1), dis_point_to_segment(s2.b, s1)});
+}
 
 bool Segment::is_cross_2(const Segment &s1, const Segment &s2)
 {

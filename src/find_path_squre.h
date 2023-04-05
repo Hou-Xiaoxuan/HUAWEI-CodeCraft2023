@@ -30,10 +30,6 @@ struct find_path {
     vector<Vertex> fix_path;
     vector<Vertex> smooth_path;
 
-    find_path(const Vertex &start, const Vertex &target, bool have_good) :
-        start(start), target(target), have_good(have_good)
-    { }
-
     static Pos current_pos(const Vertex &v)
     {
 
@@ -76,6 +72,14 @@ struct find_path {
         double limit_dis = have_good ? ConVar::robot_radius_goods * 2 : ConVar::robot_radius * 2;
         auto start_pos = current_pos(start);
         auto target_pos = current_pos(target);
+
+        if (start_pos.index_x == target_pos.index_x and start_pos.index_y == target_pos.index_y)
+        {
+            ori_path.push_back(start);
+            ori_path.push_back(target);
+            return;
+        }
+
         queue<Pos> que;
         que.push(start_pos);
         pre[start_pos.index_x][start_pos.index_y].index_x = -2;
@@ -129,8 +133,14 @@ struct find_path {
             }
         }
 
-        Pos now_pos = target_pos;
 
+        if (pre[target_pos.index_x][target_pos.index_y].index_x == -1)
+        {
+            ori_path = vector<Vertex>(0);
+            return;
+        }
+
+        Pos now_pos = target_pos;
         do
         {
             ori_path.push_back(now_pos.pos);
@@ -138,68 +148,93 @@ struct find_path {
         } while (now_pos.index_x != -2);
 
         reverse(ori_path.begin(), ori_path.end());
+
+        if (!ori_path.empty())
+        {
+            fix_flag = vector<int>(ori_path.size(), 0);
+            fix_flag[0] = 1;
+            fix_flag[ori_path.size() - 1] = 1;
+        }
     }
 
     // 将点偏移到正确位置
     void get_proper_path()
     {
+        proper_path = ori_path;
         double limit_path = have_good ? ConVar::robot_radius_goods : ConVar::robot_radius;
-        for (int i = 0; i < ori_path.size(); ++i)
+        limit_path += 0.05;
+        for (int i = 0; i < proper_path.size(); ++i)
         {
+            if (fix_flag[i]) continue;
+            Vertex nearest_vertex;
+            double nearest_dis = 1e9;
             for (const auto poly : trans_map::polys)
             {
                 const auto points = poly.points;
                 for (int j = 0; j < points.size(); ++j)
                 {
-                    int k = (j + 1) % points.size();
-                    if (dis_point_to_segment(ori_path[i], Segment {points[j], points[k]}) < limit_path + 0.05)
+                    Segment line = {points[j], points[(j + 1) % points.size()]};
+                    double tmp_dis = dis_point_to_segment(proper_path[i], line);
+                    if (tmp_dis <= nearest_dis)
                     {
-                        proper_path.push_back(Segment::get_mid(Segment {points[j], points[k]}));
-                        break;
+                        nearest_dis = tmp_dis;
+                        nearest_vertex = point_point_to_segment(proper_path[i], line);
                     }
                 }
+            }
+            if (nearest_dis < limit_path)
+            {
+                Vec2 v = {nearest_vertex, proper_path[i]};
+                // c 沿着 v 方向移动 limit_path
+                // XXX v 理论上应该不可能为 0
+                Vec2 v_unit = {v.x / v.length(), v.y / v.length()};
+                Vertex new_c
+                    = {nearest_vertex.x + v_unit.x * limit_path, nearest_vertex.y + v_unit.y * limit_path};
+                proper_path[i] = new_c;
             }
         }
     }
 
     void get_fix_path()
     {
-        fix_path = ori_path;
+        fix_path = proper_path;
         fix_flag = vector<int>(fix_path.size(), 0);
-        for (int i = 0; i < fix_path.size() - 1; ++i)
+        for (int i = 0; i < int(fix_path.size()) - 1; ++i)
         {
             int j = i + 1;
+            if (fix_flag[j]) continue;
             for (const auto line : trans_map::danger_line)
             {
                 if (Segment::is_cross_2(line, Segment {fix_path[i], fix_path[j]}))
                 {
                     fix_path[j] = Segment::get_mid(line);
-                    fix_flag[i] = 1;
+                    fix_flag[j] = 1;
                     break;
                 }
             }
         }
     }
 
-    vector<Vertex> get_smooth_path()
+    void get_smooth_path()
     {
         double limit_dis = have_good ? ConVar::robot_radius_goods : ConVar::robot_radius;
         int start_index = 0;
-        while (start_index < fix_path.size())
+        if (fix_path.empty()) return;
+        smooth_path.push_back(fix_path[start_index]);
+        while (start_index < int(fix_path.size()) - 1)
         {
             int end_index = 0;
             for (int i = start_index + 1; i < fix_path.size(); ++i)
             {
                 bool is_valid = true;
+                Segment tmp = {fix_path[start_index], fix_path[i]};
                 for (const auto poly : trans_map::polys)
                 {
                     const auto points = poly.points;
                     for (int j = 0; j < points.size(); ++j)
                     {
-                        int k = (j + 1) % points.size();
-                        if (Segment::distance(
-                                Segment {fix_path[start_index], fix_path[i]}, {points[j], points[k]})
-                            <= limit_dis)
+                        if (Segment::distance(tmp, {points[j], points[(j + 1) % points.size()]})
+                            < limit_dis)
                         {
                             is_valid = false;
                             break;
@@ -208,25 +243,35 @@ struct find_path {
                     if (not is_valid) break;
                 }
 
-                if (is_valid and fix_flag[i])
+                if (is_valid)
                 {
-                    end_index = i;
-                    break;
+                    if (fix_flag[i] == 1 or i == int(fix_path.size()) - 1)
+                    {
+                        end_index = i;
+                    }
                 }
-                if (not is_valid)
+                else
                 {
                     end_index = i - 1;
-                    break;
                 }
+                smooth_path.push_back(fix_path[end_index]);
+                start_index = end_index;
             }
         }
-        return smooth_path;
     }
 
-    vector<Vertex> get_path(const auto &start, const auto &target, bool have_good)
+    void get_path()
     {
-        get_ori_path(start, target, have_good);
-        get_fix_path(ori_path);
+        get_ori_path();
+        get_proper_path();
+        get_fix_path();
+        get_smooth_path();
+    }
+
+    find_path(const Vertex &start, const Vertex &target, bool have_good) :
+        start(start), target(target), have_good(have_good)
+    {
+        get_path();
     }
 };
 };

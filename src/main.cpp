@@ -93,7 +93,7 @@ void robot()
 void local()
 {
 
-    auto fin = std::fstream("../Robot/maps/4.txt");
+    auto fin = std::fstream("./Robot/maps/1.txt");
     if (fin.is_open() == false)
     {
         std::cerr << "[error] map file open failed" << std::endl;
@@ -104,37 +104,21 @@ void local()
     // route_fool::give_pointing();
     std::vector<navmesh::Polygon> polys = trans_map::solve();
 
-
-    // std::cerr << path.size() << std::endl;
-    // for (auto &i : path)
-    // {
-    //     std::cerr << i.x << std::endl;
-    //     std::cerr << i.y << std::endl;
-    // }
-
-
-    // int i = 0;
-    // for (auto &poly : polys)
-    // {
-    //     auto tris = navmesh::EarClipping(poly).triangulate();
-
-    //     auto fout = std::fstream("./" + std::to_string(i++) + ".txt", std::ios::out);
-    //     fout << "triangles = [";
-    //     for (auto &tri : tris)
-    //         fout << "(" << tri.a << "," << tri.b << "," << tri.c << "),";
-    //     fout << "]" << std::endl;
-    //     fout << "points = [";
-    //     for (auto &p : poly.vertices)
-    //         fout << "(" << p.x << "," << p.y << "),";
-    //     fout << "]" << std::endl;
-    // }
+    const auto &p = find_path_square::find_path(meta.robot[1].loc, meta.station[31].loc, false);
+    std::vector<navmesh::Vertex> path = p.smooth_path;
+    std::cerr << path.size() << std::endl;
+    for (auto &i : path)
+    {
+        std::cerr << i.x << std::endl;
+        std::cerr << i.y << std::endl;
+    }
 }
 
 int main()
 {
     // cerror重定向到文件
     auto cerr_buf = std::cerr.rdbuf();
-    std::fstream fout("../log.txt", std::ios::out);
+    std::fstream fout("./log.txt", std::ios::out);
     if (fout.is_open())
         std::cerr.rdbuf(fout.rdbuf());
     else
