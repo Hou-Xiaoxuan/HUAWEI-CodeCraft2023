@@ -486,7 +486,7 @@ vector<Polygon> solve()
     get_polygon();
     get_result(tree.back(), 0);
     get_danger_line();
-    test_print();
+    // test_print();
 
     return result;
 }

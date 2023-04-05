@@ -21,15 +21,30 @@ struct Pos {
 
 struct Find_path {
 
+    static vector<vector<Pos>> proper_pos;
+    static vector<vector<Pos>> proper_pos_good;
+
     const Vertex start;
     const Vertex target;
     const bool have_good;
+
     vector<Vertex> ori_path;
     vector<Vertex> proper_path;
     vector<int> fix_flag;
     vector<Vertex> fix_path;
     vector<Vertex> smooth_path;
+    vector<vector<Pos>> pre = vector<vector<Pos>>(Map::width + 2, vector<Pos>(Map::height + 2));
 
+    static void init()
+    {
+        for (int i = 1; i <= Map::width; ++i)
+        {
+            for (int j = 1; j <= Map::height; ++j)
+            { }
+        }
+    }
+
+    // 找到当前点所在的meta.map中的正方形 返回值 正方形x轴index y轴index 这个点坐标
     static Pos current_pos(const Vertex &v)
     {
 
@@ -37,17 +52,8 @@ struct Find_path {
         {
             for (int j = 2 * int(v.y); j <= 2 * int(v.y) + 2; ++j)
             {
-                vector<Vertex> vs {
-                    {(i - 1) * 0.5,       j * 0.5},
-                    {(i - 1) * 0.5, (j - 1) * 0.5},
-                    {      i * 0.5, (j - 1) * 0.5},
-                    {      i * 0.5,       j * 0.5},
-                };
-
-                if (trans_map::is_in_polygon(vs, v))
-                {
+                if (v.x <= i * 0.5 and v.x >= (i - 1) * 0.5 and v.y <= j * 0.5 and v.y >= (j - 1) * 0.5)
                     return {i, j, v};
-                }
             }
         }
         throw "you are wrong";
@@ -66,8 +72,6 @@ struct Find_path {
             { 0, -1},
             {-1,  0},
         };
-
-        vector<vector<Pos>> pre(Map::width + 2, vector<Pos>(Map::height + 2));
 
         double limit_dis = have_good ? ConVar::robot_radius_goods * 2 : ConVar::robot_radius * 2;
         auto start_pos = current_pos(start);
@@ -185,6 +189,7 @@ struct Find_path {
                     }
                 }
             }
+
             if (nearest_dis < limit_path)
             {
                 Vec2 v = {nearest_vertex, proper_path[i]};
@@ -257,6 +262,10 @@ struct Find_path {
                         if (fix_flag[i] == 1)
                         {
                             end_index = i;
+                        }
+                        else
+                        {
+                            continue;
                         }
                     }
                     else

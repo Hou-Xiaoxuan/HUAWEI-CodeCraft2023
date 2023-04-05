@@ -46,32 +46,32 @@ double __get_delta_angle(const Robot &robot, const Vertex &target)
     return delta;
 }
 
-Vertex __stop_with_spec_w(const Robot &robot)
-{
-    double w = robot.w;
-    double a = __get_max_robot_angular_acceleration(robot);
-    double v_0 = robot.v.len();
-    double t = v_0 / a;
-    double p_0 = robot.dirc;
+// Vertex __stop_with_spec_w(const Robot &robot)
+// {
+//     double w = robot.w;
+//     double a = __get_max_robot_angular_acceleration(robot);
+//     double v_0 = robot.v.len();
+//     double t = v_0 / a;
+//     double p_0 = robot.dirc;
 
-    double x = robot.loc.x - (a * (cos(t * w + p_0) - cos(p_0)) + robot.v.y * w) / (w * w);
-    double y = robot.loc.y + (a * (sin(p_0) - sin(t * w + p_0)) + robot.v.x * w) / (w * w);
-    return {x, y};
-}
+//     double x = robot.loc.x - (a * (cos(t * w + p_0) - cos(p_0)) + robot.v.y * w) / (w * w);
+//     double y = robot.loc.y + (a * (sin(p_0) - sin(t * w + p_0)) + robot.v.x * w) / (w * w);
+//     return {x, y};
+// }
 
-bool __is_in_circle(const Robot &robot, const Vertex &target)
-{
-    // 顺时针 x - r * sin y + r * cos
-    // 逆时针 x + r * sin y - r * cos
-    Vertex center;
-    // < 0 顺时针; > 0 逆时针
-    int flag = signbit(__get_delta_angle(robot, target)) ? -1 : 1;
-    center.x = robot.loc.x - flag * ComVar::max_radius * sin(robot.dirc);
-    center.y = robot.loc.y + flag * ComVar::max_radius * cos(robot.dirc);
+// bool __is_in_circle(const Robot &robot, const Vertex &target)
+// {
+//     // 顺时针 x - r * sin y + r * cos
+//     // 逆时针 x + r * sin y - r * cos
+//     Vertex center;
+//     // < 0 顺时针; > 0 逆时针
+//     int flag = signbit(__get_delta_angle(robot, target)) ? -1 : 1;
+//     center.x = robot.loc.x - flag * ComVar::max_radius * sin(robot.dirc);
+//     center.y = robot.loc.y + flag * ComVar::max_radius * cos(robot.dirc);
 
-    double radius = __get_robot_radius(robot);
-    return Vertex::distance(center, target) + ConVar::robot_workstation_check <= ComVar::max_radius;
-}
+//     double radius = __get_robot_radius(robot);
+//     return Vertex::distance(center, target) + ConVar::robot_workstation_check <= ComVar::max_radius;
+// }
 
 /*速度调整*/
 void __change_speed(const Robot &robot, const vector<Vertex> &path)
@@ -95,8 +95,8 @@ void __change_speed(const Robot &robot, const vector<Vertex> &path)
     Vec2 vec1 = {path[0], stop_loc};
     Vec2 vec2 = {path[1], stop_loc};
     double angle = Vec2::angle(vec1, vec2);
-
-    if (Vertex::distance(stop_loc, path[1]) < 0.2 or angle < M_PI / 9)
+    if (Vertex::distance(stop_loc, path[1]) < 0.1
+        or (Vertex::distance(stop_loc, path[0]) > 1e-5 and angle < M_PI / 9))
     {
         instructions.push_back(new io::I_forward(robot.id, 0));
         return;
@@ -112,7 +112,7 @@ void __change_direction(const Robot &robot, const vector<Vertex> &path)
     double angular_acceleration = __get_max_robot_angular_acceleration(robot);
     Vertex next_target = target;
 
-    if (path.size() >= 3 && Vertex::distance(robot.loc, target) < 0.2 && robot.v.len() < 1e-2)
+    if (path.size() >= 3 && Vertex::distance(robot.loc, target) < 0.1 && robot.v.len() < 1e-2)
     {
         next_target = path[2];
     }
