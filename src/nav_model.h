@@ -1,5 +1,6 @@
 #ifndef _NVV_MODEL_H_
 #define _NVV_MODEL_H_
+#include "model.h"
 #include <cmath>
 #include <iostream>
 #include <vector>
@@ -13,6 +14,7 @@ struct Vertex {
     double y;
     Vertex() = default;
     Vertex(double x, double y) : x(x), y(y) { }
+    Vertex(const Point &p) : x(p.x), y(p.y) { }
     bool operator==(const Vertex &other) const
     {
         return fabs(x - other.x) < EPS && fabs(y - other.y) < EPS;
@@ -83,6 +85,16 @@ struct Segment {
 
 
     static bool is_cross_2(const Segment &s1, const Segment &s2);
+
+    // 两条线段最短距离
+    static double distance(const Segment &s1, const Segment &s2)
+    {
+        if (is_cross(s1, s2)) return 0;
+        return min({dis_point_to_segment(s1.a, s2), dis_point_to_segment(s1.b, s2),
+            dis_point_to_segment(s2.a, s1), dis_point_to_segment(s2.b, s1)});
+    }
+
+    static Vertex get_mid(const Segment &s) { return {(s.a.x + s.b.x) / 2, (s.a.y + s.b.y) / 2}; }
 
     friend bool operator<(const Segment &s1, const Segment &s2)
     {
@@ -191,5 +203,6 @@ bool Segment::is_cross_2(const Segment &s1, const Segment &s2)
     }
     return false;
 }
+
 }
 #endif

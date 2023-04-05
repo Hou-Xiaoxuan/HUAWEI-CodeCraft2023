@@ -11,7 +11,8 @@ using namespace std;
 struct Poly {
     vector<Vertex> points;
     Poly() = default;
-    Poly(Polygon poly) { points = poly.vertices; }
+    Poly(vector<Vertex> points) : points(points) { }
+    Poly(Polygon poly) : points(poly.vertices) { }
 };
 
 // 三态函数，判断两个double在eps精度下的大小关系
@@ -62,10 +63,10 @@ bool is_clockwise(const Polygon &poly)
     return sum < 0;
 }
 
+vector<Poly> polys;
 
-vector<Poly> trans_map(const vector<vector<char>> &ori_map)
+void trans_map(const vector<vector<char>> &ori_map)
 {
-    vector<Poly> polys;
 
     vector<vector<char>> maps = vector<vector<char>>(Map::width + 2, vector<char>(Map::height + 2, '#'));
     for (int i = 1; i <= Map::width; ++i)
@@ -230,12 +231,11 @@ vector<Poly> trans_map(const vector<vector<char>> &ori_map)
             }
         }
     }
-    return polys;
 }
 
 vector<Polygon> tree;
 
-void get_polygon(const vector<Poly> &polys)
+void get_polygon()
 {
     tree = vector<Polygon>(polys.size());
     for (int i = 0; i < polys.size(); ++i)
@@ -468,7 +468,7 @@ void test_print()
 }
 vector<Polygon> solve()
 {
-    auto polys = trans_map(meta.map);
+    trans_map(meta.map);
     sort(polys.begin(), polys.end(), [](const Poly &b, const Poly &a) {
         Vertex a_p = a.points[0];
         Vertex b_p = b.points[0];
@@ -482,7 +482,7 @@ vector<Polygon> solve()
         }
         return false;
     });
-    get_polygon(polys);
+    get_polygon();
     get_result(tree.back(), 0);
     get_danger_line();
     test_print();
