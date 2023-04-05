@@ -35,6 +35,7 @@ using Path = vector<navmesh::Vertex>;
 struct _road_pair {
     int from;    // 起点工作站编号
     int to;      // 终点工作站编号
+    bool operator==(const _road_pair &p) const { return from == p.from && to == p.to; }
 };
 struct _roud_pair_hash {
     size_t operator()(const _road_pair &p) const { return p.from * 100 + p.to; }
@@ -287,34 +288,30 @@ public:
             //                      << " route=" << route << " valid, but ppf=" << ppf << endl;
             //             }
             // #else
-            //             if (ppf > best_route.ppf) best_route = {i, meta.current_flame +
-            //             expected_flame_cost, ppf};
+            if (ppf > best_route.ppf) best_route = {i, meta.current_flame + expected_flame_cost, ppf};
             // #endif
-            //         }
-            // #ifdef DEBUG
-            //         if (best_route.index == 0)
-            //         {
-            //             cerr << "[info][pointing] robot " << robot_id << " no route" << endl;
-            //         }
-            //         else
-            //         {
-            //             cerr << "[info][__pointing] [flame=" << meta.current_flame << "] robot = " <<
-            //             robot_id
-            //                  << "best ppf = " << best_route.ppf << " route [" << best_route.index
-            //                  << "]: " << routes[best_route.index] << endl;
-            //         }
-            // #endif
-            // routes[best_route.index].start_flame = meta.current_flame;
-            // routes[best_route.index].finish_flame = best_route.finish_flame;
-            // routes[best_route.index].ppf = best_route.ppf;
-            cerr << "[info][__pointing] [flame=" << meta.current_flame << "] robot_id: " << robot_id
-                 << " UPDATE best_profit_per_flame: " << best_route.ppf << " profit: " << expected_profit
-                 << " flame_cost: " << expected_flame_cost << " best_route_index: " << best_route.index
-                 << " route: <" << route.from_station_index << ", " << route.target_station_index << ">"
-                 << endl;
-
-            return best_route.index;
         }
+        // #ifdef DEBUG
+        //         if (best_route.index == 0)
+        //         {
+        //             cerr << "[info][pointing] robot " << robot_id << " no route" << endl;
+        //         }
+        //         else
+        //         {
+        //             cerr << "[info][__pointing] [flame=" << meta.current_flame << "] robot = " <<
+        //             robot_id
+        //                  << "best ppf = " << best_route.ppf << " route [" << best_route.index
+        //                  << "]: " << routes[best_route.index] << endl;
+        //         }
+        // #endif
+        // routes[best_route.index].start_flame = meta.current_flame;
+        // routes[best_route.index].finish_flame = best_route.finish_flame;
+        // routes[best_route.index].ppf = best_route.ppf;
+        cerr << "[info][__pointing] [flame=" << meta.current_flame << "] robot = " << robot_id
+             << "best ppf = " << best_route.ppf << " route [" << best_route.index
+             << "]: " << this->routes[best_route.index] << endl;
+
+        return best_route.index;
     }
 };
 

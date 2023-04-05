@@ -2,6 +2,7 @@
 #define __TRANS_MAP_H__
 #include "model.h"
 #include "nav_model.h"
+#include <algorithm>
 #include <vector>
 namespace trans_map
 {
