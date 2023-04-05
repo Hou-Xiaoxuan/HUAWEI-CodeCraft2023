@@ -4,7 +4,7 @@ namespace Args
 {
 /*route_fool 参数*/
 int _estimated_move_stable_bias = 15;    // 估计的移动稳定误差，默认15
-int turn_cost = 10;                      // 转弯消耗，默认10
+int turn_cost = 50;                      // 转弯消耗，默认10
 int stop_frame_bias = 500;               // 结束帧数，默认500
 double deeper_profit_ratio = 0.4;        // 下一层需求影响，默认0.4
 double super_demand_ratio = 0.35;        // 高层需求影响，默认0.35
