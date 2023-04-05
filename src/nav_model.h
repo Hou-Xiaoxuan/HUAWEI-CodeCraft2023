@@ -15,6 +15,12 @@ struct Vertex {
     Vertex() = default;
     Vertex(double x, double y) : x(x), y(y) { }
     Vertex(const Point &p) : x(p.x), y(p.y) { }
+    // 两点距离
+    static double distance(const Vertex &v1, const Vertex &v2)
+    {
+        return sqrt((v1.x - v2.x) * (v1.x - v2.x) + (v1.y - v2.y) * (v1.y - v2.y));
+    }
+
     bool operator==(const Vertex &other) const
     {
         return fabs(x - other.x) < EPS && fabs(y - other.y) < EPS;
