@@ -67,19 +67,19 @@ struct Route {
     }
 };
 
+/*机器人状态量*/
+enum ProcessingState {
+    PICKING = 0,    // 取货中
+    BUY = 1,        // 运输中
+    SELL = 2,       // 卖货中
+};
+static vector<int> area_index;                      // 机器人[i]所在区域编号，从1开始
+static vector<int> processing;                      // 机器人[i]正在处理的route
+static vector<ProcessingState> processing_state;    // 机器人[i]正在处理的root的状态
 /*区域划分与算法*/
 class Area
 {
 public:
-    /*机器人状态量*/
-    enum ProcessingState {
-        PICKING = 0,    // 取货中
-        BUY = 1,        // 运输中
-        SELL = 2,       // 卖货中
-    };
-    static vector<int> area_index;                      // 机器人[i]所在区域编号，从1开始
-    static vector<int> processing;                      // 机器人[i]正在处理的route
-    static vector<ProcessingState> processing_state;    // 机器人[i]正在处理的root的状态
 private:
     vector<Route> routes;           // 区域内的路径, 从1开始
     set<int> robots;                // 区域内的机器人
@@ -318,6 +318,7 @@ public:
 vector<Area> areas;    // 区域，从1开始
 void init()
 {
+    area_index = {};
     vector<Route> routes;    // 路径，从1开始
     routes.reserve(1000);
     routes.emplace_back();
@@ -379,7 +380,7 @@ void init()
         }
     }
     // 统计机器人所在区域
-    Area::area_index.assign(meta.robot.size(), 0);
+    area_index.assign(meta.robot.size(), 0);
     for (int i = 1; i < meta.robot.size(); i++)
     {
         for (int j = 1; j < areas.size(); j++)
@@ -387,13 +388,13 @@ void init()
             auto &route = areas[j].routes[1];
             vector<navmesh::Vertex> path = find_path(meta.robot[i].loc, route.from_station().loc, false);
             if (path.empty()) continue;
-            Area::area_index[i] = j;
+            area_index[i] = j;
         }
         // DEBUG
-        if (Area::area_index[i] == 0) throw std::runtime_error("area_index[i] == 0");
+        if (area_index[i] == 0) throw std::runtime_error("area_index[i] == 0");
     }
-    Area::processing.assign(meta.robot.size(), 0);
-    Area::processing_state.assign(meta.robot.size(), Area::ProcessingState::PICKING);
+    processing.assign(meta.robot.size(), 0);
+    processing_state.assign(meta.robot.size(), ProcessingState::PICKING);
 }
 
 
@@ -405,27 +406,27 @@ void give_pointing()
     {    // 得到path
         for (int i = 1; i < meta.robot.size(); i++)
         {
-            auto &area = areas[Area::area_index[i]];
-            auto &route = area.routes[Area::processing[i]];
+            auto &area = areas[area_index[i]];
+            auto &route = area.routes[processing[i]];
             auto &robot = meta.robot[i];
             // if (processing[i] == 0) processing[i] = __steal_pointing(i); // 负优化
-            if (Area::processing[i] == 0) Area::processing[i] = area._give_pointing(i);
-            if (Area::processing[i] == 0)    // 留在原地
+            if (processing[i] == 0) processing[i] = area._give_pointing(i);
+            if (processing[i] == 0)    // 留在原地
                 robot_path[i] = find_path(robot.loc, robot.loc, false);
 
             // 处理任务
             if (robot.goods == 0)
             {
-                if (Area::processing_state[i] == Area::ProcessingState::SELL)    // 3->1
+                if (processing_state[i] == ProcessingState::SELL)    // 3->1
                 {
                     cerr << "[info][pointing] [flame=" << meta.current_flame << "] robot " << i
-                         << " finished" << area.routes[Area::processing[i]] << endl;
+                         << " finished" << area.routes[processing[i]] << endl;
 
-                    Area::processing[i] = 0;
-                    Area::processing_state[i] = Area::ProcessingState::PICKING;
+                    processing[i] = 0;
+                    processing_state[i] = ProcessingState::PICKING;
                     continue;
                 }
-                Area::processing_state[i] = Area::ProcessingState::BUY;    // 1->2
+                processing_state[i] = ProcessingState::BUY;    // 1->2
 
                 if (robot.in_station == route.from_station_index)
                 {
@@ -454,8 +455,8 @@ void give_pointing()
             }
             else
             {
-                if (Area::processing_state[i] == Area::ProcessingState::BUY)    // 2->3
-                    Area::processing_state[i] = Area::ProcessingState::SELL;
+                if (processing_state[i] == ProcessingState::BUY)    // 2->3
+                    processing_state[i] = ProcessingState::SELL;
                 if (robot.in_station == route.target_station_index)
                 {
                     io::instructions.push_back(new io::I_sell(i));

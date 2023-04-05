@@ -51,16 +51,12 @@ void local()
         return;
     }
     io::init(fin);
-    std::vector<navmesh::Polygon> polys = trans_map::solve();
-
-    const auto &p = find_path_square::Find_path(meta.robot[1].loc, meta.station[31].loc, false);
-    std::vector<navmesh::Vertex> path = p.smooth_path;
-    std::cerr << path.size() << std::endl;
-    for (auto &i : path)
-    {
-        std::cerr << i.x << std::endl;
-        std::cerr << i.y << std::endl;
-    }
+    std::cerr << "info: map read end" << std::endl;
+    trans_map::solve();
+    std::cerr << "info: trans map end" << std::endl;
+    route_stupid::init();
+    std::cerr << "info: route stupid init end" << std::endl;
+    puts("OK");
 }
 
 int main()
@@ -72,8 +68,8 @@ int main()
         std::cerr.rdbuf(fout.rdbuf());
     else
         std::cerr << "[error] log file open failed" << std::endl;
-    // local();
-    robot();
+    local();
+    // robot();
 
     fout.close();
     std::cerr.rdbuf(cerr_buf);
