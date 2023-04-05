@@ -96,7 +96,7 @@ void __change_speed(const Robot &robot, const vector<Vertex> &path)
     Vec2 vec2 = {path[1], stop_loc};
     double angle = Vec2::angle(vec1, vec2);
 
-    if (Vertex::distance(stop_loc, path[1]) < 0.1 or angle < M_PI / 9)
+    if (Vertex::distance(stop_loc, path[1]) < 0.2 or angle < M_PI / 9)
     {
         instructions.push_back(new io::I_forward(robot.id, 0));
         return;
@@ -112,8 +112,7 @@ void __change_direction(const Robot &robot, const vector<Vertex> &path)
     double angular_acceleration = __get_max_robot_angular_acceleration(robot);
     Vertex next_target = target;
 
-    if (path.size() >= 3 && Vertex::distance(robot.loc, target) < ConVar::robot_workstation_check
-        && robot.v.len() < 1e-2)
+    if (path.size() >= 3 && Vertex::distance(robot.loc, target) < 0.2 && robot.v.len() < 1e-2)
     {
         next_target = path[2];
     }
