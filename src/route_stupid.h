@@ -11,6 +11,7 @@
 #include "nav_navigate.h"
 #include <algorithm>
 #include <cmath>
+#include <functional>
 #include <optional>
 #include <set>
 #include <unordered_map>
@@ -370,7 +371,8 @@ void init()
             area.routes.emplace_back();
             // 将包含x的所有route加入sub_area
             for (int j = 1; j < routes.size(); j++)
-                if (x == find_fa(routes[j].from_station_index) or x == find_fa(routes[j].target_station_index))
+                if (x == find_fa(routes[j].from_station_index)
+                    or x == find_fa(routes[j].target_station_index))
                 {
                     area.routes.emplace_back(routes[j]);
                     area.stations.insert(routes[j].from_station_index);

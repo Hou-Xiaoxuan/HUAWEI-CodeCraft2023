@@ -77,6 +77,9 @@ struct Find_path {
         {
             ori_path.push_back(start);
             ori_path.push_back(target);
+            fix_flag = vector<int>(ori_path.size(), 0);
+            fix_flag[0] = 1;
+            fix_flag[ori_path.size() - 1] = 1;
             return;
         }
 
@@ -136,7 +139,7 @@ struct Find_path {
 
         if (pre[target_pos.index_x][target_pos.index_y].index_x == -1)
         {
-            ori_path = vector<Vertex>(0);
+            ori_path = {};
             return;
         }
 
@@ -243,16 +246,23 @@ struct Find_path {
                     if (not is_valid) break;
                 }
 
-                if (is_valid)
+                if (i == int(fix_path.size()) - 1)
                 {
-                    if (fix_flag[i] == 1 or i == int(fix_path.size()) - 1)
-                    {
-                        end_index = i;
-                    }
+                    end_index = i;
                 }
                 else
                 {
-                    end_index = i - 1;
+                    if (is_valid)
+                    {
+                        if (fix_flag[i] == 1)
+                        {
+                            end_index = i;
+                        }
+                    }
+                    else
+                    {
+                        end_index = i - 1;
+                    }
                 }
                 smooth_path.push_back(fix_path[end_index]);
                 start_index = end_index;
