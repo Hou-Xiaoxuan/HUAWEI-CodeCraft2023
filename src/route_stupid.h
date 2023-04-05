@@ -263,9 +263,7 @@ public:
             double expected_profit = _get_expected_profit(robot, route);         // 预期利润
             int expected_flame_cost = _get_expected_flame_cost(robot, route);    // 预期时间
 
-            double flame_bias = 0;    // 帧数统计误差,时间越接近重点，越增大帧数误差
-            if (meta.current_flame > 8000) flame_bias = Args::stop_frame_bias;
-            if (meta.current_flame + expected_flame_cost + flame_bias > ConVar::time_limit)
+            if (meta.current_flame + expected_flame_cost + Args::stop_frame_bias > ConVar::time_limit)
                 continue;    // *condition 4
 
             double ppf = expected_profit / expected_flame_cost;
@@ -353,7 +351,7 @@ void init()
         for (int j = 1; j < meta.station.size(); j++)
         {
             const Station &from = meta.station[i], target = meta.station[j];
-            vector<navmesh::Vertex> path = find_path(from.loc, target.loc, false);
+            vector<navmesh::Vertex> path = find_path(from.loc, target.loc, true);
             if (path.empty()) continue;
             // 没有供应关系也要建边
             merge(i, j);
