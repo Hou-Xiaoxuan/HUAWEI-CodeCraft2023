@@ -7,6 +7,7 @@
 #include "nav_navigate.h"
 #include "route_stupid.h"
 #include "trans_map.h"
+#include <chrono>
 #include <fstream>
 #include <iostream>
 #include <optional>
@@ -18,9 +19,9 @@ void robot()
     io::init(std::cin);
     std::cerr << "info: map read end" << std::endl;
     trans_map::solve();
-    std::cerr<<"info: trans map end"<<std::endl;
+    std::cerr << "info: trans map end" << std::endl;
     route_stupid::init();
-    std::cerr<<"info: route stupid init end"<<std::endl;
+    std::cerr << "info: route stupid init end" << std::endl;
     puts("OK");
 
     // trans_map(meta.Map::map);
@@ -44,7 +45,7 @@ void robot()
 void local()
 {
 
-    auto fin = std::fstream("./Robot/maps/1.txt");
+    auto fin = std::fstream("../Robot/maps/1.txt");
     if (fin.is_open() == false)
     {
         std::cerr << "[error] map file open failed" << std::endl;
@@ -54,7 +55,13 @@ void local()
     std::cerr << "info: map read end" << std::endl;
     trans_map::solve();
     std::cerr << "info: trans map end" << std::endl;
+    // 计时并输出运行时间
+
+    auto start = std::chrono::steady_clock::now();
     route_stupid::init();
+    auto end = std::chrono::steady_clock::now();
+    std::chrono::duration<double> diff = end - start;
+    std::cerr << "info: route stupid init end, time:" << diff.count() << std::endl;
     std::cerr << "info: route stupid init end" << std::endl;
     puts("OK");
 }
@@ -63,7 +70,7 @@ int main()
 {
     // cerror重定向到文件
     auto cerr_buf = std::cerr.rdbuf();
-    std::fstream fout("./log.txt", std::ios::out);
+    std::fstream fout("../log.txt", std::ios::out);
     if (fout.is_open())
         std::cerr.rdbuf(fout.rdbuf());
     else
