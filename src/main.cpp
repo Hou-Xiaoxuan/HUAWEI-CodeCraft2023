@@ -30,7 +30,6 @@ void robot()
     /*----------START----------*/
     while (std::cin.eof() == false)
     {
-        // cerr << "info: flame read" << endl;
         io::read_flame(std::cin);
         std::cerr << "info: flame read end, flame:" << meta.current_flame << std::endl;
         route_stupid::give_pointing();
@@ -45,7 +44,7 @@ void robot()
 void local()
 {
 
-    auto fin = std::fstream("../Robot/maps/1.txt");
+    auto fin = std::fstream("./Robot/maps/1.txt");
     if (fin.is_open() == false)
     {
         std::cerr << "[error] map file open failed" << std::endl;
@@ -64,19 +63,20 @@ void local()
     std::cerr << "info: route stupid init end, time:" << diff.count() << std::endl;
     std::cerr << "info: route stupid init end" << std::endl;
     puts("OK");
+    route_stupid::give_pointing();
 }
 
 int main()
 {
     // cerror重定向到文件
     auto cerr_buf = std::cerr.rdbuf();
-    std::fstream fout("../log.txt", std::ios::out);
+    std::fstream fout("./log.txt", std::ios::out);
     if (fout.is_open())
         std::cerr.rdbuf(fout.rdbuf());
     else
         std::cerr << "[error] log file open failed" << std::endl;
-    local();
-    // robot();
+    // local();
+    robot();
 
     fout.close();
     std::cerr.rdbuf(cerr_buf);

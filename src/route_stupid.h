@@ -222,8 +222,8 @@ public:
         for (int i = 1; i < this->routes.size(); i++)
         {
             const auto &route = routes[i];
-            const auto &target_station = route.from_station();
-            const auto &from_station = route.target_station();
+            const auto &from_station = route.from_station();
+            const auto &target_station = route.target_station();
 
             if (target_station.goods_exist(route.goods().type)) continue;    // *contition 1-1.1
             if (from_station.with_product == 0 and from_station.timeleft == -1) continue;    // *condition 3
@@ -268,29 +268,24 @@ public:
 
             double ppf = expected_profit / expected_flame_cost;
 
-            // #ifdef DEBUG
-            //             if (ppf > best_route.ppf)
-            //             {
-            //                 best_route = {i, meta.current_flame + expected_flame_cost, ppf};
-            //                 cerr << "[info][__pointing] "
-            //                      << " [flame=" << meta.current_flame << "] robot_id: " << robot_id
-            //                      << " UPDATE best_profit_per_flame: " << best_route.ppf
-            //                      << " profit: " << expected_profit << " flame_cost: " <<
-            //                      expected_flame_cost
-            //                      << " best_route_index: " << best_route.index << " route: " << route <<
-            //                      endl;
-            //             }
-            //             else
-            //             {
-            //                 cerr << "[info][__pointing] [flame=" << meta.current_flame << "] robot_id="
-            //                 << robot_id
-            //                      << " profit=" << expected_profit << " flame_cost=" <<
-            //                      expected_flame_cost
-            //                      << " route=" << route << " valid, but ppf=" << ppf << endl;
-            //             }
-            // #else
+// #ifdef DEBUG
+//             if (ppf > best_route.ppf)
+//             {
+//                 best_route = {i, meta.current_flame + expected_flame_cost, ppf};
+//                 cerr << "[info][__pointing] "
+//                      << " [flame=" << meta.current_flame << "] robot_id: " << robot_id
+//                      << " UPDATE best_profit_per_flame: " << best_route.ppf
+//                      << " profit: " << expected_profit << " flame_cost: " << expected_flame_cost
+//                      << " best_route_index: " << best_route.index << " route: " << route << endl;
+//             }
+//             else
+//             {
+//                 cerr << "[info][__pointing] [flame=" << meta.current_flame << "] robot_id=" << robot_id
+//                      << " profit=" << expected_profit << " flame_cost=" << expected_flame_cost
+//                      << " route=" << route << " valid, but ppf=" << ppf << endl;
+//             }
+// #endif
             if (ppf > best_route.ppf) best_route = {i, meta.current_flame + expected_flame_cost, ppf};
-            // #endif
         }
         // #ifdef DEBUG
         //         if (best_route.index == 0)
@@ -311,7 +306,7 @@ public:
         cerr << "[info][__pointing] [flame=" << meta.current_flame << "] robot = " << robot_id
              << "best ppf = " << best_route.ppf << " route [" << best_route.index
              << "]: " << this->routes[best_route.index] << endl;
-
+        if (best_route.index == 0) cerr << "[error][__pointing] best_route.index == 0" << endl;
         return best_route.index;
     }
 };
@@ -319,6 +314,13 @@ public:
 vector<Area> areas;    // 区域，从1开始
 void init()
 {
+#ifdef DEBUG
+    for (auto &sta : model::meta.station)
+    {
+        if (sta.workstation().type == 1) sta.with_product = 1;
+    }
+#endif
+
     area_index = {};
     vector<Route> routes;    // 路径，从1开始
     routes.reserve(1000);
@@ -486,6 +488,7 @@ void give_pointing()
         {
             auto &robot = meta.robot[i];
             if (robot_path[i].empty()) continue;
+            nav_navigate::move_to(robot, robot_path[i]);
         }
     }
 }
