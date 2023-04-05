@@ -19,7 +19,7 @@ struct Pos {
     Vertex pos;
 };
 
-struct find_path {
+struct Find_path {
 
     const Vertex start;
     const Vertex target;
@@ -268,11 +268,18 @@ struct find_path {
         get_smooth_path();
     }
 
-    find_path(const Vertex &start, const Vertex &target, bool have_good) :
+    Find_path(const Vertex &start, const Vertex &target, bool have_good) :
         start(start), target(target), have_good(have_good)
     {
         get_path();
     }
 };
+
+// wrap 函数
+vector<Vertex> find_path(const Vertex &start, const Vertex &target, bool have_good)
+{
+    Find_path find_path(start, target, have_good);
+    return find_path.smooth_path;
+}
 };
 #endif

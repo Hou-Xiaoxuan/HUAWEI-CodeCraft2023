@@ -4,19 +4,22 @@
 #define ROUTE_STUPID_H
 #include "args.h"
 #include "const.h"
+#include "find_path_squre.h"
 #include "iointerface.h"
 #include "model.h"
 #include "nav_model.h"
+#include "nav_navigate.h"
 #include <algorithm>
 #include <cmath>
 #include <optional>
 #include <set>
 #include <unordered_map>
 #include <vector>
+
 namespace route_stupid
 {
 using namespace std;
-
+using find_path_square::find_path;
 int _estimated_move_flame(const vector<navmesh::Vertex> &path)
 {
     double dis = 0;
@@ -185,7 +188,7 @@ private:
         vector<navmesh::Vertex> from_to_target;
         if (robot.in_station == -1)
         {
-            // TODO
+            robot_to_from = find_path(robot.loc, from_station.loc, robot.goods != 0);
             cerr << "[warning][get_expected_flame_cost] robot[" << robot.id << "] is not in any station"
                  << endl;
         }
@@ -343,7 +346,7 @@ void init()
         for (int j = 1; j < meta.station.size(); j++)
         {
             const Station &from = meta.station[i], target = meta.station[j];
-            vector<navmesh::Vertex> path;    // TODO 得到path
+            vector<navmesh::Vertex> path = find_path(from.loc, target.loc, false);
             if (path.empty()) continue;
             // 没有供应关系也要建边
             merge(i, j);
@@ -385,8 +388,7 @@ void init()
         for (int j = 1; j < areas.size(); j++)
         {
             auto &route = areas[j].routes[1];
-            // TODO find_path
-            vector<navmesh::Vertex> path;
+            vector<navmesh::Vertex> path = find_path(meta.robot[i].loc, route.from_station().loc, false);
             if (path.empty()) continue;
             Area::area_index[i] = j;
         }
@@ -403,19 +405,18 @@ void give_pointing()
 {
     // TODO: 得到path
     vector<Path> robot_path(meta.robot.size());
-    vector<int> robot_wait_flame;
     {    // 得到path
         for (int i = 1; i < meta.robot.size(); i++)
         {
             auto &area = areas[Area::area_index[i]];
+            auto &route = area.routes[Area::processing[i]];
+            auto &robot = meta.robot[i];
             // if (processing[i] == 0) processing[i] = __steal_pointing(i); // 负优化
             if (Area::processing[i] == 0) Area::processing[i] = area._give_pointing(i);
             if (Area::processing[i] == 0)    // 留在原地
-                robot_path[i];               // navigate::move_to(meta.robot[i], meta.robot[i].loc);
+                robot_path[i] = find_path(robot.loc, robot.loc, false);
 
             // 处理任务
-            auto &route = area.routes[Area::processing[i]];
-            auto &robot = meta.robot[i];
             if (robot.goods == 0)
             {
                 if (Area::processing_state[i] == Area::ProcessingState::SELL)    // 3->1
@@ -450,10 +451,7 @@ void give_pointing()
                     //                 }
                     // #endif
                 }
-                const auto &target_station = meta.station[route.from_station_index];
-                int wait_flame = 0;
-                if (target_station.with_product == 0 and target_station.timeleft > 0)
-                    wait_flame = target_station.timeleft;
+                robot_path[i] = find_path(robot.loc, route.from_station().loc, false);
                 // navigate::move_to(
                 //     robot, target_station.loc, {meta.station[route.to_station_index].loc}, wait_flame);
             }
@@ -472,8 +470,7 @@ void give_pointing()
                     //                          << robot.goods << endl;
                     // #endif
                 }
-
-                // navigate::move_to(robot, meta.station[route.to_station_index].loc);
+                robot_path[i] = find_path(robot.loc, route.target_station().loc, true);
             }
         }
     }
@@ -485,7 +482,11 @@ void give_pointing()
 
     {
         // 调用navigate移动
-        // TODO
+        for (int i = 1; i < meta.robot.size(); i++)
+        {
+            auto &robot = meta.robot[i];
+            if (robot_path[i].empty()) continue;
+        }
     }
 }
 };
