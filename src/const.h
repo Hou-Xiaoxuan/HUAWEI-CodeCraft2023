@@ -6,7 +6,7 @@
 /*题目常量 constant variable*/
 namespace ConVar
 {
-const static int time_limit = 3 * 60 * 50;             // 3分钟
+const static int time_limit = 5 * 60 * 50;             // 3分钟
 const static double map_weight = 50.0;                 // 地图大小
 const static double map_height = 50.0;                 // 地图大小
 const static int worksation_type = 9;                  // 工作台种类
