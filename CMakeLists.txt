@@ -6,6 +6,7 @@ set(CMAKE_C_STANDARD 11)
 
 add_definitions(-DDEBUG)
 add_compile_definitions(DISABLE_PTHREAD_HOOK)
+add_compile_options(-O3)
 if (!WIN32)
     link_libraries(pthread m)
 endif (!WIN32)
