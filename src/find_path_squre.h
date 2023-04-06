@@ -472,11 +472,12 @@ struct Find_path {
     { }
 };
 
+// vector<Vertex> smooth_path(vector<Vertex> path);
 // wrap 函数
 vector<Vertex> find_path(const Vertex &start, const Vertex &target, bool have_good)
 {
     Find_path find_path(start, target, have_good);
-    find_path.get_path();
+    find_path.get_path_pri();
     return find_path.smooth_path;
 }
 
@@ -486,5 +487,116 @@ vector<Vertex> find_path_pri(const Vertex &start, const Vertex &target, bool hav
     find_path.get_path_pri();
     return find_path.smooth_path;
 }
+
+// // 检查line是否跟多边形相交
+// bool check_cross(Segment line)
+// {
+//     for (auto &poly : trans_map::polys)
+//         for (int i = 1; i < poly.points.size(); i++)
+//             if (Segment::is_cross(line, {poly.points[i - 1], poly.points[i]})) return true;
+
+//     return false;
+// }
+// bool check_valid(Segment line)
+// {
+//     if(std::hypot(line.a.x - line.b.x, line.a.y - line.b.y) < EPS) return true;
+//     auto start = line.a;
+//     auto target = line.b;
+//     bool valid = true;
+//     if (check_cross({start, target})) valid = false;
+//     if (valid)
+//     {
+//         // 检测线段沿着垂直方向移动后是否可以直接连线
+//         Vec2 rotate_dir = Vec2 {start, target}.rotate(M_PI / 2) * 10;
+//         rotate_dir = rotate_dir / rotate_dir.length() * 0.6;
+//         Vertex start_1 = {start.x + rotate_dir.x, start.y + rotate_dir.y};
+//         Vertex target_1 = {target.x + rotate_dir.x, target.y + rotate_dir.y};
+//         valid = !check_cross({start_1, target_1});
+//     }
+//     if (valid)
+//     {
+//         Vec2 rotate_dir = Vec2 {start, target}.rotate(-M_PI / 2) * 10;
+//         rotate_dir = rotate_dir / rotate_dir.length() * 0.6;
+//         Vertex start_1 = {start.x + rotate_dir.x, start.y + rotate_dir.y};
+//         Vertex target_1 = {target.x + rotate_dir.x, target.y + rotate_dir.y};
+//         valid = !check_cross({start_1, target_1});
+//     }
+//     return valid;
+// }
+// vector<Vertex> smooth_path(vector<Vertex> path)
+// {
+//     for (int i = 1; i < path.size(); i++)
+//     {
+//         if (path[i] == path[i - 1])
+//         {
+//             path.erase(path.begin() + i);
+//             i--;
+//         }
+//     }
+//     if (path.size() < 3) return path;
+//     cerr << "[info][smooth_path]" << endl;
+//     cerr << "before_smooth = [";
+//     for (auto &v : path)
+//         cerr << v << ",";
+//     cerr << "]" << endl;
+//     vector<Vertex> smooth_path;
+//     smooth_path.push_back(path[0]);
+//     smooth_path.push_back(path[1]);
+//     for (int i = 2; i < path.size(); i++)
+//     {
+//         auto start = smooth_path[smooth_path.size() - 2];
+//         auto target = path[i];
+//         // 检查是否可以直接连线
+//         bool replace = check_valid({start, target});
+//         if (replace) smooth_path.pop_back();
+
+//         smooth_path.push_back(target);
+//     }
+
+
+//     // 用两条直线的交点代替中间的两个点
+//     path = smooth_path;
+//     smooth_path.clear();
+//     if (path.size() < 5) return path;
+//     smooth_path.push_back(path[0]);
+//     smooth_path.push_back(path[1]);
+//     smooth_path.push_back(path[2]);
+//     for (int i = 3; i < path.size(); i++)
+//     {
+//         smooth_path.push_back(path[i]);
+//         Segment line1 {smooth_path[smooth_path.size() - 4], smooth_path[smooth_path.size() - 3]};
+//         Segment line2 {smooth_path[smooth_path.size() - 2], smooth_path[smooth_path.size() - 1]};
+//         // 标准法求两条直线的交点
+//         Vertex cross_point;
+//         double a1 = line1.b.y - line1.a.y;
+//         double b1 = line1.a.x - line1.b.x;
+//         double c1 = line1.b.x * line1.a.y - line1.a.x * line1.b.y;
+//         double a2 = line2.b.y - line2.a.y;
+//         double b2 = line2.a.x - line2.b.x;
+//         double c2 = line2.b.x * line2.a.y - line2.a.x * line2.b.y;
+//         double d = a1 * b2 - a2 * b1;
+//         // 检查是否平行
+//         if (fabs(d) < EPS) continue;
+
+//         cross_point.x = (b1 * c2 - b2 * c1) / d;
+//         cross_point.y = (a2 * c1 - a1 * c2) / d;
+
+//         if (check_valid({line1.a, cross_point}) and check_valid({cross_point, line2.b}))
+//         {
+//             smooth_path.pop_back();
+//             smooth_path.pop_back();
+//             smooth_path.pop_back();
+//             smooth_path.push_back(cross_point);
+//             smooth_path.push_back(path[i]);
+//         }
+//     }
+
+//     cerr << "after_smooth = [";
+//     for (auto &v : smooth_path)
+//         cerr << v << ",";
+//     cerr << "]" << endl;
+//     cerr << "from " << path.size() << " to " << smooth_path.size() << endl;
+//     return smooth_path;
+// }
 };
 #endif
