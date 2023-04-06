@@ -7,6 +7,7 @@
 #include <optional>
 #include <queue>
 #include <vector>
+
 namespace find_path_square
 {
 using namespace std;
@@ -18,6 +19,24 @@ struct Pos {
     int index_y = -1;
     Vertex pos;
 };
+
+// 找到当前点所在的meta.map中的正方形 返回值 正方形x轴index y轴index 这个点坐标
+Pos current_pos(const Vertex &v)
+{
+
+    for (int i = 2 * int(v.x); i <= 2 * int(v.x) + 2; ++i)
+    {
+        for (int j = 2 * int(v.y); j <= 2 * int(v.y) + 2; ++j)
+        {
+            if (v.x <= i * 0.5 and v.x >= (i - 1) * 0.5 and v.y <= j * 0.5 and v.y >= (j - 1) * 0.5)
+                return {i, j, v};
+        }
+    }
+    throw "you are wrong";
+}
+
+// 获得正方形重心
+Vertex get_center(int i, int j) { return {(i - 1) * 0.5 + 0.25, (j - 1) * 0.5 + 0.25}; }
 
 struct Find_path {
 
@@ -34,6 +53,7 @@ struct Find_path {
     vector<Vertex> fix_path;
     vector<Vertex> smooth_path;
     vector<vector<Pos>> pre = vector<vector<Pos>>(Map::width + 2, vector<Pos>(Map::height + 2));
+    vector<vector<int>> step = vector<vector<int>>(Map::width + 2, vector<int>(Map::height + 2, -1));
 
     static void init()
     {
@@ -43,24 +63,6 @@ struct Find_path {
             { }
         }
     }
-
-    // 找到当前点所在的meta.map中的正方形 返回值 正方形x轴index y轴index 这个点坐标
-    static Pos current_pos(const Vertex &v)
-    {
-
-        for (int i = 2 * int(v.x); i <= 2 * int(v.x) + 2; ++i)
-        {
-            for (int j = 2 * int(v.y); j <= 2 * int(v.y) + 2; ++j)
-            {
-                if (v.x <= i * 0.5 and v.x >= (i - 1) * 0.5 and v.y <= j * 0.5 and v.y >= (j - 1) * 0.5)
-                    return {i, j, v};
-            }
-        }
-        throw "you are wrong";
-    }
-
-    // 获得正方形重心
-    static const Vertex get_center(int i, int j) { return {(i - 1) * 0.5 + 0.25, (j - 1) * 0.5 + 0.25}; }
 
 
     void get_ori_path()
@@ -164,6 +166,134 @@ struct Find_path {
         }
     }
 
+    void get_ori_path_pri()
+    {
+        vector<pair<int, int>> dirs = {
+            { 0,  1},
+            { 1,  0},
+            { 0, -1},
+            {-1,  0},
+        };
+
+        double limit_dis = have_good ? ConVar::robot_radius_goods * 2 : ConVar::robot_radius * 2;
+        auto start_pos = current_pos(start);
+        auto target_pos = current_pos(target);
+
+        if (start_pos.index_x == target_pos.index_x and start_pos.index_y == target_pos.index_y)
+        {
+            ori_path.push_back(start);
+            ori_path.push_back(target);
+            fix_flag = vector<int>(ori_path.size(), 0);
+            fix_flag[0] = 1;
+            fix_flag[ori_path.size() - 1] = 1;
+            return;
+        }
+
+        // 优先队列
+        auto cmp_pos = [&](const Pos &a, const Pos &b) -> bool {
+            if (step[a.index_x][a.index_y] == step[b.index_x][b.index_y])
+                return trans_map::nearest_obstacle[a.index_x][a.index_y]
+                    < trans_map::nearest_obstacle[b.index_x][b.index_y];
+            else
+                return step[a.index_x][a.index_y] > step[b.index_x][b.index_y];
+        };
+
+        priority_queue<Pos, vector<Pos>, decltype(cmp_pos)> que(cmp_pos);
+        que.push(start_pos);
+        pre[start_pos.index_x][start_pos.index_y].index_x = -2;
+        step[start_pos.index_x][start_pos.index_y] = 0;
+        int now_step = 0;
+        while (not que.empty())
+        {
+            if (pre[target_pos.index_x][target_pos.index_y].index_x != -1) break;
+
+            const auto now_pos = que.top();
+            que.pop();
+
+            // cerr << "now_pos: " << now_pos.index_x << " " << now_pos.index_y << endl;
+            // cerr << "now_step: " << now_step << endl;
+            // cerr << "step: " << step[now_pos.index_x][now_pos.index_y] << endl;
+            // cerr << "distance: " << trans_map::nearest_obstacle[now_pos.index_x][now_pos.index_y] <<
+            // endl;
+
+            if (step[now_pos.index_x][now_pos.index_y] < now_step)
+            {
+                throw "error";
+            }
+            else
+            {
+                now_step = step[now_pos.index_x][now_pos.index_y];
+            }
+
+            Vertex now_center = get_center(now_pos.index_x, now_pos.index_y);
+
+            for (int i = 0; i < 4; ++i)
+            {
+                int nx = now_pos.index_x + dirs[i].first;
+                int ny = now_pos.index_y + dirs[i].second;
+
+                if (meta.map[nx][ny] == '#') continue;
+
+
+                if (pre[nx][ny].index_x != -1) continue;
+
+
+                bool is_stop = false;
+                Vertex ncenter = get_center(nx, ny);
+                for (auto line : trans_map::stop_line)
+                {
+                    if (Segment::is_cross_2(line, Segment {now_center, ncenter}))
+                    {
+                        is_stop = true;
+                        break;
+                    }
+                }
+                if (is_stop) continue;
+
+
+                for (auto line : trans_map::danger_line)
+                {
+                    if (not Segment::is_cross_2(line, Segment {now_center, ncenter})) continue;
+
+                    if (line.length() <= limit_dis)
+                    {
+                        is_stop = true;
+                        break;
+                    }
+                }
+                if (is_stop) continue;
+
+                step[nx][ny] = step[now_pos.index_x][now_pos.index_y] + 1;
+                que.push({nx, ny, ncenter});
+                pre[nx][ny] = now_pos;
+                // cerr << "push: " << nx << " " << ny << endl;
+            }
+        }
+
+
+        if (pre[target_pos.index_x][target_pos.index_y].index_x == -1)
+        {
+            ori_path = {};
+            return;
+        }
+
+        Pos now_pos = target_pos;
+        do
+        {
+            ori_path.push_back(now_pos.pos);
+            now_pos = pre[now_pos.index_x][now_pos.index_y];
+        } while (now_pos.index_x != -2);
+
+        reverse(ori_path.begin(), ori_path.end());
+
+        if (!ori_path.empty())
+        {
+            fix_flag = vector<int>(ori_path.size(), 0);
+            fix_flag[0] = 1;
+            fix_flag[ori_path.size() - 1] = 1;
+        }
+    }
+
     // 将点偏移到正确位置
     void get_proper_path()
     {
@@ -223,11 +353,11 @@ struct Find_path {
         }
     }
 
-    void get_smooth_path()
+    void get_smooth_path(const vector<Vertex> &_path)
     {
         double limit_dis = have_good ? ConVar::robot_radius_goods : ConVar::robot_radius;
         int start_index = 0;
-        const auto &tmp_path = fix_path;
+        const auto &tmp_path = _path;
         if (tmp_path.empty()) return;
         smooth_path.push_back(tmp_path[start_index]);
         while (start_index < int(tmp_path.size()) - 1)
@@ -298,6 +428,26 @@ struct Find_path {
                 throw "start == target";
             }
         }
+
+        get_smooth_path(ori_path);
+        if (smooth_path.size() >= 3)
+        {
+            if (smooth_path[0] == smooth_path[1])
+            {
+                throw "start == target";
+            }
+        }
+    }
+    void get_path_pri()
+    {
+        get_ori_path_pri();
+        if (ori_path.size() >= 3)
+        {
+            if (ori_path[0] == ori_path[1])
+            {
+                throw "start == target";
+            }
+        }
         get_proper_path();
         if (proper_path.size() >= 3)
         {
@@ -306,15 +456,8 @@ struct Find_path {
                 throw "start == target";
             }
         }
-        get_fix_path();
-        if (fix_path.size() >= 3)
-        {
-            if (fix_path[0] == fix_path[1])
-            {
-                throw "start == target";
-            }
-        }
-        get_smooth_path();
+
+        get_smooth_path(proper_path);
         if (smooth_path.size() >= 3)
         {
             if (smooth_path[0] == smooth_path[1])
@@ -326,15 +469,21 @@ struct Find_path {
 
     Find_path(const Vertex &start, const Vertex &target, bool have_good) :
         start(start), target(target), have_good(have_good)
-    {
-        get_path();
-    }
+    { }
 };
 
 // wrap 函数
 vector<Vertex> find_path(const Vertex &start, const Vertex &target, bool have_good)
 {
     Find_path find_path(start, target, have_good);
+    find_path.get_path();
+    return find_path.smooth_path;
+}
+
+vector<Vertex> find_path_pri(const Vertex &start, const Vertex &target, bool have_good)
+{
+    Find_path find_path(start, target, have_good);
+    find_path.get_path_pri();
     return find_path.smooth_path;
 }
 };

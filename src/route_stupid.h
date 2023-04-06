@@ -4,7 +4,6 @@
 #define ROUTE_STUPID_H
 #include "args.h"
 #include "const.h"
-#include "find_path_squre.h"
 #include "iointerface.h"
 #include "model.h"
 #include "nav_model.h"
@@ -21,6 +20,7 @@ namespace route_stupid
 {
 using namespace std;
 using find_path_square::find_path;
+using find_path_square::find_path_pri;
 int _estimated_move_flame(const vector<navmesh::Vertex> &path)
 {
     double dis = 0;
@@ -420,7 +420,7 @@ void give_pointing()
             // if (processing[i] == 0) processing[i] = __steal_pointing(i); // 负优化
             if (processing[i] == 0) processing[i] = area._give_pointing(i);
             if (processing[i] == 0)    // 留在原地
-                robot_path[i] = find_path(robot.loc, robot.loc, false);
+                robot_path[i] = find_path_pri(robot.loc, robot.loc, false);
 
             // 处理任务
             if (robot.goods == 0)
@@ -457,7 +457,7 @@ void give_pointing()
                     //                 }
                     // #endif
                 }
-                robot_path[i] = find_path(robot.loc, route.from_station().loc, false);
+                robot_path[i] = find_path_pri(robot.loc, route.from_station().loc, false);
                 // navigate::move_to(
                 //     robot, target_station.loc, {meta.station[route.to_station_index].loc}, wait_flame);
             }
@@ -476,7 +476,7 @@ void give_pointing()
                     //                          << robot.goods << endl;
                     // #endif
                 }
-                robot_path[i] = find_path(robot.loc, route.target_station().loc, true);
+                robot_path[i] = find_path_pri(robot.loc, route.target_station().loc, true);
             }
         }
     }

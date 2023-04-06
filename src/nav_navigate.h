@@ -1,6 +1,7 @@
 #ifndef __NAV_NAVIGATE_H__
 #define __NAV_NAVIGATE_H__
 #include "const.h"
+#include "find_path_squre.h"
 #include "iointerface.h"
 #include "model.h"
 #include "nav_model.h"
@@ -95,7 +96,16 @@ void __change_speed(const Robot &robot, const vector<Vertex> &path)
     Vec2 vec1 = {path[0], stop_loc};
     Vec2 vec2 = {path[1], stop_loc};
     double angle = Vec2::angle(vec1, vec2);
-    if (Vertex::distance(stop_loc, path[0]) > 1e-5 and angle < M_PI / 9)
+    if (Vertex::distance(stop_loc, path[1]) < 0.05
+        or (Vertex::distance(stop_loc, path[0]) > 1e-7 and abs(angle) < M_PI / 9))
+    {
+        instructions.push_back(new io::I_forward(robot.id, 0));
+        return;
+    }
+
+    double delta = __get_delta_angle(robot, path[1]);
+
+    if (abs(delta) > M_PI / 18)
     {
         instructions.push_back(new io::I_forward(robot.id, 0));
         return;
@@ -128,7 +138,7 @@ void __change_direction(const Robot &robot, const vector<Vertex> &path)
         return;
     }
 
-    delta = fabs(delta);
+    delta = abs(delta);
 
     double stop_angular = robot.w * robot.w * 0.5 / angular_acceleration;
     if (stop_angular >= delta)
@@ -138,39 +148,25 @@ void __change_direction(const Robot &robot, const vector<Vertex> &path)
     }
 
 
-    if (fabs(robot.w) + angular_acceleration * ComVar::flametime > ConVar::max_robot_angular_speed)
+    stop_angular = abs(robot.w) * ComVar::flametime + stop_angular;
+    if (stop_angular >= delta)
     {
-        double t1 = (ConVar::max_robot_angular_speed - fabs(robot.w)) / angular_acceleration;
-        double t2 = ComVar::flametime - t1;
-        double run_delta
-            = (ConVar::max_robot_angular_speed * ConVar::max_robot_angular_speed - robot.w * robot.w) * 0.5
-                / angular_acceleration
-            + ConVar::max_robot_angular_speed * t2
-            + ConVar::max_robot_angular_speed * ConVar::max_robot_angular_speed * 0.5
-                / angular_acceleration;
-        if (run_delta > delta)
-        {
-            double next_w = (2 * ComVar::flametime * robot.w + delta - robot.w * robot.w) * 0.5
-                / (angular_acceleration + 1) / ComVar::flametime;
-            instructions.push_back(new io::I_rotate(robot.id, next_w * delta_dir));
-            return;
-        }
-    }
-    else
-    {
-        double next_w = fabs(robot.w) + angular_acceleration * ComVar::flametime;
-        double run_delta = (next_w * next_w - robot.w * robot.w) * 0.5 / angular_acceleration
-            + next_w * next_w * 0.5 / angular_acceleration;
-        if (run_delta > delta)
-        {
-            double next_w = (2 * ComVar::flametime * robot.w + delta - robot.w * robot.w) * 0.5
-                / (angular_acceleration + 1) / ComVar::flametime;
-            instructions.push_back(new io::I_rotate(robot.id, next_w * delta_dir));
-            return;
-        }
+        instructions.push_back(new io::I_rotate(robot.id, robot.w));
+        return;
     }
 
-    instructions.push_back(new io::I_rotate(robot.id, ConVar::max_robot_angular_speed * delta_dir));
+    double wm = (robot.w
+                    + (signbit(robot.w) == 1 ? -1 : 1)
+                        * sqrt(4 * angular_acceleration * delta - robot.w * robot.w))
+        * 0.5;
+
+    if (abs(wm) > ConVar::max_robot_angular_speed)
+    {
+        instructions.push_back(new io::I_rotate(robot.id, ConVar::max_robot_angular_speed * delta_dir));
+        return;
+    }
+
+    instructions.push_back(new io::I_rotate(robot.id, wm));
     return;
 }
 

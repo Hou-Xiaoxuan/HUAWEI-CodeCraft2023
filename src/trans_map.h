@@ -1,8 +1,10 @@
 #ifndef __TRANS_MAP_H__
 #define __TRANS_MAP_H__
+#include "find_path_squre.h"
 #include "model.h"
 #include "nav_model.h"
 #include <algorithm>
+#include <fstream>
 #include <vector>
 namespace trans_map
 {
@@ -426,46 +428,77 @@ void get_danger_line()
     }
 }
 
+vector<vector<double>> nearest_obstacle(Map::width + 2, vector<double>(Map::height + 2, 1e9));
+
+void get_nearest_obstacle()
+{
+    for (int i = 1; i <= Map::width; ++i)
+    {
+        for (int j = 1; j <= Map::height; ++j)
+        {
+            if (meta.map[i][j] == '#') continue;
+            Vertex center = {(i - 1) * 0.5 + 0.25, (j - 1) * 0.5 + 0.25};
+            for (auto &poly : polys)
+            {
+                const auto &points = poly.points;
+                for (int k = 0; k < points.size(); ++k)
+                {
+                    nearest_obstacle[i][j] = min(nearest_obstacle[i][j],
+                        dis_point_to_segment(center, Segment {points[k], points[(k + 1) % points.size()]}));
+                }
+            }
+        }
+    }
+}
+
 void test_print()
 {
-    cerr << result.size() << endl;
+    fstream fout("map.txt");
+    if (!fout.is_open())
+    {
+        cout << "open file failed" << endl;
+        return;
+    }
+    fout << result.size() << endl;
     for (const auto &p : result)
     {
-        cerr << p.vertices.size() << endl;
+        fout << p.vertices.size() << endl;
         for (auto &v : p.vertices)
         {
-            cerr << v.x << endl;
-            cerr << v.y << endl;
+            fout << v.x << endl;
+            fout << v.y << endl;
         }
-        cerr << p.holes.size() << endl;
+        fout << p.holes.size() << endl;
         for (auto hole : p.holes)
         {
-            cerr << hole.vertices.size() << endl;
+            fout << hole.vertices.size() << endl;
             for (auto &v : hole.vertices)
             {
-                cerr << v.x << endl;
-                cerr << v.y << endl;
+                fout << v.x << endl;
+                fout << v.y << endl;
             }
         }
     }
 
-    cerr << danger_line.size() << endl;
+    fout << danger_line.size() << endl;
     for (auto &line : danger_line)
     {
-        cerr << line.a.x << endl;
-        cerr << line.a.y << endl;
-        cerr << line.b.x << endl;
-        cerr << line.b.y << endl;
+        fout << line.a.x << endl;
+        fout << line.a.y << endl;
+        fout << line.b.x << endl;
+        fout << line.b.y << endl;
     }
 
-    cerr << stop_line.size() << endl;
+    fout << stop_line.size() << endl;
     for (auto &line : stop_line)
     {
-        cerr << line.a.x << endl;
-        cerr << line.a.y << endl;
-        cerr << line.b.x << endl;
-        cerr << line.b.y << endl;
+        fout << line.a.x << endl;
+        fout << line.a.y << endl;
+        fout << line.b.x << endl;
+        fout << line.b.y << endl;
     }
+
+    fout.close();
 }
 vector<Polygon> solve()
 {
@@ -486,7 +519,8 @@ vector<Polygon> solve()
     get_polygon();
     get_result(tree.back(), 0);
     get_danger_line();
-    // test_print();
+    get_nearest_obstacle();
+    test_print();
 
     return result;
 }

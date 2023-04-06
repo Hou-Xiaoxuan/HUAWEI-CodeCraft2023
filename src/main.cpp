@@ -44,7 +44,7 @@ void robot()
 void local()
 {
 
-    auto fin = std::fstream("../Robot/maps/1.txt");
+    auto fin = std::fstream("../Robot/maps/4.txt");
     if (fin.is_open() == false)
     {
         std::cerr << "[error] map file open failed" << std::endl;
@@ -57,13 +57,13 @@ void local()
     // 计时并输出运行时间
 
     auto start = std::chrono::steady_clock::now();
-    route_stupid::init();
+    // route_stupid::init();
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> diff = end - start;
     std::cerr << "info: route stupid init end, time:" << diff.count() << std::endl;
     std::cerr << "info: route stupid init end" << std::endl;
     puts("OK");
-    route_stupid::give_pointing();
+    find_path_square::find_path_pri(meta.robot[1].loc, meta.station[1].loc, false);
 }
 
 int main()
