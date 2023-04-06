@@ -259,8 +259,7 @@ public:
             double expected_profit = _get_expected_profit(robot, route);         // 预期利润
             int expected_flame_cost = _get_expected_flame_cost(robot, route);    // 预期时间
 
-            if (meta.current_flame + expected_flame_cost + Args::stop_frame_bias > ConVar::time_limit)
-                continue;    // *condition 4
+            if (meta.current_flame + expected_flame_cost > ConVar::time_limit) continue;    // *condition 4
 
             double ppf = expected_profit / expected_flame_cost;
 
@@ -504,11 +503,11 @@ void give_pointing()
                         }
                         all_dis_j
                             += navmesh::Vertex::distance(sub_line[j], sub_line[(j + 1) % sub_line.size()]);
-                        if (all_dis_j >= 5) break;
+                        if (all_dis_j >= 3) break;
                     }
                     all_dis_i
                         += navmesh::Vertex::distance(pri_line[i], pri_line[(i + 1) % pri_line.size()]);
-                    if (all_dis_i >= 5) break;
+                    if (all_dis_i >= 3) break;
                 }
                 if (need_shelter)
                 {

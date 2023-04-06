@@ -622,9 +622,9 @@ find_shelter_path(const Vertex &start, const vector<vector<Vertex>> &pri_path, b
         Pos now_pos = current_pos(start);
         // 在路径上尝试走出去
 
-        for (int i = max(1, now_pos.index_x - 2); i <= min(Map::width, now_pos.index_x + 2); ++i)
+        for (int i = max(1, now_pos.index_x - 5); i <= min(Map::width, now_pos.index_x + 5); ++i)
         {
-            for (int j = max(1, now_pos.index_y - 2); j <= min(Map::height, now_pos.index_y + 2); ++j)
+            for (int j = max(1, now_pos.index_y - 5); j <= min(Map::height, now_pos.index_y + 5); ++j)
             {
                 if (meta.map[i][j] == '#') continue;
                 bool is_run = true;
@@ -635,7 +635,7 @@ find_shelter_path(const Vertex &start, const vector<vector<Vertex>> &pri_path, b
                     {
                         if (dis_point_to_segment(
                                 center, {_tmp_path[k], _tmp_path[(k + 1) % _tmp_path.size()]})
-                            <= 1.5)
+                            <= 1.2)
                         {
                             is_run = false;
                             break;

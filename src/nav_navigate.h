@@ -96,17 +96,24 @@ void __change_speed(const Robot &robot, const vector<Vertex> &path)
     Vec2 vec1 = {path[0], stop_loc};
     Vec2 vec2 = {path[1], stop_loc};
     double angle = Vec2::angle(vec1, vec2);
-    if (Vertex::distance(stop_loc, path[1]) < 0.05
-        or (Vertex::distance(stop_loc, path[0]) > 1e-7 and abs(angle) < M_PI / 9))
+    if (Vertex::distance(stop_loc, path[1]) < 0.05)
     {
+        cerr << "robot " << robot.id << " stop near" << endl;
+        instructions.push_back(new io::I_forward(robot.id, 0));
+        return;
+    }
+    if (Vertex::distance(stop_loc, path[0]) > 1e-7 and abs(angle) < M_PI / 9)
+    {
+        cerr << "robot " << robot.id << " stop 2 over" << endl;
         instructions.push_back(new io::I_forward(robot.id, 0));
         return;
     }
 
     double delta = __get_delta_angle(robot, path[1]);
 
-    if (abs(delta) > M_PI / 10 or abs(robot.w) > 1)
+    if (abs(delta) > M_PI / 10)
     {
+        cerr << "robot " << robot.id << " stop 3 rotate" << endl;
         instructions.push_back(new io::I_forward(robot.id, 0));
         return;
     }
