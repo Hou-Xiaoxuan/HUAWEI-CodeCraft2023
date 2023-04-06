@@ -50,14 +50,31 @@ struct Vec2 {
     friend double operator^(const Vec2 &v1, const Vec2 &v2) { return v1.x * v2.y - v1.y * v2.x; }
     // 点乘
     friend double operator*(const Vec2 &v1, const Vec2 &v2) { return v1.x * v2.x + v1.y * v2.y; }
+    friend Vec2 operator*(double k, const Vec2 &v) { return {v.x * k, v.y * k}; }
     // 加
     friend Vec2 operator+(const Vec2 &v1, const Vec2 &v2) { return {v1.x + v2.x, v1.y + v2.y}; }
     // 减
     friend Vec2 operator-(const Vec2 &v1, const Vec2 &v2) { return {v1.x - v2.x, v1.y - v2.y}; }
+    // 乘浮点数
+    friend Vec2 operator*(const Vec2 &v, double k) { return {v.x * k, v.y * k}; }
+    // 除浮点数
+    friend Vec2 operator/(const Vec2 &v, double k)
+    {
+        if (fabs(k) < EPS) throw std::runtime_error("divide by zero");
+        return {v.x / k, v.y / k};
+    }
+
     // 夹角
     static double angle(const Vec2 &v1, const Vec2 &v2)
     {
         return acos((v1 * v2) / (v1.length() * v2.length()));
+    }
+    // angle > 0 逆时针 angle:弧度
+    Vec2 rotate(double angle) const
+    {
+        double x = this->x * cos(angle) - this->y * sin(angle);
+        double y = this->x * sin(angle) + this->y * cos(angle);
+        return {x, y};
     }
 };
 // 线段

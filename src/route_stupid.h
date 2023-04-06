@@ -20,12 +20,12 @@ namespace route_stupid
 {
 using namespace std;
 using find_path_square::find_path;
-using find_path_square::find_path_pri;
 int _estimated_move_flame(const vector<navmesh::Vertex> &path)
 {
     double dis = 0;
     for (size_t i = 1; i < path.size(); i++)
         dis += std::hypot(path[i].x - path[i - 1].x, path[i].y - path[i - 1].y);
+    dis *= 10;
     return (dis / ConVar::max_robot_forward_speed) * 50 + Args::turn_cost * path.size();
 }
 using Path = vector<navmesh::Vertex>;
@@ -41,17 +41,11 @@ struct _road_pair {
 struct _roud_pair_hash {
     size_t operator()(const _road_pair &p) const { return p.from * 100 + p.to; }
 };
-unordered_map<_road_pair, Path, _roud_pair_hash> pathes;    // 路径缓存
-
+vector<vector<Path>> pathes;    // 路径缓存
 struct Route {
     int from_station_index;      // 起点工作台编号
     int target_station_index;    // 终点工作台编号
-    const Path &path() const
-    {
-        return pathes.at({
-            _road_pair {from_station_index, target_station_index}
-        });
-    }
+    const Path &path() const { pathes.at(from_station_index).at(target_station_index); }
     // 起点工作台
     const Station &from_station() const { return meta.station[from_station_index]; }
     // 终点工作台
@@ -76,9 +70,9 @@ enum ProcessingState {
     BUY = 1,        // 运输中
     SELL = 2,       // 卖货中
 };
-static vector<int> area_index{};                      // 机器人[i]所在区域编号，从1开始
-static vector<int> processing{};                      // 机器人[i]正在处理的route
-static vector<ProcessingState> processing_state{};    // 机器人[i]正在处理的root的状态
+static vector<int> area_index {};                      // 机器人[i]所在区域编号，从1开始
+static vector<int> processing {};                      // 机器人[i]正在处理的route
+static vector<ProcessingState> processing_state {};    // 机器人[i]正在处理的root的状态
 /*区域划分与算法*/
 class Area
 {
@@ -172,7 +166,7 @@ private:
                      << endl;
             }
             else
-                path = pathes[{robot.in_station, from_station.id}];
+                path = pathes[robot.in_station][from_station.id];
 
             // empty_flame
             //     = max((from_station.timeleft - _estimated_move_flame(robot.loc, from_station.loc)), 0);
@@ -190,15 +184,15 @@ private:
         int expected_flame_cost;
         vector<navmesh::Vertex> robot_to_from;
         vector<navmesh::Vertex> from_to_target;
-        if (robot.in_station == -1)
+        if (robot.in_station <= 0)
         {
-            robot_to_from = find_path(robot.loc, from_station.loc, robot.goods != 0);
+            robot_to_from = find_path(robot.loc, from_station.loc, false);
             cerr << "[warning][get_expected_flame_cost] robot[" << robot.id << "] is not in any station"
                  << endl;
         }
         else
-            robot_to_from = pathes.at({robot.in_station, from_station.id});
-
+            robot_to_from = pathes.at(robot.in_station).at(from_station.id);
+        from_to_target = pathes.at(from_station.id).at(target_station.id);
         if (from_station.with_product == 0 and from_station.timeleft > _estimated_move_flame(robot_to_from))
             expected_flame_cost = from_station.timeleft + _estimated_move_flame(from_to_target);
         else
@@ -268,27 +262,25 @@ public:
 
             double ppf = expected_profit / expected_flame_cost;
 
-            // #ifdef DEBUG
-            //             if (ppf > best_route.ppf)
-            //             {
-            //                 best_route = {i, meta.current_flame + expected_flame_cost, ppf};
-            //                 cerr << "[info][__pointing] "
-            //                      << " [flame=" << meta.current_flame << "] robot_id: " << robot_id
-            //                      << " UPDATE best_profit_per_flame: " << best_route.ppf
-            //                      << " profit: " << expected_profit << " flame_cost: " <<
-            //                      expected_flame_cost
-            //                      << " best_route_index: " << best_route.index << " route: " << route <<
-            //                      endl;
-            //             }
-            //             else
-            //             {
-            //                 cerr << "[info][__pointing] [flame=" << meta.current_flame << "] robot_id="
-            //                 << robot_id
-            //                      << " profit=" << expected_profit << " flame_cost=" <<
-            //                      expected_flame_cost
-            //                      << " route=" << route << " valid, but ppf=" << ppf << endl;
-            //             }
-            // #endif
+#ifdef DEBUG
+            if (ppf > best_route.ppf)
+            {
+                best_route = {i, meta.current_flame + expected_flame_cost, ppf};
+                cerr << "[info][__pointing] "
+                     << " [flame=" << meta.current_flame << "] robot_id: " << robot_id
+                     << " UPDATE best_profit_per_flame: " << best_route.ppf
+                     << " profit: " << expected_profit << " flame_cost: " << expected_flame_cost
+                     << " best_route_index: " << best_route.index << " route: " << route << endl;
+            }
+            else
+            {
+                cerr << "[info][__pointing] [flame=" << meta.current_flame << "] robot_id=" << robot_id
+                     << " profit=" << expected_profit << " flame_cost=" << expected_flame_cost
+                     << " route=" << route << " valid, but ppf=" << ppf << "with profit" << expected_profit
+                     << " flame_cost" << expected_flame_cost
+                     << " is not better than best_route.ppf=" << best_route.ppf << endl;
+            }
+#endif
             if (ppf > best_route.ppf) best_route = {i, meta.current_flame + expected_flame_cost, ppf};
         }
         // #ifdef DEBUG
@@ -321,11 +313,12 @@ void init()
 #ifdef DEBUG
     for (auto &sta : model::meta.station)
     {
-        if (sta.workstation().type == 1) sta.with_product = 1;
+        if (sta.workstation().type <= 3) sta.with_product = 1;
     }
 #endif
 
     vector<Route> routes;    // 路径，从1开始
+    pathes = vector<vector<Path>>(meta.station.size(), vector<Path>(meta.station.size(), Path()));
     routes.reserve(1000);
     routes.emplace_back();
 
@@ -347,15 +340,15 @@ void init()
 
 
     for (int i = 1; i < meta.station.size(); i++)
-        for (int j = 1; j < meta.station.size(); j++)
+        for (int j = i + 1; j < meta.station.size(); j++)
         {
             const Station &from = meta.station[i], target = meta.station[j];
             vector<navmesh::Vertex> path = find_path(from.loc, target.loc, true);
             if (path.empty()) continue;
             // 没有供应关系也要建边
             merge(i, j);
-            pathes[{i, j}] = path;
-            pathes[{j, i}] = path;
+            pathes[i][j] = path;
+            pathes[j][i] = path;
 
             if (std::find(
                     target.workstation().needs.begin(), target.workstation().needs.end(), from.product_id())
@@ -411,14 +404,14 @@ void give_pointing()
     {    // 得到path
         for (int i = 1; i < meta.robot.size(); i++)
         {
-            if(area_index[i] == 0) continue;
+            if (area_index[i] == 0) continue;
             auto &area = areas[area_index[i]];
             auto &route = area.routes[processing[i]];
             auto &robot = meta.robot[i];
             // if (processing[i] == 0) processing[i] = __steal_pointing(i); // 负优化
             if (processing[i] == 0) processing[i] = area._give_pointing(i);
             if (processing[i] == 0)    // 留在原地
-                robot_path[i] = find_path_pri(robot.loc, robot.loc, false);
+                robot_path[i] = find_path(robot.loc, robot.loc, false);
 
             // 处理任务
             if (robot.goods == 0)
@@ -455,7 +448,7 @@ void give_pointing()
                     //                 }
                     // #endif
                 }
-                robot_path[i] = find_path_pri(robot.loc, route.from_station().loc, false);
+                robot_path[i] = find_path(robot.loc, route.from_station().loc, false);
                 // navigate::move_to(
                 //     robot, target_station.loc, {meta.station[route.to_station_index].loc}, wait_flame);
                 if (robot_path[i].empty())
@@ -477,8 +470,8 @@ void give_pointing()
                     // #endif
                 }
                 robot_path[i] = find_path(robot.loc, route.target_station().loc, true);
-                if(robot_path[i].empty())
-                    cerr<<"[error][__pointing] robot "<<i<<" 没有得到至target的path！"<<endl;
+                if (robot_path[i].empty())
+                    cerr << "[error][__pointing] robot " << i << " 没有得到至target的path！" << endl;
             }
         }
     }
