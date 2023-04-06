@@ -27,7 +27,7 @@ int _estimated_move_flame(const vector<navmesh::Vertex> &path)
     double dis = 0;
     for (size_t i = 1; i < path.size(); i++)
         dis += std::hypot(path[i].x - path[i - 1].x, path[i].y - path[i - 1].y);
-    dis *= 10;
+    dis *= 5;
     return (dis / ConVar::max_robot_forward_speed) * 50 + Args::turn_cost * path.size();
 }
 using Path = vector<navmesh::Vertex>;
@@ -75,6 +75,7 @@ enum ProcessingState {
 static vector<int> area_index {};                      // 机器人[i]所在区域编号，从1开始
 static vector<int> processing {};                      // 机器人[i]正在处理的route
 static vector<ProcessingState> processing_state {};    // 机器人[i]正在处理的root的状态
+static vector<bool> stop_flag {};    // 机器人停止获取pointing的标志，缓解跳帧
 /*区域划分与算法*/
 class Area
 {
@@ -341,7 +342,7 @@ void init()
 
 
     for (int i = 1; i < meta.station.size(); i++)
-        for (int j = i + 1; j < meta.station.size(); j++)
+        for (int j = 1; j < meta.station.size(); j++)
         {
             const Station &from = meta.station[i], target = meta.station[j];
             vector<navmesh::Vertex> path = find_path(from.loc, target.loc, true);
@@ -394,15 +395,18 @@ void init()
     }
     processing.assign(meta.robot.size(), 0);
     processing_state.assign(meta.robot.size(), ProcessingState::PICKING);
+    stop_flag.assign(meta.robot.size(), false);
 }
 
 
 /*1帧15ms内给出策略*/
 void give_pointing()
 {
-    // TODO: 得到path
+    // 得到path
     vector<Path> robot_path(meta.robot.size());
-    {    // 得到path
+
+    // 得到path
+    {
         for (int i = 1; i < meta.robot.size(); i++)
         {
             if (area_index[i] == 0) continue;
@@ -410,9 +414,16 @@ void give_pointing()
             auto &route = area.routes[processing[i]];
             auto &robot = meta.robot[i];
             // if (processing[i] == 0) processing[i] = __steal_pointing(i); // 负优化
-            if (processing[i] == 0) processing[i] = area._give_pointing(i);
-            if (processing[i] == 0)    // 留在原地
-                robot_path[i] = find_path(robot.loc, robot.loc, false);
+            if (processing[i] == 0)
+            {
+                if (stop_flag[i] == true) continue;
+                processing[i] = area._give_pointing(i);
+                if (processing[i] == 0)
+                {
+                    robot_path[i] = {robot.loc, robot.loc};
+                    if (meta.current_flame + 1000 > ConVar::time_limit) stop_flag[i] = true;
+                }
+            }
 
             // 处理任务
             if (robot.goods == 0)
@@ -431,23 +442,6 @@ void give_pointing()
                 if (robot.in_station == route.from_station_index)
                 {
                     io::instructions.push_back(new io::I_buy(i));
-                    // #ifdef DEBUG
-                    //                 if (meta.station[route.from_station_index].timeleft > 0)
-                    //                 {
-                    //                     cerr << "[error][pointing]"
-                    //                          << "robot " << i << " waiting for station " <<
-                    //                          route.from_station_index
-                    //                          << ", timeleft =" <<
-                    //                          meta.station[route.from_station_index].timeleft << endl;
-                    //                 }
-                    //                 if (meta.current_money < route.money_need)
-                    //                 {
-                    //                     cerr << "[error][pointing]"
-                    //                          << "robot " << i << " waiting for money, need " <<
-                    //                          route.money_need << ", current "
-                    //                          << meta.current_money << endl;
-                    //                 }
-                    // #endif
                 }
                 robot_path[i] = find_path(robot.loc, route.from_station().loc, false);
                 // navigate::move_to(
@@ -479,9 +473,9 @@ void give_pointing()
         }
     }
 
+    // 解决单行道死锁
     {
-        // 解决单行道死锁
-        for (int pri = 0; pri < robot_path.size(); ++pri)
+        for (int pri = 1; pri < robot_path.size(); ++pri)
         {
             for (int sub = pri + 1; sub < robot_path.size(); ++sub)
             {
@@ -520,8 +514,8 @@ void give_pointing()
         }
     }
 
+    // 调用navigate移动
     {
-        // 调用navigate移动
         for (int i = 1; i < meta.robot.size(); i++)
         {
             auto &robot = meta.robot[i];
