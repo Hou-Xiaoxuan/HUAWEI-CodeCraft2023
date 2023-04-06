@@ -41,13 +41,13 @@ void robot()
     }
 }
 
-void local()
+void local(std::string file)
 {
-
-    auto fin = std::fstream("../Robot/maps/4.txt");
+    std::cerr << "chose map "<<file << std::endl;
+    auto fin = std::fstream(file);
     if (fin.is_open() == false)
     {
-        std::cerr << "[error] map file open failed" << std::endl;
+        std::cerr << "[error] map file\" " << file << "\" open failed" << std::endl;
         return;
     }
     io::init(fin);
@@ -57,16 +57,17 @@ void local()
     // 计时并输出运行时间
 
     auto start = std::chrono::steady_clock::now();
-    // route_stupid::init();
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> diff = end - start;
     std::cerr << "info: route stupid init end, time:" << diff.count() << std::endl;
     std::cerr << "info: route stupid init end" << std::endl;
+    route_stupid::init();
     puts("OK");
-    find_path_square::find_path_pri(meta.robot[1].loc, meta.station[1].loc, false);
+
+    route_stupid::give_pointing();
 }
 
-int main()
+int main(int argc, char *argv[])
 {
     // cerror重定向到文件
     auto cerr_buf = std::cerr.rdbuf();
@@ -75,8 +76,13 @@ int main()
         std::cerr.rdbuf(fout.rdbuf());
     else
         std::cerr << "[error] log file open failed" << std::endl;
-    // local();
-    robot();
+    if (argc < 2)
+        robot();
+    else
+    {
+        std::string file = argv[1];
+        local(file);
+    }
 
     fout.close();
     std::cerr.rdbuf(cerr_buf);
