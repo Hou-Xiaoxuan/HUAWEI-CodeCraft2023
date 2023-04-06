@@ -81,7 +81,12 @@ void trans_map(const vector<vector<char>> &ori_map)
     }
 
     // 顺时针 四向
-    vector<pair<int, int>> dirs = {{ 0,  1},{ 1,  0},{ 0, -1},{-1,  0}};
+    vector<pair<int, int>> dirs = {
+        { 0,  1},
+        { 1,  0},
+        { 0, -1},
+        {-1,  0}
+    };
 
     vector<vector<vector<int>>> map_status = vector<vector<vector<int>>>(
         Map::width + 2, vector<vector<int>>(Map::height + 2, vector<int>(4, 0)));
@@ -501,16 +506,18 @@ vector<Polygon> solve()
           #.  .#
     两种情况，填上一个.
     */
-   /* 识别 
-   
-   */
-    for(int i=2; i<=100; i++)
-        for(int j=1; j<=100; j++)
+    /* 识别
+
+    */
+    for (int i = 2; i <= 100; i++)
+        for (int j = 1; j <= 100; j++)
         {
-            if(meta.map[i][j]=='#' and meta.map[i-1][j]=='.' and meta.map[i][j-1]=='.' and meta.map[i-1][j-1]=='#')
-                model::meta.map[i-1][j]='#';
-            if(meta.map[i][j]=='.' and meta.map[i-1][j]=='#' and meta.map[i][j-1]=='#' and meta.map[i-1][j-1]=='.')
-                model::meta.map[i-1][j-1]='#';
+            if (meta.map[i][j] == '#' and meta.map[i - 1][j] == '.' and meta.map[i][j - 1] == '.'
+                and meta.map[i - 1][j - 1] == '#')
+                model::meta.map[i - 1][j] = '#';
+            if (meta.map[i][j] == '.' and meta.map[i - 1][j] == '#' and meta.map[i][j - 1] == '#'
+                and meta.map[i - 1][j - 1] == '.')
+                model::meta.map[i - 1][j - 1] = '#';
         }
 
     trans_map(meta.map);

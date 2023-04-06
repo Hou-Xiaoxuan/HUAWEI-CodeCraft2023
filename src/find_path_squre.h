@@ -32,7 +32,7 @@ Pos current_pos(const Vertex &v)
                 return {i, j, v};
         }
     }
-    throw "you are wrong";
+    throw "current_pos error";
 }
 
 
@@ -481,12 +481,12 @@ vector<Vertex> find_path(const Vertex &start, const Vertex &target, bool have_go
     return find_path.smooth_path;
 }
 
-vector<Vertex> find_path_pri(const Vertex &start, const Vertex &target, bool have_good)
-{
-    Find_path find_path(start, target, have_good);
-    find_path.get_path_pri();
-    return find_path.smooth_path;
-}
+// vector<Vertex> find_path_pri(const Vertex &start, const Vertex &target, bool have_good)
+// {
+//     Find_path find_path(start, target, have_good);
+//     find_path.get_path_pri();
+//     return find_path.smooth_path;
+// }
 
 // // 检查line是否跟多边形相交
 // bool check_cross(Segment line)
@@ -646,14 +646,14 @@ find_shelter_path(const Vertex &start, const vector<vector<Vertex>> &pri_path, b
 
                 if (is_run)
                 {
-                    auto result = find_path_pri(start, center, have_good);
+                    auto result = find_path(start, center, have_good);
                     if (not result.empty()) return result;
                 }
             }
         }
-        return find_path_pri(start, tmp_path.back(), have_good);
+        return find_path(start, tmp_path.back(), have_good);
     }
-    return find_path_pri(start, start, have_good);
+    return find_path(start, start, have_good);
 }
 };
 #endif
