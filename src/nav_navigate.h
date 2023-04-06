@@ -105,7 +105,7 @@ void __change_speed(const Robot &robot, const vector<Vertex> &path)
 
     double delta = __get_delta_angle(robot, path[1]);
 
-    if (abs(delta) > M_PI / 18)
+    if (abs(delta) > M_PI / 10 or abs(robot.w) > 1)
     {
         instructions.push_back(new io::I_forward(robot.id, 0));
         return;

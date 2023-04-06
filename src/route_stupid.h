@@ -47,7 +47,7 @@ vector<vector<Path>> pathes;    // 路径缓存
 struct Route {
     int from_station_index;      // 起点工作台编号
     int target_station_index;    // 终点工作台编号
-    const Path &path() const { pathes.at(from_station_index).at(target_station_index); }
+    const Path &path() const { return pathes.at(from_station_index).at(target_station_index); }
     // 起点工作台
     const Station &from_station() const { return meta.station[from_station_index]; }
     // 终点工作台
@@ -72,9 +72,9 @@ enum ProcessingState {
     BUY = 1,        // 运输中
     SELL = 2,       // 卖货中
 };
-static vector<int> area_index  {};                      // 机器人[i]所在区域编号，从1开始
-static vector<int> processing  {};                      // 机器人[i]正在处理的route
-static vector<ProcessingState> processing_state  {};    // 机器人[i]正在处理的root的状态
+static vector<int> area_index {};                      // 机器人[i]所在区域编号，从1开始
+static vector<int> processing {};                      // 机器人[i]正在处理的route
+static vector<ProcessingState> processing_state {};    // 机器人[i]正在处理的root的状态
 /*区域划分与算法*/
 class Area
 {
@@ -406,7 +406,7 @@ void give_pointing()
     {    // 得到path
         for (int i = 1; i < meta.robot.size(); i++)
         {
-            if  (area_index[i] == 0) continue;
+            if (area_index[i] == 0) continue;
             auto &area = areas[area_index[i]];
             auto &route = area.routes[processing[i]];
             auto &robot = meta.robot[i];
@@ -489,18 +489,26 @@ void give_pointing()
                 auto pri_line = robot_path[pri];
                 auto sub_line = robot_path[sub];
                 bool need_shelter = false;
+                double all_dis_i = 0.0;
                 for (int i = 0; i < pri_line.size() and not need_shelter; ++i)
                 {
+                    double all_dis_j = 0.0;
                     for (int j = 0; j < sub_line.size() and not need_shelter; ++j)
                     {
                         double dis = navmesh::Segment::distance(
                             navmesh::Segment {pri_line[i], pri_line[(i + 1) % pri_line.size()]},
                             navmesh::Segment {sub_line[j], sub_line[(j + 1) % sub_line.size()]});
-                        if (dis <= 1.4)
+                        if (dis <= 1.2)
                         {
                             need_shelter = true;
                         }
+                        all_dis_j
+                            += navmesh::Vertex::distance(sub_line[j], sub_line[(j + 1) % sub_line.size()]);
+                        if (all_dis_j >= 5) break;
                     }
+                    all_dis_i
+                        += navmesh::Vertex::distance(pri_line[i], pri_line[(i + 1) % pri_line.size()]);
+                    if (all_dis_i >= 5) break;
                 }
                 if (need_shelter)
                 {

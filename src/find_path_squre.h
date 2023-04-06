@@ -621,6 +621,7 @@ find_shelter_path(const Vertex &start, const vector<vector<Vertex>> &pri_path, b
 
         Pos now_pos = current_pos(start);
         // 在路径上尝试走出去
+
         for (int i = max(1, now_pos.index_x - 2); i <= min(Map::width, now_pos.index_x + 2); ++i)
         {
             for (int j = max(1, now_pos.index_y - 2); j <= min(Map::height, now_pos.index_y + 2); ++j)
@@ -630,7 +631,7 @@ find_shelter_path(const Vertex &start, const vector<vector<Vertex>> &pri_path, b
                 Vertex center = get_center(i, j);
                 for (auto _tmp_path : pri_path)
                 {
-                    for (int k = 0; k < pri_path.size(); ++k)
+                    for (int k = 0; k < _tmp_path.size(); ++k)
                     {
                         if (dis_point_to_segment(
                                 center, {_tmp_path[k], _tmp_path[(k + 1) % _tmp_path.size()]})
@@ -642,7 +643,12 @@ find_shelter_path(const Vertex &start, const vector<vector<Vertex>> &pri_path, b
                     }
                     if (not is_run) break;
                 }
-                if (is_run) return find_path_pri(start, center, have_good);
+
+                if (is_run)
+                {
+                    auto result = find_path_pri(start, center, have_good);
+                    if (not result.empty()) return result;
+                }
             }
         }
         return find_path_pri(start, tmp_path.back(), have_good);
