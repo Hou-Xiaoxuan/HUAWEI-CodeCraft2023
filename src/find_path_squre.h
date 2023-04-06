@@ -35,6 +35,14 @@ Pos current_pos(const Vertex &v)
     throw "you are wrong";
 }
 
+
+vector<pair<int, int>> dirs = {
+    { 0,  1},
+    { 1,  0},
+    { 0, -1},
+    {-1,  0},
+};
+
 // 获得正方形重心
 Vertex get_center(int i, int j) { return {(i - 1) * 0.5 + 0.25, (j - 1) * 0.5 + 0.25}; }
 
@@ -67,14 +75,6 @@ struct Find_path {
 
     void get_ori_path()
     {
-
-        vector<pair<int, int>> dirs = {
-            { 0,  1},
-            { 1,  0},
-            { 0, -1},
-            {-1,  0},
-        };
-
         double limit_dis = have_good ? ConVar::robot_radius_goods * 2 : ConVar::robot_radius * 2;
         auto start_pos = current_pos(start);
         auto target_pos = current_pos(target);
@@ -598,5 +598,56 @@ vector<Vertex> find_path_pri(const Vertex &start, const Vertex &target, bool hav
 //     cerr << "from " << path.size() << " to " << smooth_path.size() << endl;
 //     return smooth_path;
 // }
+
+vector<Vertex>
+find_shelter_path(const Vertex &start, const vector<vector<Vertex>> &pri_path, bool have_good)
+{
+    // 不在路径上不动
+    // 在路径上 尝试3个格子内走出路径
+    // 走不出 就顺着对方路径走
+
+    bool is_in_path = false;
+    for (auto tmp_path : pri_path)
+    {
+        for (int i = 0; i < tmp_path.size() and not is_in_path; ++i)
+        {
+            if (dis_point_to_segment(start, {tmp_path[i], tmp_path[(i + 1) % tmp_path.size()]}) <= 1.5)
+            {
+                is_in_path = true;
+                break;
+            }
+        }
+        if (not is_in_path) continue;
+
+        Pos now_pos = current_pos(start);
+        // 在路径上尝试走出去
+        for (int i = max(1, now_pos.index_x - 2); i <= min(Map::width, now_pos.index_x + 2); ++i)
+        {
+            for (int j = max(1, now_pos.index_y - 2); j <= min(Map::height, now_pos.index_y + 2); ++j)
+            {
+                if (meta.map[i][j] == '#') continue;
+                bool is_run = true;
+                Vertex center = get_center(i, j);
+                for (auto _tmp_path : pri_path)
+                {
+                    for (int k = 0; k < pri_path.size(); ++k)
+                    {
+                        if (dis_point_to_segment(
+                                center, {_tmp_path[k], _tmp_path[(k + 1) % _tmp_path.size()]})
+                            <= 1.5)
+                        {
+                            is_run = false;
+                            break;
+                        }
+                    }
+                    if (not is_run) break;
+                }
+                if (is_run) return find_path_pri(start, center, have_good);
+            }
+        }
+        return find_path_pri(start, tmp_path.back(), have_good);
+    }
+    return find_path_pri(start, start, have_good);
+}
 };
 #endif

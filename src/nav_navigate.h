@@ -129,7 +129,7 @@ void __change_direction(const Robot &robot, const vector<Vertex> &path)
     double delta = __get_delta_angle(robot, next_target);
     // cerr << "info: robot " << robot.id << " dir " << robot.dirc << " delta " << delta << endl;
 
-    double delta_dir = signbit(delta) ? -1 : 1;
+    int delta_dir = signbit(delta) ? -1 : 1;
 
 
     if (signbit(delta) != signbit(robot.w))    // HACK
