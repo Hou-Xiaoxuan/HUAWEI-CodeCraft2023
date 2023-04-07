@@ -22,6 +22,9 @@ def judge_os():
         return "windows"
 
 
+cnt = []
+
+
 def excute_test(index: int):
     if judge_os() == "macos":
         cmd = f'cd ./Robot && ./Mac-Robot -f -m ./maps/{index}.txt ../build/main'
@@ -33,6 +36,8 @@ def excute_test(index: int):
     p = subprocess.Popen(
         cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     data = p.stdout.readlines()
+
+    cnt.append(index)
     try:
         for d in data:
             if b"score" in d:
@@ -56,10 +61,15 @@ tasks = [threading.Thread(target=excute_test, args=(i,)) for i in range(1, 5)]
 def time_coutn():
     time_now = 0
     while time_now < 180:
-        time.sleep(10)
-        time_now += 10
-        print(f"now time: {time_now}")
-    print("time out")
+        time.sleep(1)
+        time_now += 1
+        if (time_now % 10) == 0:
+            print(f"now time: {time_now}")
+            if len(cnt) == 4:
+                print("over")
+                break
+    else:
+        print("time out")
 
 
 # 时间线程主线程推出后，会自动退出
