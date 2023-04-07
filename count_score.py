@@ -21,9 +21,9 @@ def judge_os():
 
 def excute_test(index: int):
     if judge_os() == "macos":
-        cmd = f'cd ./Robot && ./Mac-Robot -m ./maps/{index}.txt ../build/main'
+        cmd = f'cd ./Robot && ./Mac-Robot -f -m ./maps/{index}.txt ../build/main'
     elif judge_os() == "linux":
-        cmd = f'cd ./Robot && ./Robot -m ./maps/{index}.txt ../build/main'
+        cmd = f'cd ./Robot && ./Robot -f -m ./maps/{index}.txt ../build/main'
     else:
         raise Exception("not support os")
     print(f"cmd: {cmd} start")
