@@ -479,36 +479,63 @@ void give_pointing()
         {
             for (int sub = pri + 1; sub < robot_path.size(); ++sub)
             {
-                const auto &pri_line = robot_path[pri];
-                const auto &sub_line = robot_path[sub];
+                const auto &pri_path = robot_path[pri];
+                const auto &sub_path = robot_path[sub];
                 bool need_shelter = false;
-                double all_dis_i = 0.0;
-                for (int i = 0; i < pri_line.size() and not need_shelter; ++i)
+                double left_dis_pri = 3.0;
+                double left_dis_sub = 3.0;
+
+                for (int i = 0; i < pri_path.size(); ++i)
                 {
-                    double all_dis_j = 0.0;
-                    for (int j = 0; j < sub_line.size() and not need_shelter; ++j)
+                    navmesh::Vec2 vec_pri {pri_path[i], pri_path[(i + 1) % pri_path.size()]};
+                    navmesh::Segment pri_seg;
+                    // 过长截取
+                    if (vec_pri.length() >= left_dis_pri)
+                        // XXX 万一除0
+                        pri_seg = {
+                            pri_path[i],
+                            {pri_path[i].x + vec_pri.x * left_dis_pri / vec_pri.length(),
+                                 pri_path[i].y + vec_pri.y * left_dis_pri / vec_pri.length()}
+                        };
+                    else
                     {
-                        double dis = navmesh::Segment::distance(
-                            navmesh::Segment {pri_line[i], pri_line[(i + 1) % pri_line.size()]},
-                            navmesh::Segment {sub_line[j], sub_line[(j + 1) % sub_line.size()]});
-                        if (dis <= 1.2)
-                        {
-                            need_shelter = true;
-                        }
-                        all_dis_j
-                            += navmesh::Vertex::distance(sub_line[j], sub_line[(j + 1) % sub_line.size()]);
-                        if (all_dis_j >= 3) break;
+                        pri_seg = {pri_path[i], pri_path[(i + 1) % pri_path.size()]};
                     }
-                    all_dis_i
-                        += navmesh::Vertex::distance(pri_line[i], pri_line[(i + 1) % pri_line.size()]);
-                    if (all_dis_i >= 3) break;
+                    left_dis_pri -= pri_seg.length();
+
+                    for (int j = 0; j < sub_path.size(); ++j)
+                    {
+                        // 过长截取
+                        navmesh::Vec2 vec_sub {sub_path[j], sub_path[(j + 1) % sub_path.size()]};
+                        navmesh::Segment sub_seg;
+                        if (vec_sub.length() >= left_dis_sub)
+                            // XXX 万一除0
+                            sub_seg = {
+                                sub_path[j],
+                                {sub_path[j].x + vec_sub.x * left_dis_sub / vec_sub.length(),
+                                     sub_path[j].y + vec_sub.y * left_dis_sub / vec_sub.length()}
+                            };
+                        else
+                        {
+                            sub_seg = {sub_path[j], sub_path[(j + 1) % sub_path.size()]};
+                        }
+                        left_dis_sub -= sub_seg.length();
+
+                        double dis = navmesh::Segment::distance(pri_seg, sub_seg);
+                        if (dis <= 1.2) need_shelter = true;
+
+                        if (left_dis_sub <= 1e-6 or need_shelter) break;
+                    }
+                    if (left_dis_pri <= 1e-6 or need_shelter) break;
                 }
+
                 if (need_shelter)
                 {
-                    Path shelter = find_shelter_path(sub_line,
+                    cerr << "[info] robot " << pri << " and " << sub << " need shelter " << need_shelter
+                         << endl;
+                    robot_path[sub] = find_shelter_path(sub_path,
                         vector<Path>(robot_path.begin(), robot_path.begin() + sub),
                         meta.robot[sub].goods == 0 ? false : true);
-                    robot_path[sub] = shelter;
                 }
             }
         }
