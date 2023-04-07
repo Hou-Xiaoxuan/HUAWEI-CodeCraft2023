@@ -522,7 +522,7 @@ void give_pointing()
             /* STOP逻辑 */
             if (stop_until[i] != -1)
             {
-                if (stop_until[i] < meta.current_flame)
+                if (meta.current_flame < stop_until[i])
                 {
                     cerr << "[info][pointing] frame " << meta.current_flame << " robot " << i
                          << "stop until" << stop_until[i] << endl;
@@ -543,6 +543,8 @@ void give_pointing()
                     cerr << "[waring][pointing] robot " << i << "didn't get route. stop 5s." << endl;
                     robot_path[i] = {robot.loc, robot.loc};
                     stop_until[i] = meta.current_flame + 5 * 50;
+                    cerr << "[info][pointing] [flame=" << meta.current_flame << "] robot " << i
+                         << " stop until" << stop_until[i] << endl;
                     if (meta.current_flame + 2000 > ConVar::time_limit)
                         stop_until[i] = ConVar::time_limit;    // 最后时刻完全停止
                     continue;
