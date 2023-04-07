@@ -118,7 +118,7 @@ void init()
             proper_pos[i][j] = get_center(i, j);
         }
     }
-    for (int i = 0; i < 1; ++i)
+    for (int i = 0; i < 3; ++i)
     {
         get_proper_pos();
     }
@@ -309,6 +309,7 @@ find_shelter_path(const vector<Vertex> &sub_path, const vector<vector<Vertex>> &
     // 走不出 就顺着对方路径走
 
     Vertex start = sub_path[0];
+    double limit_dis = have_good ? ConVar::robot_radius_goods * 2 : ConVar::robot_radius * 2;
 
     bool is_in_path = false;
     for (const auto &tmp_path : pri_path)
@@ -316,49 +317,151 @@ find_shelter_path(const vector<Vertex> &sub_path, const vector<vector<Vertex>> &
 
         for (int i = 0; i < tmp_path.size() and not is_in_path; ++i)
         {
-            if (dis_point_to_segment(start, {tmp_path[i], tmp_path[(i + 1) % tmp_path.size()]}) <= 1.2)
+            if (dis_point_to_segment(start, {tmp_path[i], tmp_path[(i + 1) % tmp_path.size()]})
+                <= limit_dis)
             {
                 is_in_path = true;
                 break;
             }
         }
-        if (not is_in_path) continue;
+        if (is_in_path) break;
+    }
+    if (not is_in_path) return sub_path;
 
-        Pos now_pos = current_pos(start);
-        // 在路径上尝试走出去
+    Pos now_pos = current_pos(start);
 
-        for (int i = max(1, now_pos.index_x - 5); i <= min(100, now_pos.index_x + 5); ++i)
+    auto start_pos = current_pos(start);
+    Vertex target = {-1, -1};
+
+    priority_queue<pair<Pos, int>, vector<pair<Pos, int>>, decltype(cmp_pos)> que(cmp_pos);
+    queue<Pos> que_bak;
+
+    pre[start_pos.index_x][start_pos.index_y].index_x = -2;
+    que.push({start_pos, 0});
+    que_bak.push(start_pos);
+
+    while (not que.empty())
+    {
+        const pair<Pos, int> now_pos = que.top();
+        que.pop();
+
+        Vertex now_center = get_center(now_pos.first.index_x, now_pos.first.index_y);
+
+        // 走得到 这个点距离所有对方路径的前3m的线段 距离大于1.2m
+        // 避免迎头撞上对方
+        bool is_run = true;
+        for (const auto &tmp_path : pri_path)
         {
-            for (int j = max(1, now_pos.index_y - 5); j <= min(100, now_pos.index_y + 5); ++j)
+            double left_dis = 3;
+            for (int k = 0; k < tmp_path.size(); ++k)
             {
-                if (meta.map[i][j] == '#') continue;
-                bool is_run = true;
-                Vertex center = get_center(i, j);
-                for (const auto &_tmp_path : pri_path)
+                // 过长截取
+                navmesh::Vec2 vec_tmp {tmp_path[k], tmp_path[(k + 1) % tmp_path.size()]};
+                navmesh::Segment tmp_seg;
+                if (vec_tmp.length() >= left_dis)
                 {
-                    for (int k = 0; k < _tmp_path.size(); ++k)
-                    {
-                        if (dis_point_to_segment(
-                                center, {_tmp_path[k], _tmp_path[(k + 1) % _tmp_path.size()]})
-                            <= 1.2)
-                        {
-                            is_run = false;
-                            break;
-                        }
-                    }
-                    if (not is_run) break;
+                    // XXX 万一除0
+                    tmp_seg = {
+                        sub_path[k],
+                        {sub_path[k].x + vec_tmp.x * left_dis / vec_tmp.length(),
+                             sub_path[k].y + vec_tmp.y * left_dis / vec_tmp.length()}
+                    };
                 }
-
-                if (is_run)
+                else
                 {
-                    auto result = find_path(start, center, have_good);
-                    if (not result.empty()) return result;
+                    tmp_seg = {sub_path[k], sub_path[(k + 1) % sub_path.size()]};
+                }
+                if (dis_point_to_segment(now_center, tmp_seg) <= 1.2)
+                {
+                    is_run = false;
+                    break;
+                }
+                left_dis -= vec_tmp.length();
+                if (left_dis <= 1e-6) break;
+            }
+            if (not is_run) break;
+        }
+
+        if (is_run)
+        {
+            target = now_center;
+            cerr << "info: robot_id " << pri_path.size() + 1 << " find shelter point." << target << endl;
+            break;
+        }
+
+        for (int i = 0; i < 4; ++i)
+        {
+            int nx = now_pos.first.index_x + dirs[i].first;
+            int ny = now_pos.first.index_y + dirs[i].second;
+
+            if (meta.map[nx][ny] == '#') continue;
+
+            auto &npre = pre[nx][ny];
+            if (npre.index_x != -1) continue;
+
+            bool is_stop = false;
+            Vertex ncenter = get_center(nx, ny);
+            for (const auto &line : trans_map::stop_line)
+            {
+                if (Segment::is_cross(line, Segment {now_center, ncenter}))
+                {
+                    is_stop = true;
+                    break;
                 }
             }
+
+            if (is_stop) continue;
+
+            for (const auto &line : trans_map::danger_line)
+            {
+                if (not Segment::is_cross_2(line, Segment {now_center, ncenter})) continue;
+
+                if (line.length() <= limit_dis)
+                {
+                    is_stop = true;
+                    break;
+                }
+            }
+            if (is_stop) continue;
+
+            if (now_pos.second == 6) continue;
+
+            // 偏移起点和终点之外所有点
+            Pos npos = {nx, ny, proper_pos[nx][ny]};
+
+            npre = now_pos.first;
+            que.push({npos, now_pos.second + 1});
+            que_bak.push(npos);
         }
-        return find_path(start, tmp_path.back(), have_good);
     }
-    return find_path(start, start, have_good);
+
+    while (not que_bak.empty())
+    {
+        Pos now_pos = que_bak.front();
+        que_bak.pop();
+        pre[now_pos.index_x][now_pos.index_y].index_x = -1;
+    }
+
+    if (target.x != -1)
+    {
+        return find_path(start, target, have_good);
+    }
+    else
+    {
+        double nearest_dis = 1e9;
+        int nearest_index = 0;
+        for (int i = 0; i < pri_path.size(); ++i)
+        {
+            if (pri_path[i].empty()) continue;
+            double tmp_dis = Vertex::distance(sub_path[0], pri_path[i][0]);
+            if (tmp_dis < nearest_dis)
+            {
+                nearest_dis = tmp_dis;
+                nearest_index = i;
+            }
+        }
+        return find_path(start, pri_path[nearest_index].back(), true);
+    }
 }
 
 

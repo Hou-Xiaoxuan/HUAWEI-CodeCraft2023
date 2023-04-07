@@ -105,12 +105,8 @@ void __change_speed(const Robot &robot, const vector<Vertex> &path)
     Vec2 vec1 = {path[0], stop_loc};
     Vec2 vec2 = {path[1], stop_loc};
     double angle = Vec2::angle(vec1, vec2);
-    if (Vertex::distance(stop_loc, path[1]) < 1e-1)
-    {
-        cerr << "[info][__change_speed] robot " << robot.id << " stop 接近目标" << endl;
-        instructions.push_back(new io::I_forward(robot.id, 0));
-        return;
-    }
+
+    // 已经冲过了 停下来
     if (Vertex::distance(stop_loc, path[0]) > 1e-2 and abs(angle) < M_PI / 9)
     {
         cerr << "robot " << robot.id << " stop over" << endl;
@@ -118,9 +114,17 @@ void __change_speed(const Robot &robot, const vector<Vertex> &path)
         return;
     }
 
+    // 距离目标很近停下来
+    if (Vertex::distance(stop_loc, path[1]) < 2e-1)
+    {
+        cerr << "[info][__change_speed] robot " << robot.id << " stop 接近目标" << endl;
+        instructions.push_back(new io::I_forward(robot.id, 0));
+        return;
+    }
+
     double delta = __get_delta_angle(robot, path[1]);
 
-    if (abs(delta) > M_PI / 36 and robot.w > 0.5)
+    if (abs(delta) > M_PI / 18 and robot.w > M_PI / 18)
     {
         cerr << "robot " << robot.id << " stop rotate" << endl;
         instructions.push_back(new io::I_forward(robot.id, 0));
@@ -170,7 +174,7 @@ void __change_direction(const Robot &robot, const vector<Vertex> &path)
     }
 
     // 立即停止，判断是否正好1
-    if (abs(__normalize_angle(stop_angular_1 - right_angle)) < M_PI / 36)
+    if (abs(__normalize_angle(stop_angular_1 - right_angle)) < M_PI / 90)
     {
         cerr << "robot " << robot.id << " rotate to logic 1" << endl;
         instructions.push_back(new io::I_rotate(robot.id, 0));
@@ -181,7 +185,7 @@ void __change_direction(const Robot &robot, const vector<Vertex> &path)
     double small_delta = robot.w * ComVar::flametime;
     double stop_angular_2 = stop_angular_1 + small_delta;
     stop_angular_2 = __normalize_angle(stop_angular_2);
-    if (abs(__normalize_angle(stop_angular_2 - right_angle)) < M_PI / 36)
+    if (abs(__normalize_angle(stop_angular_2 - right_angle)) < M_PI / 90)
     {
         cerr << "robot " << robot.id << " rotate to logic 2" << endl;
         instructions.push_back(new io::I_rotate(robot.id, robot.w));

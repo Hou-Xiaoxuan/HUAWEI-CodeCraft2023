@@ -518,6 +518,77 @@ void process_anticollision(vector<Path> &robot_path)
         }
     }
 }
+
+void process_anticollision_2(vector<Path> &robot_path)
+{
+    // 解决单行道死锁
+    {
+        for (int pri = 1; pri < robot_path.size(); ++pri)
+        {
+            for (int sub = pri + 1; sub < robot_path.size(); ++sub)
+            {
+                const auto &pri_path = robot_path[pri];
+                const auto &sub_path = robot_path[sub];
+                bool need_shelter = false;
+                double left_dis_pri = 3.0;
+                double left_dis_sub = 3.0;
+
+                for (int i = 0; i < pri_path.size(); ++i)
+                {
+                    navmesh::Vec2 vec_pri {pri_path[i], pri_path[(i + 1) % pri_path.size()]};
+                    navmesh::Segment pri_seg;
+                    // 过长截取
+                    if (vec_pri.length() >= left_dis_pri)
+                        // XXX 万一除0
+                        pri_seg = {
+                            pri_path[i],
+                            {pri_path[i].x + vec_pri.x * left_dis_pri / vec_pri.length(),
+                                 pri_path[i].y + vec_pri.y * left_dis_pri / vec_pri.length()}
+                        };
+                    else
+                    {
+                        pri_seg = {pri_path[i], pri_path[(i + 1) % pri_path.size()]};
+                    }
+                    left_dis_pri -= pri_seg.length();
+
+                    for (int j = 0; j < sub_path.size(); ++j)
+                    {
+                        // 过长截取
+                        navmesh::Vec2 vec_sub {sub_path[j], sub_path[(j + 1) % sub_path.size()]};
+                        navmesh::Segment sub_seg;
+                        if (vec_sub.length() >= left_dis_sub)
+                            // XXX 万一除0
+                            sub_seg = {
+                                sub_path[j],
+                                {sub_path[j].x + vec_sub.x * left_dis_sub / vec_sub.length(),
+                                     sub_path[j].y + vec_sub.y * left_dis_sub / vec_sub.length()}
+                            };
+                        else
+                        {
+                            sub_seg = {sub_path[j], sub_path[(j + 1) % sub_path.size()]};
+                        }
+                        left_dis_sub -= sub_seg.length();
+
+                        double dis = navmesh::Segment::distance(pri_seg, sub_seg);
+                        if (dis <= 1.2) need_shelter = true;
+
+                        if (left_dis_sub <= 1e-6 or need_shelter) break;
+                    }
+                    if (left_dis_pri <= 1e-6 or need_shelter) break;
+                }
+
+                if (need_shelter)
+                {
+                    cerr << "[info] robot " << pri << " and " << sub << " need shelter " << endl;
+                    robot_path[sub] = find_shelter_path(sub_path,
+                        vector<Path>(robot_path.begin(), robot_path.begin() + sub),
+                        meta.robot[sub].goods == 0 ? false : true);
+                }
+            }
+        }
+    }
+}
+
 /*1帧15ms内给出策略*/
 void give_pointing()
 {
@@ -618,7 +689,7 @@ void give_pointing()
 
     // 解决单行道死锁
     {
-        process_anticollision(robot_path);
+        process_anticollision_2(robot_path);
     }
 
     // 调用navigate移动
