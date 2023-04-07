@@ -53,6 +53,13 @@ void read_flame(std::istream &io_in)
     // loc_to_index init
     int flame, money;
     io_in >> flame >> money;
+#ifdef DEBUG
+    if (flame - model::meta.current_flame > 1)
+    {
+        std::cerr
+            << "[error] !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! skip flame";
+    }
+#endif
     model::meta.current_flame = flame;
     model::meta.current_money = money;
     int k;

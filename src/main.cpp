@@ -20,6 +20,8 @@ void robot()
     std::cerr << "info: map read end" << std::endl;
     trans_map::solve();
     std::cerr << "info: trans map end" << std::endl;
+    find_path_square::init();
+    std::cerr << "info: find path init end" << std::endl;
     route_stupid::init();
     std::cerr << "info: route stupid init end" << std::endl;
     puts("OK");
@@ -43,7 +45,7 @@ void robot()
 
 void local(std::string file)
 {
-    std::cerr << "chose map "<<file << std::endl;
+    std::cerr << "chose map " << file << std::endl;
     auto fin = std::fstream(file);
     if (fin.is_open() == false)
     {
@@ -56,15 +58,24 @@ void local(std::string file)
     std::cerr << "info: trans map end" << std::endl;
     // 计时并输出运行时间
 
+
     auto start = std::chrono::steady_clock::now();
+    // route_stupid::init();
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> diff = end - start;
     std::cerr << "info: route stupid init end, time:" << diff.count() << std::endl;
     std::cerr << "info: route stupid init end" << std::endl;
-    route_stupid::init();
-    puts("OK");
 
-    route_stupid::give_pointing();
+    // route_stupid::give_pointing();
+    auto tmp1 = find_path_square::find_path(meta.robot[1].loc, meta.station[1].loc, false);
+    auto tmp2 = find_path_square::find_path(meta.robot[1].loc, meta.station[2].loc, false);
+    auto tmp3 = find_path_square::find_path(meta.robot[1].loc, meta.station[3].loc, false);
+    auto tmp4 = find_path_square::find_path(meta.robot[1].loc, meta.station[4].loc, false);
+    auto tmp5 = find_path_square::find_path(meta.robot[1].loc, meta.station[5].loc, false);
+    auto tmp6 = find_path_square::find_path(meta.robot[1].loc, meta.station[6].loc, false);
+    auto tmp7 = find_path_square::find_path(meta.robot[1].loc, meta.station[7].loc, false);
+    auto tmp8 = find_path_square::find_path(meta.robot[1].loc, meta.station[8].loc, false);
+    return;
 }
 
 int main(int argc, char *argv[])

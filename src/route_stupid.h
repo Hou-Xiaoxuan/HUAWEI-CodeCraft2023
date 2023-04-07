@@ -481,12 +481,12 @@ void give_pointing()
 
     {
         // 解决单行道死锁
-        for (int pri = 0; pri < robot_path.size(); ++pri)
+        for (int pri = 1; pri < robot_path.size(); ++pri)
         {
             for (int sub = pri + 1; sub < robot_path.size(); ++sub)
             {
-                auto pri_line = robot_path[pri];
-                auto sub_line = robot_path[sub];
+                const auto &pri_line = robot_path[pri];
+                const auto &sub_line = robot_path[sub];
                 bool need_shelter = false;
                 double all_dis_i = 0.0;
                 for (int i = 0; i < pri_line.size() and not need_shelter; ++i)
@@ -511,7 +511,7 @@ void give_pointing()
                 }
                 if (need_shelter)
                 {
-                    Path shelter = find_shelter_path(sub_line[0],
+                    Path shelter = find_shelter_path(sub_line,
                         vector<Path>(robot_path.begin(), robot_path.begin() + sub),
                         meta.robot[sub].goods == 0 ? false : true);
                     robot_path[sub] = shelter;

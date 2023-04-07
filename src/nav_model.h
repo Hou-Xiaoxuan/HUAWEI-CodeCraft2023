@@ -84,7 +84,7 @@ struct Segment {
     Segment() = default;
     Segment(const Vertex &a, const Vertex &b) : a(a), b(b) { }
 
-    double length() { return Vec2(a, b).length(); }
+    double length() const { return Vec2(a, b).length(); }
 
     // 判断是否相交
     static bool is_cross(const Segment &s1, const Segment &s2)
