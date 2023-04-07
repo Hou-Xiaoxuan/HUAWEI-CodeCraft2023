@@ -18,7 +18,7 @@ void robot()
 {
     io::init(std::cin);
     std::cerr << "info: map read end" << std::endl;
-    trans_map::solve();
+    trans_map::init();
     std::cerr << "info: trans map end" << std::endl;
     find_path_square::init();
     std::cerr << "info: find path init end" << std::endl;
@@ -54,7 +54,7 @@ void local(std::string file)
     }
     io::init(fin);
     std::cerr << "info: map read end" << std::endl;
-    trans_map::solve();
+    trans_map::init();
     std::cerr << "info: trans map end" << std::endl;
     find_path_square::init();
     std::cerr << "info: find path init end" << std::endl;
