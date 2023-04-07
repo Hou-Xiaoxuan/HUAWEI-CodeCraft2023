@@ -56,6 +56,8 @@ void local(std::string file)
     std::cerr << "info: map read end" << std::endl;
     trans_map::solve();
     std::cerr << "info: trans map end" << std::endl;
+    find_path_square::init();
+    std::cerr << "info: find path init end" << std::endl;
     // 计时并输出运行时间
 
 

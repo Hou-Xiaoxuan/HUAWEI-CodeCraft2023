@@ -98,13 +98,13 @@ void __change_speed(const Robot &robot, const vector<Vertex> &path)
     double angle = Vec2::angle(vec1, vec2);
     if (Vertex::distance(stop_loc, path[1]) < 0.05)
     {
-        cerr << "robot " << robot.id << " stop near" << endl;
+        cerr << "[info][__change_speed] robot " << robot.id << " stop 接近目标" << endl;
         instructions.push_back(new io::I_forward(robot.id, 0));
         return;
     }
     if (Vertex::distance(stop_loc, path[0]) > 1e-7 and abs(angle) < M_PI / 9)
     {
-        cerr << "robot " << robot.id << " stop 2 over" << endl;
+        cerr << "[info][__change_speed] robot " << robot.id << " stop 越过目标" << endl;
         instructions.push_back(new io::I_forward(robot.id, 0));
         return;
     }
@@ -113,7 +113,7 @@ void __change_speed(const Robot &robot, const vector<Vertex> &path)
 
     if (abs(delta) > M_PI / 10)
     {
-        cerr << "robot " << robot.id << " stop 3 rotate" << endl;
+        cerr << "[info][__change_speed] robot " << robot.id << " stop 方向不对" << endl;
         instructions.push_back(new io::I_forward(robot.id, 0));
         return;
     }
@@ -185,12 +185,18 @@ void move_to(const Robot &robot, vector<Vertex> path)
 {
     if (not path.empty())
     {
-        cerr << "info: robot " << robot.id << " move to ";
+        cerr << "[info][move_to]: robot " << robot.id << " move to: ";
         for (auto &p : path)
             cerr << p << "->";
         cerr << endl;
         __change_direction(robot, path);
         __change_speed(robot, path);
+    }
+    else
+    {
+        cerr << "[info][move_to]: robot " << robot.id << " move to: empty" << endl;
+        instructions.push_back(new io::I_forward(robot.id, 0));
+        instructions.push_back(new io::I_rotate(robot.id, 0));
     }
 }
 }

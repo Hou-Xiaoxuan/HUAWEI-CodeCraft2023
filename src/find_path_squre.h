@@ -321,9 +321,9 @@ find_shelter_path(const vector<Vertex> &sub_path, const vector<vector<Vertex>> &
         Pos now_pos = current_pos(start);
         // 在路径上尝试走出去
 
-        for (int i = max(1, now_pos.index_x - 5); i <= min(Map::width, now_pos.index_x + 5); ++i)
+        for (int i = max(1, now_pos.index_x - 5); i <= min(100, now_pos.index_x + 5); ++i)
         {
-            for (int j = max(1, now_pos.index_y - 5); j <= min(Map::height, now_pos.index_y + 5); ++j)
+            for (int j = max(1, now_pos.index_y - 5); j <= min(100, now_pos.index_y + 5); ++j)
             {
                 if (meta.map[i][j] == '#') continue;
                 bool is_run = true;
@@ -354,5 +354,145 @@ find_shelter_path(const vector<Vertex> &sub_path, const vector<vector<Vertex>> &
     }
     return find_path(start, start, have_good);
 }
+
+
+vector<Vertex> find_shelter(const Vertex &start, const vector<Vertex> &dodge_path, bool have_good)
+{
+    // 远离寻找dodge_path起始3m以内的一个躲避点
+    // 如果没有 就先前往dodge_path的终点
+    double limit_dis = have_good ? ConVar::robot_radius_goods * 2 : ConVar::robot_radius * 2;
+    limit_dis *= 1.1;
+    // 如果当前位置不挡道(完整路径)：留在原地
+    bool can_stop = true;
+    for (int i = 1; i < dodge_path.size() and can_stop == true; ++i)
+    {
+        if (dis_point_to_segment(start, {dodge_path[i], dodge_path[i - 1]}) < limit_dis) can_stop = false;
+    }
+    if (can_stop) return vector<Vertex> {start, start};
+
+    vector<Vertex> dodge_path_sub;
+    double tmp_dis = 0;
+    for (int i = 1; i < dodge_path.size(); ++i)
+    {
+        tmp_dis += std::hypot(
+            dodge_path.at(i).x - dodge_path.at(i - 1).x, dodge_path.at(i).y - dodge_path.at(i - 1).y);
+        if (tmp_dis > 5)
+        {
+            dodge_path_sub = vector<Vertex>(dodge_path.begin(), dodge_path.begin() + i);
+            break;
+        }
+    }
+    if (dodge_path_sub.empty()) dodge_path_sub = dodge_path;
+
+    auto &dodge_loc = dodge_path[0];
+
+    Vertex target {-1, -1};
+    /* BFS寻找躲避点*/
+    {
+        // cerr << "[debug][find_shelter] enter bfs" << endl;
+        // 1. 禁止靠近dodge_loc
+        // 2. 距离dodge_sub_path距离大于limit_dis
+        // 3. 15步数内能到达
+        priority_queue<pair<Pos, int>, vector<pair<Pos, int>>, decltype(cmp_pos)> que(cmp_pos);
+        queue<Pos> que_bak;
+        auto start_pos = current_pos(start);
+        pre[start_pos.index_x][start_pos.index_y].index_x = -1;
+        que.push({start_pos, 0});
+        que_bak.push(start_pos);
+
+        pair<Pos, int> now_pos {};
+        while (not que.empty())
+        {
+            now_pos = que.top();
+            // cerr << "[debug][find_shelter][bfs] now_pos: " << now_pos.first.index_x << " "
+            //  << now_pos.first.index_y << " " << now_pos.second << endl;
+            que.pop();
+            // check valid
+            if (now_pos.second > 20) break;
+            bool valid = true;
+            for (int i = 1; i < dodge_path_sub.size() and valid; i++)
+            {
+                if (dis_point_to_segment(
+                        now_pos.first.pos, {dodge_path_sub.at(i), dodge_path_sub.at(i - 1)})
+                    <= limit_dis)
+                    valid = false;
+            }
+            if (valid)    // 目标点要求
+            {
+                target = now_pos.first.pos;
+                break;
+            }
+
+            /*next*/
+            Vertex now_center = get_center(now_pos.first.index_x, now_pos.first.index_y);
+            for (int i = 0; i < 4; ++i)
+            {
+                // cerr << "[debug][find_shelter][bfs] i=" << i << ", and pos is " << now_pos.first.index_x
+                //    << " " << now_pos.first.index_y << endl;
+                int nx = now_pos.first.index_x + dirs.at(i).first;
+                int ny = now_pos.first.index_y + dirs.at(i).second;
+
+                if (meta.map.at(nx).at(ny) == '#') continue;
+                if (std::hypot(nx - dodge_loc.x, ny - dodge_loc.y) < limit_dis) continue;
+
+                auto &npre = pre.at(nx).at(ny);
+                if (npre.index_x != -1) continue;
+
+                bool is_stop = false;
+                Vertex ncenter = get_center(nx, ny);
+                for (const auto &line : trans_map::stop_line)
+                {
+                    if (Segment::is_cross_2(line, Segment {now_center, ncenter}))
+                    {
+                        is_stop = true;
+                        break;
+                    }
+                }
+                if (is_stop) continue;
+
+                for (const auto &line : trans_map::danger_line)
+                {
+                    if (not Segment::is_cross_2(line, Segment {now_center, ncenter})) continue;
+
+                    if (line.length() <= limit_dis)
+                    {
+                        is_stop = true;
+                        break;
+                    }
+                }
+                if (is_stop) continue;
+
+                // 偏移起点和终点之外所有点
+                Pos npos = {nx, ny, proper_pos[nx][ny]};
+
+                npre = now_pos.first;
+                // cerr << "[debug][find_shelter][bfs] next_pos: " << npos.index_x << " " << npos.index_y
+                //      << " " << now_pos.second + 1 << endl;
+                que.push({npos, now_pos.second + 1});
+                que_bak.push(npos);
+            }
+        }
+
+        // 释放内存
+        while (not que_bak.empty())
+        {
+            Pos now_pos = que_bak.front();
+            que_bak.pop();
+            pre[now_pos.index_x][now_pos.index_y].index_x = -1;
+        }
+        /*BFS END*/
+    }
+
+    if (target.x != -1)
+    {
+        cerr << "[info][find_shelter] find shelter target" << target << endl;
+        return find_path(start, target, have_good);
+    }
+
+
+    else    // XXX 找不到躲避点
+        return {start, start};
+}
+
 };
 #endif
