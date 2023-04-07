@@ -440,8 +440,13 @@ void process_anticollision(vector<Path> &robot_path)
                 // 过长截取
                 if (vec_pri.length() >= left_dis_pri)
                 {
+#ifdef DEBUG
                     // XXX 万一除0
-                    if (vec_pri.length() < 1e-20) throw "vec_pri.length() == 0";
+                    if (vec_pri.length() < 1e-20)
+                    {
+                        throw "vec_pri.length() == 0";
+                    }
+#endif
                     pri_seg = {
                         pri_path[i],
                         {pri_path[i].x + vec_pri.x * left_dis_pri / vec_pri.length(),
@@ -461,8 +466,13 @@ void process_anticollision(vector<Path> &robot_path)
                     navmesh::Segment sub_seg;
                     if (vec_sub.length() >= left_dis_sub)
                     {
+#ifdef DEBUG
                         // XXX 万一除0
-                        if (vec_sub.length() < 1e-20) throw "vec_sub.length() == 0";
+                        if (vec_pri.length() < 1e-20)
+                        {
+                            if (vec_sub.length() < 1e-20) throw "vec_sub.length() == 0";
+                        }
+#endif
                         sub_seg = {
                             sub_path[j],
                             {sub_path[j].x + vec_sub.x * left_dis_sub / vec_sub.length(),
