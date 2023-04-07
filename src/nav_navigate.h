@@ -47,6 +47,15 @@ double __get_delta_angle(const Robot &robot, const Vertex &target)
     return delta;
 }
 
+double __normalize_angle(double angle)
+{
+    while (angle > M_PI)
+        angle -= 2 * M_PI;
+    while (angle < -M_PI)
+        angle += 2 * M_PI;
+    return angle;
+}
+
 // Vertex __stop_with_spec_w(const Robot &robot)
 // {
 //     double w = robot.w;
@@ -96,24 +105,24 @@ void __change_speed(const Robot &robot, const vector<Vertex> &path)
     Vec2 vec1 = {path[0], stop_loc};
     Vec2 vec2 = {path[1], stop_loc};
     double angle = Vec2::angle(vec1, vec2);
-    if (Vertex::distance(stop_loc, path[1]) < 0.05)
+    if (Vertex::distance(stop_loc, path[1]) < 1e-1)
     {
         cerr << "robot " << robot.id << " stop near" << endl;
         instructions.push_back(new io::I_forward(robot.id, 0));
         return;
     }
-    if (Vertex::distance(stop_loc, path[0]) > 1e-7 and abs(angle) < M_PI / 9)
+    if (Vertex::distance(stop_loc, path[0]) > 1e-2 and abs(angle) < M_PI / 9)
     {
-        cerr << "robot " << robot.id << " stop 2 over" << endl;
+        cerr << "robot " << robot.id << " stop over" << endl;
         instructions.push_back(new io::I_forward(robot.id, 0));
         return;
     }
 
     double delta = __get_delta_angle(robot, path[1]);
 
-    if (abs(delta) > M_PI / 10)
+    if (abs(delta) > M_PI / 36 and robot.w > 0.5)
     {
-        cerr << "robot " << robot.id << " stop 3 rotate" << endl;
+        cerr << "robot " << robot.id << " stop rotate" << endl;
         instructions.push_back(new io::I_forward(robot.id, 0));
         return;
     }
@@ -125,55 +134,126 @@ void __change_speed(const Robot &robot, const vector<Vertex> &path)
 void __change_direction(const Robot &robot, const vector<Vertex> &path)
 {
     Vertex target = path[1];
-    double angular_acceleration = __get_max_robot_angular_acceleration(robot);
-    Vertex next_target = target;
 
-    // if (path.size() >= 3 && Vertex::distance(robot.loc, target) < 0.1 && robot.v.len() < 1e-2)
-    // {
-    //     next_target = path[2];
-    // }
+    double y = target.y - robot.loc.y;
+    double x = target.x - robot.loc.x;
 
-    double delta = __get_delta_angle(robot, next_target);
-    // cerr << "info: robot " << robot.id << " dir " << robot.dirc << " delta " << delta << endl;
+    double right_angle = atan2(y, x);
 
-    int delta_dir = signbit(delta) ? -1 : 1;
+    double delta = __get_delta_angle(robot, target);
 
+    double angular_acceleration_symbol
+        = __get_max_robot_angular_acceleration(robot) * (signbit(robot.w) == 1 ? -1 : 1);
+    double angular_acceleration_rev_symbol = -angular_acceleration_symbol;
 
-    if (signbit(delta) != signbit(robot.w))    // HACK
+    double stop_t = -robot.w / angular_acceleration_rev_symbol;
+
+    if (stop_t < 0)
     {
-        instructions.push_back(new io::I_rotate(robot.id, ConVar::max_robot_angular_speed * delta_dir));
-        return;
+        cerr << "robot " << robot.id << " throw error t < 0" << endl;
+        throw "error t < 0";
     }
 
-    delta = abs(delta);
+    double stop_angular_1
+        = robot.dirc + robot.w * stop_t + 0.5 * angular_acceleration_rev_symbol * stop_t * stop_t;
+    stop_angular_1 = __normalize_angle(stop_angular_1);
 
-    double stop_angular = robot.w * robot.w * 0.5 / angular_acceleration;
-    if (stop_angular >= delta)
+    // 立刻停止，判断是否来不及了0
+    if (abs(__normalize_angle(robot.dirc - right_angle))
+            < abs(__normalize_angle(robot.dirc - stop_angular_1))
+        and abs(__normalize_angle(right_angle - stop_angular_1))
+            < abs(__normalize_angle(robot.dirc - stop_angular_1)))
     {
+        cerr << "robot " << robot.id << " rotate to logic 0" << endl;
         instructions.push_back(new io::I_rotate(robot.id, 0));
         return;
     }
 
-
-    stop_angular = abs(robot.w) * ComVar::flametime + stop_angular;
-    if (stop_angular >= delta)
+    // 立即停止，判断是否正好1
+    if (abs(__normalize_angle(stop_angular_1 - right_angle)) < M_PI / 36)
     {
+        cerr << "robot " << robot.id << " rotate to logic 1" << endl;
+        instructions.push_back(new io::I_rotate(robot.id, 0));
+        return;
+    }
+
+    // 判断再走一帧是否正好2
+    double small_delta = robot.w * ComVar::flametime;
+    double stop_angular_2 = stop_angular_1 + small_delta;
+    stop_angular_2 = __normalize_angle(stop_angular_2);
+    if (abs(__normalize_angle(stop_angular_2 - right_angle)) < M_PI / 36)
+    {
+        cerr << "robot " << robot.id << " rotate to logic 2" << endl;
         instructions.push_back(new io::I_rotate(robot.id, robot.w));
         return;
     }
 
-    double wm = (robot.w
-                    + (signbit(robot.w) == 1 ? -1 : 1)
-                        * sqrt(4 * angular_acceleration * delta - robot.w * robot.w))
-        * 0.5;
 
-    if (abs(wm) > ConVar::max_robot_angular_speed)
+    // 是否在上面的两个区间内3
+    // 如果是先减速 再平动 在减速
+    if (abs(__normalize_angle(stop_angular_1 - right_angle)) < abs(small_delta)
+        and abs(__normalize_angle(stop_angular_2 - right_angle)) < abs(small_delta))
     {
-        instructions.push_back(new io::I_rotate(robot.id, ConVar::max_robot_angular_speed * delta_dir));
+        double nw_1 = 0.5 * (angular_acceleration_rev_symbol * ComVar::flametime + robot.w);
+        double nw_2 = 0.5
+            * sqrt(angular_acceleration_rev_symbol * angular_acceleration_rev_symbol * ComVar::flametime
+                    * ComVar::flametime
+                - 4 * angular_acceleration_rev_symbol * delta
+                + 2 * angular_acceleration_rev_symbol * ComVar::flametime * robot.w - robot.w * robot.w);
+
+        if (nw_1 + nw_2 > robot.w
+                and nw_1 + nw_2 < robot.w + angular_acceleration_rev_symbol * ComVar::flametime
+            or nw_1 + nw_2 < robot.w
+                and nw_1 + nw_1 > robot.w + angular_acceleration_rev_symbol * ComVar::flametime)
+        {
+            instructions.push_back(new io::I_rotate(robot.id, nw_1 + nw_2));
+            cerr << "robot " << robot.id << " rotate to logic 3 +" << endl;
+            return;
+        }
+        else if (nw_1 - nw_2 > robot.w
+                and nw_1 - nw_2 < robot.w + angular_acceleration_rev_symbol * ComVar::flametime
+            or nw_1 - nw_2 < robot.w
+                and nw_1 - nw_1 > robot.w + angular_acceleration_rev_symbol * ComVar::flametime)
+        {
+            instructions.push_back(new io::I_rotate(robot.id, nw_1 - nw_2));
+            cerr << "robot " << robot.id << " rotate to logic 3 -" << endl;
+            return;
+        }
+        else
+        {
+            cerr << "robot " << robot.id << " throw logic 3 error" << endl;
+            throw "logic 3 error";
+            return;
+        }
+    }
+
+    // 加速到极限再立刻减速
+    // if (abs(robot.w) < 1e-2) {
+
+    // }
+    double next_w_1 = sqrt(angular_acceleration_symbol * delta + robot.w * robot.w * 0.5)
+        * (signbit(delta) == 1 ? -1 : 1);
+
+    // if (abs(next_w_1) < abs(robot.w))
+    // {
+    //     cerr << "robot " << robot.id << " throw logic 4 error" << endl;
+    //     throw "logic 4 error";
+    // }
+
+    if ((next_w_1 - robot.w) / angular_acceleration_symbol >= ComVar::flametime
+        or abs(next_w_1) >= ConVar::max_robot_angular_speed)
+    {
+        instructions.push_back(new io::I_rotate(robot.id, next_w_1));
+        cerr << "robot " << robot.id << " rotate to logic 4" << endl;
         return;
     }
 
-    instructions.push_back(new io::I_rotate(robot.id, wm));
+    double next_w_2 = (angular_acceleration_symbol * delta + 0.5 * robot.w * robot.w)
+        / (robot.w + angular_acceleration_symbol * ComVar::flametime);
+
+    instructions.push_back(new io::I_rotate(robot.id, next_w_2));
+    cerr << "robot " << robot.id << " rotate to logic 5" << endl;
+
     return;
 }
 

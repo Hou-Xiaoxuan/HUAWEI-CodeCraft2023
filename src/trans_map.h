@@ -500,7 +500,7 @@ void test_print()
 
     fout.close();
 }
-vector<Polygon> solve()
+vector<Polygon> init()
 {
     /*识别 .#  #.
           #.  .#
@@ -538,7 +538,9 @@ vector<Polygon> solve()
     get_result(tree.back(), 0);
     get_danger_line();
     get_nearest_obstacle();
+#ifdef DEBUG
     test_print();
+#endif
 
     // // 根据danger_line填充修改地图
     // for (auto &line : danger_line)
