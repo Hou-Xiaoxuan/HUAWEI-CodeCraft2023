@@ -118,7 +118,7 @@ void init()
             proper_pos[i][j] = get_center(i, j);
         }
     }
-    for (int i = 0; i < 3; ++i)
+    for (int i = 0; i < 1; ++i)
     {
         get_proper_pos();
     }
@@ -168,13 +168,13 @@ vector<Vertex> get_ori_path()
             Vertex ncenter = get_center(nx, ny);
             for (const auto &line : trans_map::stop_line)
             {
-                if (Segment::is_cross_2(line, Segment {now_center, ncenter}))
+                if (Segment::is_cross(line, Segment {now_center, ncenter}))
                 {
                     is_stop = true;
                     break;
                 }
             }
-            if (is_stop) continue;
+            if (is_stop and not(nx == target_pos.index_x and ny == target_pos.index_y)) continue;
 
             for (const auto &line : trans_map::danger_line)
             {
@@ -276,6 +276,12 @@ vector<Vertex> get_smooth_path(const vector<Vertex> &ori_path)
             smooth_path.push_back(ori_path[end_index]);
             start_index = end_index;
         }
+    }
+
+    // xxx 需要跟nav_nagivatorp停留在原地距离配合
+    while (smooth_path.size() > 2 and Vertex::distance(smooth_path[0], smooth_path[1]) < 0.1)
+    {
+        smooth_path.erase(smooth_path.begin());
     }
 
     return smooth_path;
