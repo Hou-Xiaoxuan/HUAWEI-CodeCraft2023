@@ -6,8 +6,11 @@ import time
 import subprocess
 import json
 import threading
-
-result = [None]*5
+import os
+# 重新编译 cd build && cmake .. && make
+os.system("cd build && cmake .. && make")
+result = [None] * 5
+skip_frame = [None] * 5
 # 判断系统是macos还是linux
 
 
@@ -33,8 +36,7 @@ def excute_test(index: int):
     else:
         raise Exception("not support os")
     print(f"cmd: {cmd} start")
-    p = subprocess.Popen(
-        cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     data = p.stdout.readlines()
 
     cnt.append(index)
@@ -42,9 +44,16 @@ def excute_test(index: int):
         for d in data:
             if b"score" in d:
                 _data = d
+            if b'skipped frames' in d:
+                _data_2 = d
         print(f"index {index}: {_data}")
         res = json.loads(_data)
         result[index] = res['score']
+        if _data_2:
+            skip_frame[index] = str(_data_2).split(":")[-1][:-3]
+            # 二进制转int
+            skip_frame[index] = int(skip_frame[index])
+            print(f'index {index}: skip frame: {skip_frame[index]}')
     except Exception as e:
         print(f"task {index} error: ", e)
 
@@ -80,3 +89,4 @@ time_thread.start()
 sum_score = sum([score for score in result if score != None])
 print(f"result: {result[1:]}")
 print(f"sum score: {sum_score}")
+print(f"skip frame: {skip_frame[1:]}")
