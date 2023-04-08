@@ -78,7 +78,6 @@ enum ProcessingState {
     BUY = 1,        // 运输中
     SELL = 2,       // 卖货中
 };
-static vector<int> area_index {};                      // 机器人[i]所在区域编号，从1开始
 static vector<int> processing {};                      // 机器人[i]正在处理的route
 static vector<ProcessingState> processing_state {};    // 机器人[i]正在处理的root的状态
 static vector<int> stop_until {};    // 机器人停止获取pointing的标志，缓解跳帧
@@ -88,7 +87,6 @@ class Area
 public:
 private:
     vector<Route> routes;           // 区域内的路径, 从1开始
-    set<int> robots;                // 区域内的机器人
     set<int> stations;              // 区域内的工作台
     vector<double> super_demand;    // 是否有workstation正在等待货物[i]
 private:
@@ -389,8 +387,9 @@ void init()
             routes.emplace_back(Route {i, j});
         }
 
-    // 划分区域
-    areas.emplace_back();
+    // 按照机器人划分为4个区域(有重叠)
+    areas.assign(meta.robot.size(), {});
+
     for (int i = 1; i < meta.station.size(); i++)
     {
         int x = find_fa(i);
@@ -398,7 +397,6 @@ void init()
         {
             Area area;
             area.routes.reserve(100);
-            area.routes.emplace_back();
             // 将包含x的所有route加入sub_area
             for (int j = 1; j < routes.size(); j++)
                 if (x == find_fa(routes[j].from_station_index)
@@ -408,21 +406,30 @@ void init()
                     area.stations.insert(routes[j].from_station_index);
                     area.stations.insert(routes[j].target_station_index);
                 }
-            if (area.routes.size() > 1) areas.emplace_back(std::move(area));
+            if (area.routes.size() > 0)
+            {
+                for (int k=1; k < meta.robot.size(); k++)
+                {
+                    auto path = find_path(meta.robot[k].loc, meta.station[i].loc, false);
+                    if (path.empty()) continue;
+                    // 合并
+                    for (auto &route : area.routes)
+                        areas[k].routes.emplace_back(route);
+                    areas[k].stations.insert(area.stations.begin(), area.stations.end());
+                }
+            }
         }
     }
-    // 统计机器人所在区域
-    area_index.assign(meta.robot.size(), 0);
-    for (int i = 1; i < meta.robot.size(); i++)
+    // debug
+    for (int i = 1; i < areas.size(); i++)
     {
-        for (int j = 1; j < areas.size(); j++)
-        {
-            auto &route = areas[j].routes[1];
-            vector<navmesh::Vertex> path = find_path(meta.robot[i].loc, route.from_station().loc, false);
-            if (path.empty()) continue;
-            area_index[i] = j;
-        }
+        cerr << "[info][init] area " << i << " routes size = " << areas[i].routes.size() << "station size"
+             << areas[i].stations.size() << endl;
+
+        cerr << endl;
     }
+
+    // enddebug
     processing.assign(meta.robot.size(), 0);
     processing_state.assign(meta.robot.size(), ProcessingState::PICKING);
     stop_until.assign(meta.robot.size(), -1);
@@ -610,7 +617,7 @@ void give_pointing()
     {
         for (int i = 1; i < meta.robot.size(); i++)
         {
-            if (area_index[i] == 0) continue;
+            if (areas[i].stations.empty()) continue;
             /* STOP逻辑 */
             if (stop_until[i] != -1)
             {
@@ -623,10 +630,11 @@ void give_pointing()
                 else
                     stop_until[i] = -1;
             }
-            auto &area = areas[area_index[i]];
+            auto &area = areas[i];
             auto &route = area.routes[processing[i]];
             auto &robot = meta.robot[i];
-            // if (processing[i] == 0) processing[i] = __steal_pointing(i); // 负优化
+
+            /* 重新获取任务 */
             if (processing[i] == 0)
             {
                 processing[i] = area._give_pointing(i);

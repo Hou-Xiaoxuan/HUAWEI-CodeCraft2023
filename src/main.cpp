@@ -57,6 +57,7 @@ void local(const std::string &file)
     trans_map::init();
     std::cerr << "info: trans map end" << std::endl;
     find_path_square::init();
+    route_stupid::init();
     std::cerr << "info: find path init end" << std::endl;
     // 计时并输出运行时间
 
