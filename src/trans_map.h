@@ -1,5 +1,6 @@
 #ifndef __TRANS_MAP_H__
 #define __TRANS_MAP_H__
+#include "args.h"
 #include "model.h"
 #include "nav_model.h"
 #include <algorithm>

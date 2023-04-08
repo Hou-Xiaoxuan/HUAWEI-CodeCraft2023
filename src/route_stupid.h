@@ -405,7 +405,11 @@ void init()
 
     // 按照机器人划分为4个区域(有重叠)
     areas.assign(meta.robot.size(), {});
-
+    for (int i = 1; i < meta.robot.size(); i++)
+    {
+        areas[i].routes.emplace_back();
+        areas[i].routes.reserve(100);
+    }
     for (int i = 1; i < meta.station.size(); i++)
     {
         int x = find_fa(i);
