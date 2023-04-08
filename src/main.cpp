@@ -17,29 +17,34 @@ void sb_clangd() { }
 void robot()
 {
     io::init(std::cin);
-    std::cerr << "info: map read end" << std::endl;
+    std::cerr << "[info] map read end" << std::endl;
     trans_map::init();
-    std::cerr << "info: trans map end" << std::endl;
-    find_path_square::init();
-    std::cerr << "info: find path init end" << std::endl;
+    std::cerr << "[info] trans map end" << std::endl;
     route_stupid::init();
-    std::cerr << "info: route stupid init end" << std::endl;
-    puts("OK");
-
-    // trans_map(meta.Map::map);
+    std::cerr << "[info] route_stupid init end" << std::endl;
+    puts("[info] init OK");
 
     fflush(stdout);
     /*----------START----------*/
     while (std::cin.eof() == false)
     {
+        find_path_square::pre_cnt_path = find_path_square::cnt_path;
+        find_path_square::pre_cnt_find_que = find_path_square::cnt_find_que;
         io::read_flame(std::cin);
-        std::cerr << "info: flame read end, flame:" << meta.current_flame << std::endl;
+        std::cerr << "[info] flame read end, flame: " << meta.current_flame << std::endl;
         route_stupid::give_pointing();
         for (auto in : io::instructions)
         {
             in->print(std::cerr);
         }
         io::print_instructions(io::instructions, std::cout, meta.current_flame);
+        if (_USE_LOG_)
+        {
+            std::cerr << "[info] flame: " << meta.current_flame << " find_path in frame "
+                      << find_path_square::cnt_path - find_path_square::pre_cnt_path << std::endl;
+            std::cerr << "[info] flame: " << meta.current_flame << " find_que in frame "
+                      << find_path_square::cnt_find_que - find_path_square::pre_cnt_find_que << std::endl;
+        }
     }
 }
 
@@ -53,12 +58,9 @@ void local(const std::string &file)
         return;
     }
     io::init(fin);
-    std::cerr << "info: map read end" << std::endl;
+    std::cerr << "[info] map read end" << std::endl;
     trans_map::init();
-    std::cerr << "info: trans map end" << std::endl;
-    find_path_square::init();
-    route_stupid::init();
-    std::cerr << "info: find path init end" << std::endl;
+    std::cerr << "[info] trans map end" << std::endl;
     // 计时并输出运行时间
 
 
@@ -66,18 +68,11 @@ void local(const std::string &file)
     // route_stupid::init();
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> diff = end - start;
-    std::cerr << "info: route stupid init end, time:" << diff.count() << std::endl;
-    std::cerr << "info: route stupid init end" << std::endl;
+    std::cerr << "[info] route stupid init end, time:" << diff.count() << std::endl;
+    std::cerr << "[info] route stupid init end" << std::endl;
 
     // route_stupid::give_pointing();
-    auto tmp1 = find_path_square::find_path(meta.robot[1].loc, meta.station[1].loc, false);
-    auto tmp2 = find_path_square::find_path(meta.robot[1].loc, meta.station[2].loc, false);
-    auto tmp3 = find_path_square::find_path(meta.robot[1].loc, meta.station[3].loc, false);
-    auto tmp4 = find_path_square::find_path(meta.robot[1].loc, meta.station[4].loc, false);
-    auto tmp5 = find_path_square::find_path(meta.robot[1].loc, meta.station[5].loc, false);
-    auto tmp6 = find_path_square::find_path(meta.robot[1].loc, meta.station[6].loc, false);
-    auto tmp7 = find_path_square::find_path(meta.robot[1].loc, meta.station[7].loc, false);
-    auto tmp8 = find_path_square::find_path(meta.robot[1].loc, meta.station[8].loc, false);
+    auto tmp1 = find_path_square::find_path({22.9579, 30.5276}, meta.station[13].loc, false);
     return;
 }
 

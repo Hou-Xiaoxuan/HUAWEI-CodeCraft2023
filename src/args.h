@@ -1,5 +1,6 @@
 #ifndef __ARGS__H__
 #define __ARGS__H__
+#define _USE_LOG_ false
 namespace Args
 {
 /*route_fool 参数*/

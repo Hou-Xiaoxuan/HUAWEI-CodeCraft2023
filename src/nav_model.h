@@ -60,7 +60,14 @@ struct Vec2 {
     // 除浮点数
     friend Vec2 operator/(const Vec2 &v, double k)
     {
-        if (fabs(k) < EPS) throw std::runtime_error("divide by zero");
+        if (fabs(k) < EPS)
+        {
+            if (_USE_LOG_)
+            {
+                cerr << "[error][Vec2 /]"
+                     << "divide by zero" << endl;
+            }
+        }
         return {v.x / k, v.y / k};
     }
 

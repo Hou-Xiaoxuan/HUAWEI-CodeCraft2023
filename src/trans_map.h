@@ -559,13 +559,16 @@ vector<Polygon> init()
     //     }while(x < line.b.x);
     // }
     // 打印修改后的地图
-    for (auto &i : model::meta.map)
+    if (_USE_LOG_)
     {
-        for (char j : i)
+        for (auto &i : model::meta.map)
         {
-            cerr << j;
+            for (char j : i)
+            {
+                cerr << j;
+            }
+            cerr << endl;
         }
-        cerr << endl;
     }
 
     return result;

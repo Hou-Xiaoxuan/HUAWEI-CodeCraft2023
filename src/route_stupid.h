@@ -168,9 +168,12 @@ private:
             vector<navmesh::Vertex> path;
             if (robot.in_station == -1)
             {
-                // robot.loc->from_station.loc
-                cerr << "[warning][get_expected_profit] robot[" << robot.id << "] is not in any station"
-                     << endl;
+                if (_USE_LOG_)
+                {
+                    // robot.loc->from_station.loc
+                    cerr << "[warning][get_expected_profit] robot[" << robot.id << "] is not in any station"
+                         << endl;
+                }
             }
             else
                 path = pathes[robot.in_station][from_station.id];
@@ -194,8 +197,11 @@ private:
         if (station_now <= 0)
         {
             robot_to_from = find_path(robot.loc, from_station.loc, false);
-            cerr << "[warning][get_expected_flame_cost] robot[" << robot.id
-                 << "] is not start from any station" << endl;
+            if (_USE_LOG_)
+            {
+                cerr << "[warning][get_expected_flame_cost] robot[" << robot.id
+                     << "] is not start from any station" << endl;
+            }
         }
         else
             robot_to_from = pathes.at(station_now).at(from_station.id);
@@ -232,9 +238,12 @@ public:
                         < navmesh::EPS)
                     {
                         now_station = station_index;
-                        cerr << "[info][give_pointing] robot[" << robot_id
-                             << "] is not in any station, but find now station [" << now_station
-                             << "], path size: " << now_station_path.size() << endl;
+                        if (_USE_LOG_)
+                        {
+                            cerr << "[info][give_pointing] robot[" << robot_id
+                                 << "] is not in any station, but find now station [" << now_station
+                                 << "], path size: " << now_station_path.size() << endl;
+                        }
                         break;
                     }
                 }
@@ -329,10 +338,19 @@ public:
         // routes[best_route.index].start_flame = meta.current_flame;
         // routes[best_route.index].finish_flame = best_route.finish_flame;
         // routes[best_route.index].ppf = best_route.ppf;
-        cerr << "[info][__pointing] [flame=" << meta.current_flame << "] robot = " << robot_id
-             << "best ppf = " << best_route.ppf << " route [" << best_route.index
-             << "]: " << this->routes[best_route.index] << endl;
-        if (best_route.index == 0) cerr << "[error][__pointing] best_route.index == 0" << endl;
+        if (_USE_LOG_)
+        {
+            cerr << "[info][__pointing] [flame=" << meta.current_flame << "] robot = " << robot_id
+                 << "best ppf = " << best_route.ppf << " route [" << best_route.index
+                 << "]: " << this->routes[best_route.index] << endl;
+        }
+        if (best_route.index == 0)
+        {
+            if (_USE_LOG_)
+            {
+                cerr << "[error][__pointing] best_route.index == 0" << endl;
+            }
+        }
         return best_route.index;
     }
 };
@@ -600,7 +618,10 @@ void process_anticollision_2(vector<Path> &robot_path)
 
                 if (need_shelter)
                 {
-                    cerr << "[info] robot " << pri << " and " << sub << " need shelter " << endl;
+                    if (_USE_LOG_)
+                    {
+                        cerr << "[info] robot " << pri << " and " << sub << " need shelter " << endl;
+                    }
                     robot_path[sub] = find_shelter_path(sub_path,
                         vector<Path>(robot_path.begin(), robot_path.begin() + sub),
                         meta.robot[sub].goods == 0 ? false : true);
@@ -626,8 +647,11 @@ void give_pointing()
             {
                 if (meta.current_flame < stop_until[i])
                 {
-                    cerr << "[info][pointing] frame " << meta.current_flame << " robot " << i
-                         << "stop until" << stop_until[i] << endl;
+                    if (_USE_LOG_)
+                    {
+                        cerr << "[info][pointing] frame " << meta.current_flame << " robot " << i
+                             << "stop until" << stop_until[i] << endl;
+                    }
                     continue;
                 }
                 else
@@ -643,11 +667,17 @@ void give_pointing()
                 processing[i] = area._give_pointing(i);
                 if (processing[i] == 0)
                 {
-                    cerr << "[waring][pointing] robot " << i << "didn't get route. stop 5s." << endl;
+                    if (_USE_LOG_)
+                    {
+                        cerr << "[waring][pointing] robot " << i << "didn't get route. stop 5s." << endl;
+                    }
                     robot_path[i] = {robot.loc, robot.loc};
                     stop_until[i] = meta.current_flame + 2 * 50;
-                    cerr << "[info][pointing] [flame=" << meta.current_flame << "] robot " << i
-                         << " stop until" << stop_until[i] << endl;
+                    if (_USE_LOG_)
+                    {
+                        cerr << "[info][pointing] [flame=" << meta.current_flame << "] robot " << i
+                             << " stop until" << stop_until[i] << endl;
+                    }
                     if (meta.current_flame + 900 > ConVar::time_limit)
                         stop_until[i] = ConVar::time_limit;    // 最后时刻完全停止
                     continue;
@@ -659,8 +689,11 @@ void give_pointing()
             {
                 if (processing_state[i] == ProcessingState::SELL)    // 3->1
                 {
-                    cerr << "[info][pointing] [flame=" << meta.current_flame << "] robot " << i
-                         << " finished" << area.routes[processing[i]] << endl;
+                    if (_USE_LOG_)
+                    {
+                        cerr << "[info][pointing] [flame=" << meta.current_flame << "] robot " << i
+                             << " finished" << area.routes[processing[i]] << endl;
+                    }
 
                     processing[i] = 0;
                     processing_state[i] = ProcessingState::PICKING;
@@ -676,7 +709,13 @@ void give_pointing()
                 // navigate::move_to(
                 //     robot, target_station.loc, {meta.station[route.to_station_index].loc}, wait_flame);
                 if (robot_path[i].empty())
-                    cerr << "[error][__pointing] robot " << i << " 没有得到取from的路径" << endl;
+                {
+                    if (_USE_LOG_)
+                    {
+                        cerr << "[error][__pointing] robot " << i << " 没有得到取from的路径, from"
+                             << robot.loc << "->" << route.from_station().loc << endl;
+                    }
+                }
             }
             else
             {
@@ -688,14 +727,23 @@ void give_pointing()
                 }
                 robot_path[i] = find_path(robot.loc, route.target_station().loc, true);
                 if (robot_path[i].empty())
-                    cerr << "[error][__pointing] robot " << i << " 没有得到至target的path！" << endl;
+                {
+                    if (_USE_LOG_)
+                    {
+                        cerr << "[error][__pointing] robot " << i << " 没有得到至target的path！" << endl;
+                    }
+                }
             }
         }
 
         for (int i = 1; i < meta.robot.size(); i++)
             if (processing[i] != 0 and robot_path[i].size() < 2)
             {
-                cerr << "[error][pointing]: robot " << i << " has no path! with route " << processing[i];
+                if (_USE_LOG_)
+                {
+                    cerr << "[error][pointing]: robot " << i << " has no path! with route " << processing[i]
+                         << endl;
+                }
                 robot_path[i] = {meta.robot[i].loc, meta.robot[i].loc};
             }
     }

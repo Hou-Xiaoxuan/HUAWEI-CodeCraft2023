@@ -40,26 +40,31 @@ void init(std::istream &io_in)
             }
             else
             {
-                std::cerr << "非法输入，map[" << y << "][" << x << "] = " << meta.map[x][y] << std::endl;
+                if (_USE_LOG_)
+                {
+                    std::cerr << "非法输入，map[" << y << "][" << x << "] = " << meta.map[x][y]
+                              << std::endl;
+                }
             }
         }
     // 读入标识结束的“ok”
     std::string ok;
     io_in >> ok;
-    std::cerr << "[info] ok = " << ok << std::endl;
+    if (_USE_LOG_)
+    {
+        std::cerr << "[info] ok = " << ok << std::endl;
+    }
 }
 void read_flame(std::istream &io_in)
 {
     // loc_to_index init
     int flame, money;
     io_in >> flame >> money;
-#ifdef DEBUG
     if (flame - model::meta.current_flame > 1)
     {
-        std::cerr
-            << "[error] !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! skip flame";
+        std::cerr << "[error] !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! "
+                     "skip flame";
     }
-#endif
     model::meta.current_flame = flame;
     model::meta.current_money = money;
     int k;
@@ -70,13 +75,14 @@ void read_flame(std::istream &io_in)
         Station tmp;
         io_in >> tmp.type >> tmp.loc.x >> tmp.loc.y >> tmp.timeleft >> tmp.material >> tmp.with_product;
         int index = i + 1;
-#ifdef DEBUG
-        if (model::meta.station[index].type != tmp.type)
+        if (_USE_LOG_)
         {
-            std::cerr << "station type error" << std::endl;
-            throw "station type didn't match";
+            if (model::meta.station[index].type != tmp.type)
+            {
+                std::cerr << "[error][read_flame] station type error" << std::endl;
+                throw "station type didn't match";
+            }
         }
-#endif
         tmp.id = i + 1;
         model::meta.station[index] = tmp;
     }

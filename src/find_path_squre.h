@@ -21,6 +21,11 @@ struct Pos {
     Vertex pos = {-1, -1};
 };
 
+int cnt_path = 0;
+int pre_cnt_path = 0;
+
+int cnt_find_que = 0;
+int pre_cnt_find_que = 0;
 vector<pair<int, int>> dirs = {
     { 0,  1},
     { 1,  0},
@@ -76,7 +81,11 @@ Pos current_pos(const Vertex &v)
                 return {i, j, v};
         }
     }
-    throw "current_pos error";
+    if (_USE_LOG_)
+    {
+        cerr << "[error][current_pos] can't find current pos with " << v << endl;
+        throw "can't find current pos";
+    }
 }
 
 
@@ -186,6 +195,7 @@ vector<Vertex> get_ori_path()
     const auto &target_pre = pre[target_pos.index_x][target_pos.index_y];
     while (not que.empty())
     {
+        cnt_find_que++;
         if (target_pre.index_x != -1) break;
 
         const pair<Pos, int> now_pos = que.top();
@@ -364,9 +374,12 @@ vector<Vertex> smooth_path_again(vector<Vertex> path)
             cross_point.x = (b1 * c2 - b2 * c1) / d;
             cross_point.y = (a2 * c1 - a1 * c2) / d;
 
-            if (_check_valid({line1.a, cross_point}) and _check_valid({cross_point, line2.b}))
+            if (_is_valid({line1.a, cross_point}) and _is_valid({cross_point, line2.b}))
             {
-                cerr << "[debug][smooth_path_again] CONGRACTULATIONS! " << i << " " << j << endl;
+                if (_USE_LOG_)
+                {
+                    cerr << "[debug][smooth_path_again] CONGRACTULATIONS! " << i << " " << j << endl;
+                }
                 // 删除掉[i, j-1]的点
                 path[i] = cross_point;
                 for (size_t k = i + 1; k < j; k++)
@@ -375,17 +388,21 @@ vector<Vertex> smooth_path_again(vector<Vertex> path)
             }
         }
     }
-    if (path.size() < ori_path.size())
+    if (_USE_LOG_)
     {
-        cerr << "smooth_path_again: " << ori_path.size() << " -> " << path.size() << endl;
-        cerr << "before_smooth = [";
-        for (auto &v : ori_path)
-            cerr << v << ",";
-        cerr << "]" << endl;
-        cerr << "after_smooth = [";
-        for (auto &v : path)
-            cerr << v << ",";
-        cerr << "]" << endl;
+        if (path.size() < ori_path.size())
+        {
+            cerr << "smooth_path_again: " << ori_path.size() << " -> " << path.size() << endl;
+            cerr << "before_smooth = [";
+
+            for (auto &v : ori_path)
+                cerr << v << ",";
+            cerr << "]" << endl;
+            cerr << "after_smooth = [";
+            for (auto &v : path)
+                cerr << v << ",";
+            cerr << "]" << endl;
+        }
     }
 
     return path;
@@ -444,6 +461,7 @@ find_shelter_path(const vector<Vertex> &sub_path, const vector<vector<Vertex>> &
 
     while (not que.empty())
     {
+        cnt_find_que++;
         const pair<Pos, int> now_pos = que.top();
         que.pop();
 
@@ -487,7 +505,11 @@ find_shelter_path(const vector<Vertex> &sub_path, const vector<vector<Vertex>> &
         if (is_run)
         {
             target = now_center;
-            cerr << "info: robot_id " << pri_path.size() + 1 << " find shelter point." << target << endl;
+            if (_USE_LOG_)
+            {
+                cerr << "[info][find_shelter_path] robot_id " << pri_path.size() + 1
+                     << " find shelter point." << target << endl;
+            }
             break;
         }
 
@@ -735,9 +757,8 @@ std::vector<Vertex> find_nearest_workshop(const Vertex &start)
         pair<Pos, int> now_pos {};
         while (not que.empty())
         {
+            cnt_find_que++;
             now_pos = que.top();
-            // cerr << "[debug][find_shelter][bfs] now_pos: " << now_pos.first.index_x << " "
-            //  << now_pos.first.index_y << " " << now_pos.second << endl;
             que.pop();
             // check valid
             if (now_pos.second > step_limit) break;
@@ -753,9 +774,7 @@ std::vector<Vertex> find_nearest_workshop(const Vertex &start)
             Vertex now_center = get_center(now_pos.first.index_x, now_pos.first.index_y);
             for (int i = 0; i < 4; ++i)
             {
-                // cerr << "[debug][find_shelter][bfs] i=" << i << ", and pos is " <<
-                // now_pos.first.index_x
-                //    << " " << now_pos.first.index_y << endl;
+
                 int nx = now_pos.first.index_x + dirs.at(i).first;
                 int ny = now_pos.first.index_y + dirs.at(i).second;
 
@@ -802,8 +821,7 @@ std::vector<Vertex> find_nearest_workshop(const Vertex &start)
                 Pos npos = {nx, ny, ncenter};
 
                 npre = now_pos.first;
-                // cerr << "[debug][find_shelter][bfs] next_pos: " << npos.index_x << " " << npos.index_y
-                //      << " " << now_pos.second + 1 << endl;
+
                 que.push({npos, now_pos.second + 1});
                 que_bak.push(npos);
             }

@@ -109,7 +109,10 @@ void _change_speed(const Robot &robot, const vector<Vertex> &path)
     // 已经冲过了 停下来
     if (Vertex::distance(stop_loc, path[0]) > 1e-2 and abs(angle) < M_PI / 9)
     {
-        cerr << "robot " << robot.id << " stop over" << endl;
+        if (_USE_LOG_)
+        {
+            cerr << "[info][_change_speed] robot " << robot.id << " stop 冲过了" << endl;
+        }
         instructions.push_back(new io::I_forward(robot.id, 0));
         return;
     }
@@ -117,16 +120,22 @@ void _change_speed(const Robot &robot, const vector<Vertex> &path)
     // 距离目标很近停下来
     if (Vertex::distance(stop_loc, path[1]) < 2e-1)
     {
-        cerr << "[info][__change_speed] robot " << robot.id << " stop 接近目标" << endl;
+        if (_USE_LOG_)
+        {
+            cerr << "[info][_change_speed] robot " << robot.id << " stop 接近目标" << endl;
+        }
         instructions.push_back(new io::I_forward(robot.id, 0));
         return;
     }
 
     double delta = _get_delta_angle(robot, path[1]);
 
-    if (abs(delta) > M_PI / 18 and robot.w > M_PI / 18)
+    if (abs(delta) > M_PI / 18 and robot.w > M_PI / 9)
     {
-        cerr << "robot " << robot.id << " stop rotate" << endl;
+        if (_USE_LOG_)
+        {
+            cerr << "[info][_change_speed] robot " << robot.id << " stop 还在旋转" << endl;
+        }
         instructions.push_back(new io::I_forward(robot.id, 0));
         return;
     }
@@ -152,23 +161,19 @@ void _change_direction(const Robot &robot, const vector<Vertex> &path)
 
     double stop_t = -robot.w / angular_acceleration_rev_symbol;
 
-    if (stop_t < 0)
-    {
-        cerr << "robot " << robot.id << " throw error t < 0" << endl;
-        throw "error t < 0";
-    }
-
     double stop_angular_1
         = robot.dirc + robot.w * stop_t + 0.5 * angular_acceleration_rev_symbol * stop_t * stop_t;
     stop_angular_1 = _normalize_angle(stop_angular_1);
 
     // 立刻停止，判断是否来不及了0
-    if (abs(_normalize_angle(robot.dirc - right_angle))
-            < abs(_normalize_angle(robot.dirc - stop_angular_1))
+    if (abs(_normalize_angle(robot.dirc - right_angle)) < abs(_normalize_angle(robot.dirc - stop_angular_1))
         and abs(_normalize_angle(right_angle - stop_angular_1))
             < abs(_normalize_angle(robot.dirc - stop_angular_1)))
     {
-        cerr << "robot " << robot.id << " rotate to logic 0" << endl;
+        if (_USE_LOG_)
+        {
+            cerr << "[info][_change_direction] robot" << robot.id << " rotate to logic 0" << endl;
+        }
         instructions.push_back(new io::I_rotate(robot.id, 0));
         return;
     }
@@ -176,7 +181,10 @@ void _change_direction(const Robot &robot, const vector<Vertex> &path)
     // 立即停止，判断是否正好1
     if (abs(_normalize_angle(stop_angular_1 - right_angle)) < M_PI / 90)
     {
-        cerr << "robot " << robot.id << " rotate to logic 1" << endl;
+        if (_USE_LOG_)
+        {
+            cerr << "[info][_change_direction] robot" << robot.id << " rotate to logic 1" << endl;
+        }
         instructions.push_back(new io::I_rotate(robot.id, 0));
         return;
     }
@@ -187,7 +195,10 @@ void _change_direction(const Robot &robot, const vector<Vertex> &path)
     stop_angular_2 = _normalize_angle(stop_angular_2);
     if (abs(_normalize_angle(stop_angular_2 - right_angle)) < M_PI / 90)
     {
-        cerr << "robot " << robot.id << " rotate to logic 2" << endl;
+        if (_USE_LOG_)
+        {
+            cerr << "[info][_change_direction] robot" << robot.id << " rotate to logic 2" << endl;
+        }
         instructions.push_back(new io::I_rotate(robot.id, robot.w));
         return;
     }
@@ -211,7 +222,10 @@ void _change_direction(const Robot &robot, const vector<Vertex> &path)
                 and nw_1 + nw_1 > robot.w + angular_acceleration_rev_symbol * ComVar::flametime)
         {
             instructions.push_back(new io::I_rotate(robot.id, nw_1 + nw_2));
-            cerr << "robot " << robot.id << " rotate to logic 3 +" << endl;
+            if (_USE_LOG_)
+            {
+                cerr << "[info][_change_direction] robot" << robot.id << " rotate to logic 3 +" << endl;
+            }
             return;
         }
         else if (nw_1 - nw_2 > robot.w
@@ -220,21 +234,23 @@ void _change_direction(const Robot &robot, const vector<Vertex> &path)
                 and nw_1 - nw_1 > robot.w + angular_acceleration_rev_symbol * ComVar::flametime)
         {
             instructions.push_back(new io::I_rotate(robot.id, nw_1 - nw_2));
-            cerr << "robot " << robot.id << " rotate to logic 3 -" << endl;
+            if (_USE_LOG_)
+            {
+                cerr << "[info][_change_direction] robot" << robot.id << " rotate to logic 3 -" << endl;
+            }
             return;
         }
         else
         {
-            cerr << "robot " << robot.id << " throw logic 3 error" << endl;
-            throw "logic 3 error";
+            if (_USE_LOG_)
+            {
+                cerr << "[error][_change_direction] robot" << robot.id << " throw logic 3 error" << endl;
+            }
             return;
         }
     }
 
     // 加速到极限再立刻减速
-    // if (abs(robot.w) < 1e-2) {
-
-    // }
     double next_w_1 = sqrt(angular_acceleration_symbol * delta + robot.w * robot.w * 0.5)
         * (signbit(delta) == 1 ? -1 : 1);
 
@@ -248,7 +264,10 @@ void _change_direction(const Robot &robot, const vector<Vertex> &path)
         or abs(next_w_1) >= ConVar::max_robot_angular_speed)
     {
         instructions.push_back(new io::I_rotate(robot.id, next_w_1));
-        cerr << "robot " << robot.id << " rotate to logic 4" << endl;
+        if (_USE_LOG_)
+        {
+            cerr << "[info][_change_direction] robot" << robot.id << " rotate to logic 4" << endl;
+        }
         return;
     }
 
@@ -256,7 +275,10 @@ void _change_direction(const Robot &robot, const vector<Vertex> &path)
         / (robot.w + angular_acceleration_symbol * ComVar::flametime);
 
     instructions.push_back(new io::I_rotate(robot.id, next_w_2));
-    cerr << "robot " << robot.id << " rotate to logic 5" << endl;
+    if (_USE_LOG_)
+    {
+        cerr << "[info][_change_direction] robot" << robot.id << " rotate to logic 5" << endl;
+    }
 
     return;
 }
@@ -265,20 +287,26 @@ void _change_direction(const Robot &robot, const vector<Vertex> &path)
 /*将i号机器人移动到target点
  * 可选参数follow_target, 考虑后续目标点的航迹优化
  */
-void move_to(const Robot &robot, const vector<Vertex>& path)
+void move_to(const Robot &robot, const vector<Vertex> &path)
 {
     if (not path.empty())
     {
-        cerr << "[info][move_to]: robot " << robot.id << " move to: ";
-        for (auto &p : path)
-            cerr << p << "->";
-        cerr << endl;
+        if (_USE_LOG_)
+        {
+            cerr << "[info][move_to]: robot " << robot.id << " move to: ";
+            for (auto &p : path)
+                cerr << p << "->";
+            cerr << endl;
+        }
         _change_direction(robot, path);
         _change_speed(robot, path);
     }
     else
     {
-        cerr << "[info][move_to]: robot " << robot.id << " move to: empty" << endl;
+        if (_USE_LOG_)
+        {
+            cerr << "[info][move_to]: robot " << robot.id << " move to: empty" << endl;
+        }
         instructions.push_back(new io::I_forward(robot.id, 0));
         instructions.push_back(new io::I_rotate(robot.id, 0));
     }
