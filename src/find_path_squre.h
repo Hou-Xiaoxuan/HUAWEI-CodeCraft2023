@@ -328,7 +328,7 @@ vector<Vertex> find_path(const Vertex &_start, const Vertex &_target, bool _have
     have_good = _have_good;
     const auto &ori_path = get_ori_path();
     const auto &smooth_path = get_smooth_path(ori_path);
-    return smooth_path;
+    return smooth_path_again(smooth_path);
 }
 
 vector<Vertex>
