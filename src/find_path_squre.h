@@ -603,5 +603,99 @@ vector<Vertex> find_shelter(const Vertex &start, const vector<Vertex> &dodge_pat
         return {start, start};
 }
 
+// 找到最近的工作站,limit步数内没有找到则返回空
+std::vector<Vertex> find_nearest_workshop(const Vertex &start)
+{
+    int step_limit = 10;    // 最多搜索20步
+    double limit_dis = ConVar::robot_radius * 2;
+    limit_dis *= 1.1;
+    Vertex target {-1, -1};
+    /* BFS寻找躲避点*/
+    {
+        priority_queue<pair<Pos, int>, vector<pair<Pos, int>>, decltype(cmp_pos)> que(cmp_pos);
+        queue<Pos> que_bak;
+        auto start_pos = current_pos(start);
+        pre[start_pos.index_x][start_pos.index_y].index_x = -1;
+        que.push({start_pos, 0});
+        que_bak.push(start_pos);
+
+        pair<Pos, int> now_pos {};
+        while (not que.empty())
+        {
+            now_pos = que.top();
+            // cerr << "[debug][find_shelter][bfs] now_pos: " << now_pos.first.index_x << " "
+            //  << now_pos.first.index_y << " " << now_pos.second << endl;
+            que.pop();
+            // check valid
+            if (now_pos.second > step_limit) break;
+
+            // 找到了工作站
+            if (meta.map[now_pos.first.index_x][now_pos.first.index_y] >= '0'
+                and meta.map[now_pos.first.index_x][now_pos.first.index_y] <= '9')
+            {
+                target = now_pos.first.pos;
+                break;
+            }
+            /*next*/
+            Vertex now_center = get_center(now_pos.first.index_x, now_pos.first.index_y);
+            for (int i = 0; i < 4; ++i)
+            {
+                // cerr << "[debug][find_shelter][bfs] i=" << i << ", and pos is " << now_pos.first.index_x
+                //    << " " << now_pos.first.index_y << endl;
+                int nx = now_pos.first.index_x + dirs.at(i).first;
+                int ny = now_pos.first.index_y + dirs.at(i).second;
+
+                if (meta.map.at(nx).at(ny) == '#') continue;
+                auto &npre = pre.at(nx).at(ny);
+                if (npre.index_x != -1) continue;
+
+                bool is_stop = false;
+                Vertex ncenter = get_center(nx, ny);
+                for (const auto &line : trans_map::stop_line)
+                {
+                    if (Segment::is_cross_2(line, Segment {now_center, ncenter}))
+                    {
+                        is_stop = true;
+                        break;
+                    }
+                }
+                if (is_stop) continue;
+
+                for (const auto &line : trans_map::danger_line)
+                {
+                    if (not Segment::is_cross_2(line, Segment {now_center, ncenter})) continue;
+
+                    if (line.length() <= limit_dis)
+                    {
+                        is_stop = true;
+                        break;
+                    }
+                }
+                if (is_stop) continue;
+
+                // 偏移起点和终点之外所有点
+                Pos npos = {nx, ny, proper_pos[nx][ny]};
+
+                npre = now_pos.first;
+                // cerr << "[debug][find_shelter][bfs] next_pos: " << npos.index_x << " " << npos.index_y
+                //      << " " << now_pos.second + 1 << endl;
+                que.push({npos, now_pos.second + 1});
+                que_bak.push(npos);
+            }
+        }
+
+        // 释放内存
+        while (not que_bak.empty())
+        {
+            Pos now_pos = que_bak.front();
+            que_bak.pop();
+            pre[now_pos.index_x][now_pos.index_y].index_x = -1;
+        }
+    }
+    if (target.x != -1)
+        return find_path(start, target, false);
+    else
+        return {};
+}
 };
 #endif

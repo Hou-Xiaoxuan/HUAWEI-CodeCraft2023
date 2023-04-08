@@ -186,21 +186,21 @@ private:
         return expected_profit;
     }
 
-    int _get_expected_flame_cost(const Robot &robot, const Route &route)
+    int _get_expected_flame_cost(const Robot &robot, const Route &route, int station_now)
     {
         const auto &from_station = route.from_station();
         const auto &target_station = route.target_station();
         int expected_flame_cost;
         vector<navmesh::Vertex> robot_to_from;
         vector<navmesh::Vertex> from_to_target;
-        if (robot.in_station <= 0)
+        if (station_now <= 0)
         {
             robot_to_from = find_path(robot.loc, from_station.loc, false);
-            cerr << "[warning][get_expected_flame_cost] robot[" << robot.id << "] is not in any station"
-                 << endl;
+            cerr << "[warning][get_expected_flame_cost] robot[" << robot.id
+                 << "] is not start from any station" << endl;
         }
         else
-            robot_to_from = pathes.at(robot.in_station).at(from_station.id);
+            robot_to_from = pathes.at(station_now).at(from_station.id);
         from_to_target = pathes.at(from_station.id).at(target_station.id);
         if (from_station.with_product == 0 and from_station.timeleft > _estimated_move_flame(robot_to_from))
             expected_flame_cost = from_station.timeleft + _estimated_move_flame(from_to_target);
@@ -219,6 +219,29 @@ public:
     {
         this->_update_super_demand();
         const auto &robot = meta.robot[robot_id];
+        int now_station = robot.in_station;
+        Path now_station_path {};
+        if (now_station <= 0)
+        {
+            now_station_path = find_path_square::find_nearest_workshop(robot.loc);
+            if (now_station_path.size() > 0u)
+            {
+                const auto &station_loc = now_station_path.back();
+                for (auto station_index : this->stations)
+                {
+                    if (std::hypot(station_loc.x - meta.station[station_index].loc.x,
+                            station_loc.y - meta.station[station_index].loc.y)
+                        < navmesh::EPS)
+                    {
+                        now_station = station_index;
+                        cerr << "[info][give_pointing] robot[" << robot_id
+                             << "] is not in any station, but find now station [" << now_station
+                             << "], path size: " << now_station_path.size() << endl;
+                        break;
+                    }
+                }
+            }
+        }
         struct {
             int index = 0;
             int finish_flame = 0;
@@ -263,32 +286,38 @@ public:
 
 
             /*计算、选择最佳ppf*/
-            double expected_profit = _get_expected_profit(robot, route);         // 预期利润
-            int expected_flame_cost = _get_expected_flame_cost(robot, route);    // 预期时间
+            double expected_profit = _get_expected_profit(robot, route);    // 预期利润
+            int expected_flame_cost = _get_expected_flame_cost(robot, route, now_station)
+                + _estimated_move_flame(now_station_path);    // 预期时间
 
             if (meta.current_flame + expected_flame_cost > ConVar::time_limit) continue;    // *condition 4
 
             double ppf = expected_profit / expected_flame_cost;
 
-#ifdef DEBUG
-            if (ppf > best_route.ppf)
-            {
-                best_route = {i, meta.current_flame + expected_flame_cost, ppf};
-                cerr << "[info][__pointing] "
-                     << " [flame=" << meta.current_flame << "] robot_id: " << robot_id
-                     << " UPDATE best_profit_per_flame: " << best_route.ppf
-                     << " profit: " << expected_profit << " flame_cost: " << expected_flame_cost
-                     << " best_route_index: " << best_route.index << " route: " << route << endl;
-            }
-            else
-            {
-                cerr << "[info][__pointing] [flame=" << meta.current_flame << "] robot_id=" << robot_id
-                     << " profit=" << expected_profit << " flame_cost=" << expected_flame_cost
-                     << " route=" << route << " valid, but ppf=" << ppf << "with profit" << expected_profit
-                     << " flame_cost" << expected_flame_cost
-                     << " is not better than best_route.ppf=" << best_route.ppf << endl;
-            }
-#endif
+            // #ifdef DEBUG
+            //             if (ppf > best_route.ppf)
+            //             {
+            //                 best_route = {i, meta.current_flame + expected_flame_cost, ppf};
+            //                 cerr << "[info][__pointing] "
+            //                      << " [flame=" << meta.current_flame << "] robot_id: " << robot_id
+            //                      << " UPDATE best_profit_per_flame: " << best_route.ppf
+            //                      << " profit: " << expected_profit << " flame_cost: " <<
+            //                      expected_flame_cost
+            //                      << " best_route_index: " << best_route.index << " route: " << route <<
+            //                      endl;
+            //             }
+            //             else
+            //             {
+            //                 cerr << "[info][__pointing] [flame=" << meta.current_flame << "] robot_id="
+            //                 << robot_id
+            //                      << " profit=" << expected_profit << " flame_cost=" <<
+            //                      expected_flame_cost
+            //                      << " route=" << route << " valid, but ppf=" << ppf << "with profit" <<
+            //                      expected_profit
+            //                      << " flame_cost" << expected_flame_cost
+            //                      << " is not better than best_route.ppf=" << best_route.ppf << endl;
+            //             }
+            // #endif
             if (ppf > best_route.ppf) best_route = {i, meta.current_flame + expected_flame_cost, ppf};
         }
         // #ifdef DEBUG
@@ -441,13 +470,6 @@ void process_anticollision(vector<Path> &robot_path)
                 // 过长截取
                 if (vec_pri.length() >= left_dis_pri)
                 {
-#ifdef DEBUG
-                    // XXX 万一除0
-                    if (vec_pri.length() < 1e-20)
-                    {
-                        throw "vec_pri.length() == 0";
-                    }
-#endif
                     pri_seg = {
                         pri_path[i],
                         {pri_path[i].x + vec_pri.x * left_dis_pri / vec_pri.length(),
@@ -467,13 +489,6 @@ void process_anticollision(vector<Path> &robot_path)
                     navmesh::Segment sub_seg;
                     if (vec_sub.length() >= left_dis_sub)
                     {
-#ifdef DEBUG
-                        // XXX 万一除0
-                        if (vec_pri.length() < 1e-20)
-                        {
-                            if (vec_sub.length() < 1e-20) throw "vec_sub.length() == 0";
-                        }
-#endif
                         sub_seg = {
                             sub_path[j],
                             {sub_path[j].x + vec_sub.x * left_dis_sub / vec_sub.length(),
@@ -624,7 +639,7 @@ void give_pointing()
                 {
                     cerr << "[waring][pointing] robot " << i << "didn't get route. stop 5s." << endl;
                     robot_path[i] = {robot.loc, robot.loc};
-                    stop_until[i] = meta.current_flame + 5 * 50;
+                    stop_until[i] = meta.current_flame + 2 * 50;
                     cerr << "[info][pointing] [flame=" << meta.current_flame << "] robot " << i
                          << " stop until" << stop_until[i] << endl;
                     if (meta.current_flame + 2000 > ConVar::time_limit)
