@@ -435,107 +435,110 @@ void init()
     stop_until.assign(meta.robot.size(), -1);
 }
 ///////////////////////////////////////////////////////////////////////////////////
-void process_anticollision(vector<Path> &robot_path)
-{
-    // 处理，改变robot_path
-    static vector<optional<navmesh::Vertex>> shelter_vertex;
-    if (shelter_vertex.empty()) shelter_vertex.assign(meta.robot.size(), nullopt);
-    for (int i = 1; i < meta.robot.size(); i++)
-    {
-        if (shelter_vertex[i].has_value())
-        {
-            if (hypot(
-                    meta.robot[i].loc.x - shelter_vertex[i]->x, meta.robot[i].loc.y - shelter_vertex[i]->y)
-                < 0.2)
-                shelter_vertex[i] = nullopt;
-            else
-            {
-                robot_path[i] = find_path(meta.robot[i].loc, *shelter_vertex[i], meta.robot[i].goods > 0.5);
-            }
-        }
-    }
+// void process_anticollision(vector<Path> &robot_path)
+// {
+//     // 处理，改变robot_path
+//     static vector<optional<navmesh::Vertex>> shelter_vertex;
+//     if (shelter_vertex.empty()) shelter_vertex.assign(meta.robot.size(), nullopt);
+//     for (int i = 1; i < meta.robot.size(); i++)
+//     {
+//         if (shelter_vertex[i].has_value())
+//         {
+//             if (hypot(
+//                     meta.robot[i].loc.x - shelter_vertex[i]->x, meta.robot[i].loc.y -
+//                     shelter_vertex[i]->y)
+//                 < 0.2)
+//                 shelter_vertex[i] = nullopt;
+//             else
+//             {
+//                 robot_path[i] = find_path(meta.robot[i].loc, *shelter_vertex[i], meta.robot[i].goods >
+//                 0.5);
+//             }
+//         }
+//     }
 
-    for (int pri = 1; pri < robot_path.size(); ++pri)
-    {
-        for (int sub = pri + 1; sub < robot_path.size(); ++sub)
-        {
-            const auto &pri_path = robot_path[pri];
-            const auto &sub_path = robot_path[sub];
-            bool need_shelter = false;
-            double left_dis_pri = 3.0;
-            double left_dis_sub = 3.0;
+//     for (int pri = 1; pri < robot_path.size(); ++pri)
+//     {
+//         for (int sub = pri + 1; sub < robot_path.size(); ++sub)
+//         {
+//             const auto &pri_path = robot_path[pri];
+//             const auto &sub_path = robot_path[sub];
+//             bool need_shelter = false;
+//             double left_dis_pri = 3.0;
+//             double left_dis_sub = 3.0;
 
-            for (int i = 0; i < pri_path.size(); ++i)
-            {
-                navmesh::Vec2 vec_pri {pri_path[i], pri_path[(i + 1) % pri_path.size()]};
-                navmesh::Segment pri_seg;
-                // 过长截取
-                if (vec_pri.length() >= left_dis_pri)
-                {
-                    pri_seg = {
-                        pri_path[i],
-                        {pri_path[i].x + vec_pri.x * left_dis_pri / vec_pri.length(),
-                             pri_path[i].y + vec_pri.y * left_dis_pri / vec_pri.length()}
-                    };
-                }
-                else
-                {
-                    pri_seg = {pri_path[i], pri_path[(i + 1) % pri_path.size()]};
-                }
-                left_dis_pri -= pri_seg.length();
+//             for (int i = 0; i < pri_path.size(); ++i)
+//             {
+//                 navmesh::Vec2 vec_pri {pri_path[i], pri_path[(i + 1) % pri_path.size()]};
+//                 navmesh::Segment pri_seg;
+//                 // 过长截取
+//                 if (vec_pri.length() >= left_dis_pri)
+//                 {
+//                     pri_seg = {
+//                         pri_path[i],
+//                         {pri_path[i].x + vec_pri.x * left_dis_pri / vec_pri.length(),
+//                              pri_path[i].y + vec_pri.y * left_dis_pri / vec_pri.length()}
+//                     };
+//                 }
+//                 else
+//                 {
+//                     pri_seg = {pri_path[i], pri_path[(i + 1) % pri_path.size()]};
+//                 }
+//                 left_dis_pri -= pri_seg.length();
 
-                for (int j = 0; j < sub_path.size(); ++j)
-                {
-                    // 过长截取
-                    navmesh::Vec2 vec_sub {sub_path[j], sub_path[(j + 1) % sub_path.size()]};
-                    navmesh::Segment sub_seg;
-                    if (vec_sub.length() >= left_dis_sub)
-                    {
-                        sub_seg = {
-                            sub_path[j],
-                            {sub_path[j].x + vec_sub.x * left_dis_sub / vec_sub.length(),
-                                 sub_path[j].y + vec_sub.y * left_dis_sub / vec_sub.length()}
-                        };
-                    }
-                    else
-                    {
-                        sub_seg = {sub_path[j], sub_path[(j + 1) % sub_path.size()]};
-                    }
-                    left_dis_sub -= sub_seg.length();
+//                 for (int j = 0; j < sub_path.size(); ++j)
+//                 {
+//                     // 过长截取
+//                     navmesh::Vec2 vec_sub {sub_path[j], sub_path[(j + 1) % sub_path.size()]};
+//                     navmesh::Segment sub_seg;
+//                     if (vec_sub.length() >= left_dis_sub)
+//                     {
+//                         sub_seg = {
+//                             sub_path[j],
+//                             {sub_path[j].x + vec_sub.x * left_dis_sub / vec_sub.length(),
+//                                  sub_path[j].y + vec_sub.y * left_dis_sub / vec_sub.length()}
+//                         };
+//                     }
+//                     else
+//                     {
+//                         sub_seg = {sub_path[j], sub_path[(j + 1) % sub_path.size()]};
+//                     }
+//                     left_dis_sub -= sub_seg.length();
 
-                    double dis = navmesh::Segment::distance(pri_seg, sub_seg);
-                    if (dis <= 1.2) need_shelter = true;
+//                     double dis = navmesh::Segment::distance(pri_seg, sub_seg);
+//                     if (dis <= 1.2) need_shelter = true;
 
-                    if (left_dis_sub <= 1e-6 or need_shelter) break;
-                }
-                if (left_dis_pri <= 1e-6 or need_shelter) break;
-            }
+//                     if (left_dis_sub <= 1e-6 or need_shelter) break;
+//                 }
+//                 if (left_dis_pri <= 1e-6 or need_shelter) break;
+//             }
 
-            if (need_shelter)
-            {
-                cerr << "[info][shelter] robot " << sub << " need shelter " << pri << endl;
-                // cerr << "[debug][shelter]robot " << sub << " loc in " << sub_path[0] << " robot " << pri
-                //      << " path(" << pri_path.size() << "):"
-                //      << " {";
-                // print_path(robot_path[pri]);
-                // cerr << "}" << endl;
-                // sub躲避，pri减速
-                if (shelter_vertex[sub].has_value())
-                {
-                    // 已经在躲避了，停一下
-                    robot_path[pri] = {};
-                    stop_until[pri] = meta.current_flame + 1 * 50;
-                }
-                else
-                {
-                    robot_path[sub] = find_path_square::find_shelter(
-                        sub_path[0], robot_path[pri], meta.robot[sub].goods == 0 ? false : true);
-                    if (robot_path[sub].size() > 2) shelter_vertex[sub] = robot_path[sub].back();
-                }
-            }
-        }
-    }
-}
+//             if (need_shelter)
+//             {
+//                 cerr << "[info][shelter] robot " << sub << " need shelter " << pri << endl;
+//                 // cerr << "[debug][shelter]robot " << sub << " loc in " << sub_path[0] << " robot " <<
+//                 pri
+//                 //      << " path(" << pri_path.size() << "):"
+//                 //      << " {";
+//                 // print_path(robot_path[pri]);
+//                 // cerr << "}" << endl;
+//                 // sub躲避，pri减速
+//                 if (shelter_vertex[sub].has_value())
+//                 {
+//                     // 已经在躲避了，停一下
+//                     robot_path[pri] = {};
+//                     stop_until[pri] = meta.current_flame + 1 * 50;
+//                 }
+//                 else
+//                 {
+//                     robot_path[sub] = find_path_square::find_shelter(
+//                         sub_path[0], robot_path[pri], meta.robot[sub].goods == 0 ? false : true);
+//                     if (robot_path[sub].size() > 2) shelter_vertex[sub] = robot_path[sub].back();
+//                 }
+//             }
+//         }
+//     }
+// }
 
 void process_anticollision_2(vector<Path> &robot_path)
 {

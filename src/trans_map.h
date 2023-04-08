@@ -304,7 +304,7 @@ vector<Segment> stop_line;
 
 void get_danger_line()
 {
-    double danger_dis = 1.1;
+    double danger_dis = 1.0 + 1e-6;
     double stop_dis = ConVar::robot_radius * 2 + 1e-6;
     for (auto &poly : result)
     {
