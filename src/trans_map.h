@@ -1,10 +1,10 @@
 #ifndef __TRANS_MAP_H__
 #define __TRANS_MAP_H__
-#include "find_path_squre.h"
 #include "model.h"
 #include "nav_model.h"
 #include <algorithm>
 #include <fstream>
+#include <utility>
 #include <vector>
 namespace trans_map
 {
@@ -14,8 +14,8 @@ using namespace std;
 struct Poly {
     vector<Vertex> points;
     Poly() = default;
-    Poly(vector<Vertex> points) : points(points) { }
-    Poly(Polygon poly) : points(poly.vertices) { }
+    Poly(vector<Vertex> points) : points(std::move(points)) { }
+    Poly(const Polygon &poly) : points(poly.vertices) { }
 };
 
 // 三态函数，判断两个double在eps精度下的大小关系
@@ -40,7 +40,7 @@ bool is_in_polygon(const Poly &poly, Vertex p, bool is_on_edge = true)
     bool flag = false;
     for (int i = 0; i < poly.points.size(); ++i)
     {
-        int j = (i + 1) % poly.points.size();
+        int j = (i + 1) % static_cast<int>(poly.points.size());
         Vertex p1 = poly.points[i];
         Vertex p2 = poly.points[j];
 
@@ -60,7 +60,7 @@ bool is_clockwise(const Polygon &poly)
     double sum = 0;
     for (int i = 0; i < poly.vertices.size(); ++i)
     {
-        int j = (i + 1) % poly.vertices.size();
+        int j = (i + 1) % static_cast<int>(poly.vertices.size());
         sum += poly.vertices[i].x * poly.vertices[j].y - poly.vertices[j].x * poly.vertices[i].y;
     }
     return sum < 0;
@@ -118,21 +118,21 @@ void trans_map(const vector<vector<char>> &ori_map)
     auto trans_point = [](int x, int y, int k) -> Vertex {
         if (k == 2)
         {
-            return Vertex(x * 0.5, (y - 1) * 0.5);
+            return {x * 0.5, (y - 1) * 0.5};
         }
         else if (k == 1)
         {
-            return Vertex(x * 0.5, y * 0.5);
+            return {x * 0.5, y * 0.5};
         }
         else if (k == 0)
         {
-            return Vertex((x - 1) * 0.5, y * 0.5);
+            return {(x - 1) * 0.5, y * 0.5};
         }
         else if (k == 3)
         {
-            return Vertex((x - 1) * 0.5, (y - 1) * 0.5);
+            return {(x - 1) * 0.5, (y - 1) * 0.5};
         }
-        return Vertex(0, 0);
+        return {0, 0};
     };
     // dingdian
     vector<vector<int>> xs;
@@ -167,10 +167,10 @@ void trans_map(const vector<vector<char>> &ori_map)
         }
         if (!x and !y) break;
         int startx = x, starty = y, startdir = dir;
-        xs.push_back(vector<int>());
-        ys.push_back(vector<int>());
-        ks.push_back(vector<int>());
-        polys.push_back(Poly());
+        xs.emplace_back();
+        ys.emplace_back();
+        ks.emplace_back();
+        polys.emplace_back();
         while (true)
         {
             bool stop_flag = true;
@@ -318,14 +318,13 @@ void get_danger_line()
         }
         for (int i = 0; i < poly.vertices.size(); ++i)
         {
-            all_segment.push_back(Segment(poly.vertices[i], poly.vertices[(i + 1) % poly.vertices.size()]));
+            all_segment.emplace_back(poly.vertices[i], poly.vertices[(i + 1) % poly.vertices.size()]);
         }
         for (auto &hole : poly.holes)
         {
             for (int i = 0; i < hole.vertices.size(); ++i)
             {
-                all_segment.push_back(
-                    Segment(hole.vertices[i], hole.vertices[(i + 1) % hole.vertices.size()]));
+                all_segment.emplace_back(hole.vertices[i], hole.vertices[(i + 1) % hole.vertices.size()]);
             }
         }
 
@@ -469,7 +468,7 @@ void test_print()
             fout << v.y << endl;
         }
         fout << p.holes.size() << endl;
-        for (auto hole : p.holes)
+        for (const auto &hole : p.holes)
         {
             fout << hole.vertices.size() << endl;
             for (auto &v : hole.vertices)
@@ -560,11 +559,11 @@ vector<Polygon> init()
     //     }while(x < line.b.x);
     // }
     // 打印修改后的地图
-    for (int i = 0; i < model::meta.map.size(); ++i)
+    for (auto &i : model::meta.map)
     {
-        for (int j = 0; j < model::meta.map[i].size(); ++j)
+        for (char j : i)
         {
-            cerr << model::meta.map[i][j];
+            cerr << j;
         }
         cerr << endl;
     }

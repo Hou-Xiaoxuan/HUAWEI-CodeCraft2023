@@ -16,23 +16,23 @@ using namespace navmesh;
 using namespace std;
 using io::instructions;
 
-double __get_max_robot_acceleration(const Robot &robot)
+double _get_max_robot_acceleration(const Robot &robot)
 {
     return robot.goods == 0 ? ComVar::max_robot_acceleration : ComVar::max_robot_goods_acceleration;
 }
 
-double __get_robot_radius(const Robot &robot)
+double _get_robot_radius(const Robot &robot)
 {
     return robot.goods == 0 ? ConVar::robot_radius : ConVar::robot_radius_goods;
 }
 
-double __get_max_robot_angular_acceleration(const Robot &robot)
+double _get_max_robot_angular_acceleration(const Robot &robot)
 {
     return robot.goods == 0 ? ComVar::max_robot_angular_acceleration
                             : ComVar::max_robot_angular_acceleration_with_goods;
 }
 
-double __get_delta_angle(const Robot &robot, const Vertex &target)
+double _get_delta_angle(const Robot &robot, const Vertex &target)
 {
     double y = target.y - robot.loc.y;
     double x = target.x - robot.loc.x;
@@ -47,7 +47,7 @@ double __get_delta_angle(const Robot &robot, const Vertex &target)
     return delta;
 }
 
-double __normalize_angle(double angle)
+double _normalize_angle(double angle)
 {
     while (angle > M_PI)
         angle -= 2 * M_PI;
@@ -84,7 +84,7 @@ double __normalize_angle(double angle)
 // }
 
 /*速度调整*/
-void __change_speed(const Robot &robot, const vector<Vertex> &path)
+void _change_speed(const Robot &robot, const vector<Vertex> &path)
 {
     // double rorate_limit = M_PI / 18;
 
@@ -95,9 +95,9 @@ void __change_speed(const Robot &robot, const vector<Vertex> &path)
     //     return;
     // }
 
-    double min_a_x = __get_max_robot_acceleration(robot) * robot.v.x / robot.v.len();
-    double min_a_y = __get_max_robot_acceleration(robot) * robot.v.y / robot.v.len();
-    double stop_t = robot.v.len() / __get_max_robot_acceleration(robot);
+    double min_a_x = _get_max_robot_acceleration(robot) * robot.v.x / robot.v.len();
+    double min_a_y = _get_max_robot_acceleration(robot) * robot.v.y / robot.v.len();
+    double stop_t = robot.v.len() / _get_max_robot_acceleration(robot);
     double stop_x = robot.loc.x + robot.v.x * stop_t + 0.5 * min_a_x * stop_t * stop_t;
     double stop_y = robot.loc.y + robot.v.y * stop_t + 0.5 * min_a_y * stop_t * stop_t;
     Vertex stop_loc = {stop_x, stop_y};
@@ -122,7 +122,7 @@ void __change_speed(const Robot &robot, const vector<Vertex> &path)
         return;
     }
 
-    double delta = __get_delta_angle(robot, path[1]);
+    double delta = _get_delta_angle(robot, path[1]);
 
     if (abs(delta) > M_PI / 18 and robot.w > M_PI / 18)
     {
@@ -135,7 +135,7 @@ void __change_speed(const Robot &robot, const vector<Vertex> &path)
 }
 
 /*角度调整*/
-void __change_direction(const Robot &robot, const vector<Vertex> &path)
+void _change_direction(const Robot &robot, const vector<Vertex> &path)
 {
     Vertex target = path[1];
 
@@ -144,10 +144,10 @@ void __change_direction(const Robot &robot, const vector<Vertex> &path)
 
     double right_angle = atan2(y, x);
 
-    double delta = __get_delta_angle(robot, target);
+    double delta = _get_delta_angle(robot, target);
 
     double angular_acceleration_symbol
-        = __get_max_robot_angular_acceleration(robot) * (signbit(robot.w) == 1 ? -1 : 1);
+        = _get_max_robot_angular_acceleration(robot) * (signbit(robot.w) == 1 ? -1 : 1);
     double angular_acceleration_rev_symbol = -angular_acceleration_symbol;
 
     double stop_t = -robot.w / angular_acceleration_rev_symbol;
@@ -160,13 +160,13 @@ void __change_direction(const Robot &robot, const vector<Vertex> &path)
 
     double stop_angular_1
         = robot.dirc + robot.w * stop_t + 0.5 * angular_acceleration_rev_symbol * stop_t * stop_t;
-    stop_angular_1 = __normalize_angle(stop_angular_1);
+    stop_angular_1 = _normalize_angle(stop_angular_1);
 
     // 立刻停止，判断是否来不及了0
-    if (abs(__normalize_angle(robot.dirc - right_angle))
-            < abs(__normalize_angle(robot.dirc - stop_angular_1))
-        and abs(__normalize_angle(right_angle - stop_angular_1))
-            < abs(__normalize_angle(robot.dirc - stop_angular_1)))
+    if (abs(_normalize_angle(robot.dirc - right_angle))
+            < abs(_normalize_angle(robot.dirc - stop_angular_1))
+        and abs(_normalize_angle(right_angle - stop_angular_1))
+            < abs(_normalize_angle(robot.dirc - stop_angular_1)))
     {
         cerr << "robot " << robot.id << " rotate to logic 0" << endl;
         instructions.push_back(new io::I_rotate(robot.id, 0));
@@ -174,7 +174,7 @@ void __change_direction(const Robot &robot, const vector<Vertex> &path)
     }
 
     // 立即停止，判断是否正好1
-    if (abs(__normalize_angle(stop_angular_1 - right_angle)) < M_PI / 90)
+    if (abs(_normalize_angle(stop_angular_1 - right_angle)) < M_PI / 90)
     {
         cerr << "robot " << robot.id << " rotate to logic 1" << endl;
         instructions.push_back(new io::I_rotate(robot.id, 0));
@@ -184,8 +184,8 @@ void __change_direction(const Robot &robot, const vector<Vertex> &path)
     // 判断再走一帧是否正好2
     double small_delta = robot.w * ComVar::flametime;
     double stop_angular_2 = stop_angular_1 + small_delta;
-    stop_angular_2 = __normalize_angle(stop_angular_2);
-    if (abs(__normalize_angle(stop_angular_2 - right_angle)) < M_PI / 90)
+    stop_angular_2 = _normalize_angle(stop_angular_2);
+    if (abs(_normalize_angle(stop_angular_2 - right_angle)) < M_PI / 90)
     {
         cerr << "robot " << robot.id << " rotate to logic 2" << endl;
         instructions.push_back(new io::I_rotate(robot.id, robot.w));
@@ -195,8 +195,8 @@ void __change_direction(const Robot &robot, const vector<Vertex> &path)
 
     // 是否在上面的两个区间内3
     // 如果是先减速 再平动 在减速
-    if (abs(__normalize_angle(stop_angular_1 - right_angle)) < abs(small_delta)
-        and abs(__normalize_angle(stop_angular_2 - right_angle)) < abs(small_delta))
+    if (abs(_normalize_angle(stop_angular_1 - right_angle)) < abs(small_delta)
+        and abs(_normalize_angle(stop_angular_2 - right_angle)) < abs(small_delta))
     {
         double nw_1 = 0.5 * (angular_acceleration_rev_symbol * ComVar::flametime + robot.w);
         double nw_2 = 0.5
@@ -265,7 +265,7 @@ void __change_direction(const Robot &robot, const vector<Vertex> &path)
 /*将i号机器人移动到target点
  * 可选参数follow_target, 考虑后续目标点的航迹优化
  */
-void move_to(const Robot &robot, vector<Vertex> path)
+void move_to(const Robot &robot, const vector<Vertex>& path)
 {
     if (not path.empty())
     {
@@ -273,8 +273,8 @@ void move_to(const Robot &robot, vector<Vertex> path)
         for (auto &p : path)
             cerr << p << "->";
         cerr << endl;
-        __change_direction(robot, path);
-        __change_speed(robot, path);
+        _change_direction(robot, path);
+        _change_speed(robot, path);
     }
     else
     {
