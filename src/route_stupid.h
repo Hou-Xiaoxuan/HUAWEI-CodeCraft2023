@@ -27,8 +27,9 @@ int _estimated_move_flame(const vector<navmesh::Vertex> &path)
     double dis = 0;
     for (size_t i = 1; i < path.size(); i++)
         dis += std::hypot(path[i].x - path[i - 1].x, path[i].y - path[i - 1].y);
-    dis *= 5;
-    return (dis / ConVar::max_robot_forward_speed) * 50 + Args::turn_cost * path.size();
+    dis *= Args::distance_factor;
+    return static_cast<int>(dis / ConVar::max_robot_forward_speed) * 50
+        + Args::turn_cost * static_cast<int>(path.size());
 }
 using Path = vector<navmesh::Vertex>;
 static void print_path(const Path &path)
