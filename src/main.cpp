@@ -2,7 +2,6 @@
 #include "find_path_squre.h"
 #include "iointerface.h"
 #include "model.h"
-#include "nav_ear_clipping.h"
 #include "nav_model.h"
 #include "nav_navigate.h"
 #include "route_stupid.h"

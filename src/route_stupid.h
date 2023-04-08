@@ -32,11 +32,6 @@ int _estimated_move_flame(const vector<navmesh::Vertex> &path)
         + Args::turn_cost * static_cast<int>(path.size());
 }
 using Path = vector<navmesh::Vertex>;
-static void print_path(const Path &path)
-{
-    for (const auto &p : path)
-        cerr << p << ",";
-}
 /*Route与road_pair的区别
 - Rotue是有合法供应关系的工作站之间的节点对
 - road_pair是任意工作站之间的节点对
