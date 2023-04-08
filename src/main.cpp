@@ -43,7 +43,7 @@ void robot()
     }
 }
 
-void local(std::string file)
+void local(const std::string& file)
 {
     std::cerr << "chose map " << file << std::endl;
     auto fin = std::fstream(file);

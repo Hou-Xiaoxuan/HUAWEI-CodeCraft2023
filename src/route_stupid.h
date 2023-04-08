@@ -642,13 +642,13 @@ void give_pointing()
                     stop_until[i] = meta.current_flame + 2 * 50;
                     cerr << "[info][pointing] [flame=" << meta.current_flame << "] robot " << i
                          << " stop until" << stop_until[i] << endl;
-                    if (meta.current_flame + 2000 > ConVar::time_limit)
+                    if (meta.current_flame + 900 > ConVar::time_limit)
                         stop_until[i] = ConVar::time_limit;    // 最后时刻完全停止
                     continue;
                 }
             }
 
-            // 处理任务
+            /* 处理任务*/
             if (robot.goods == 0)
             {
                 if (processing_state[i] == ProcessingState::SELL)    // 3->1
@@ -679,26 +679,17 @@ void give_pointing()
                 if (robot.in_station == route.target_station_index)
                 {
                     io::instructions.push_back(new io::I_sell(i));
-                    // #ifdef DEBUG
-                    //                 if (meta.station[route.to_station_index].goods_exist(robot.goods))
-                    //                     cerr << "[error][pointing]"
-                    //                          << "robot " << i << " station " << route.to_station_index <<
-                    //                          "already has goods "
-                    //                          << robot.goods << endl;
-                    // #endif
                 }
                 robot_path[i] = find_path(robot.loc, route.target_station().loc, true);
-                if (robot_path[i].empty())
-                    cerr << "[error][__pointing] robot " << i << " 没有得到至target的path！" << endl;
                 if (robot_path[i].empty())
                     cerr << "[error][__pointing] robot " << i << " 没有得到至target的path！" << endl;
             }
         }
 
         for (int i = 1; i < meta.robot.size(); i++)
-            if (robot_path[i].size() < 2)
+            if (processing[i] != 0 and robot_path[i].size() < 2)
             {
-                cerr << "[error][pointing]: robot " << i << " has no path! with route" << processing[i];
+                cerr << "[error][pointing]: robot " << i << " has no path! with route " << processing[i];
                 robot_path[i] = {meta.robot[i].loc, meta.robot[i].loc};
             }
     }
