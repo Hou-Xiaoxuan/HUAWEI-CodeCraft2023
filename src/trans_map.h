@@ -452,7 +452,7 @@ void get_nearest_obstacle()
 
 void test_print()
 {
-    fstream fout("./Robot/map.txt");
+    fstream fout("./map.txt");
     if (!fout.is_open())
     {
         cout << "open file failed" << endl;
