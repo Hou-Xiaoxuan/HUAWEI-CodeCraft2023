@@ -283,5 +283,12 @@ void move_to(const Robot &robot, const vector<Vertex>& path)
         instructions.push_back(new io::I_rotate(robot.id, 0));
     }
 }
+
+void move_back(const Robot &robot)
+{
+    cerr << "[info][move_back]: robot " << robot.id << endl;
+    instructions.push_back(new io::I_forward(robot.id, -2));
+    instructions.push_back(new io::I_rotate(robot.id, 0));
+}
 }
 #endif

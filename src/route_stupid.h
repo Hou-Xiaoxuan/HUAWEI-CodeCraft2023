@@ -294,30 +294,25 @@ public:
 
             double ppf = expected_profit / expected_flame_cost;
 
-            // #ifdef DEBUG
-            //             if (ppf > best_route.ppf)
-            //             {
-            //                 best_route = {i, meta.current_flame + expected_flame_cost, ppf};
-            //                 cerr << "[info][__pointing] "
-            //                      << " [flame=" << meta.current_flame << "] robot_id: " << robot_id
-            //                      << " UPDATE best_profit_per_flame: " << best_route.ppf
-            //                      << " profit: " << expected_profit << " flame_cost: " <<
-            //                      expected_flame_cost
-            //                      << " best_route_index: " << best_route.index << " route: " << route <<
-            //                      endl;
-            //             }
-            //             else
-            //             {
-            //                 cerr << "[info][__pointing] [flame=" << meta.current_flame << "] robot_id="
-            //                 << robot_id
-            //                      << " profit=" << expected_profit << " flame_cost=" <<
-            //                      expected_flame_cost
-            //                      << " route=" << route << " valid, but ppf=" << ppf << "with profit" <<
-            //                      expected_profit
-            //                      << " flame_cost" << expected_flame_cost
-            //                      << " is not better than best_route.ppf=" << best_route.ppf << endl;
-            //             }
-            // #endif
+
+            if (ppf > best_route.ppf)
+            {
+                best_route = {i, meta.current_flame + expected_flame_cost, ppf};
+                cerr << "[info][__pointing] "
+                     << " [flame=" << meta.current_flame << "] robot_id: " << robot_id
+                     << " UPDATE best_profit_per_flame: " << best_route.ppf
+                     << " profit: " << expected_profit << " flame_cost: " << expected_flame_cost
+                     << " best_route_index: " << best_route.index << " route: " << route << endl;
+            }
+            else
+            {
+                cerr << "[info][__pointing] [flame=" << meta.current_flame << "] robot_id=" << robot_id
+                     << " profit=" << expected_profit << " flame_cost=" << expected_flame_cost
+                     << " route=" << route << " valid, but ppf=" << ppf << "with profit" << expected_profit
+                     << " flame_cost" << expected_flame_cost
+                     << " is not better than best_route.ppf=" << best_route.ppf << endl;
+            }
+
             if (ppf > best_route.ppf) best_route = {i, meta.current_flame + expected_flame_cost, ppf};
         }
         // #ifdef DEBUG
