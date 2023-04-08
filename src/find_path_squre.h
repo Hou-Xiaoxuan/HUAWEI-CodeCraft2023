@@ -28,6 +28,42 @@ vector<pair<int, int>> dirs = {
     {-1,  0},
 };
 
+// 检查line是否跟多边形相交
+bool _check_cross(Segment line)
+{
+    for (auto &poly : trans_map::polys)
+        for (int i = 1; i < poly.points.size(); i++)
+            if (Segment::is_cross(line, {poly.points[i - 1], poly.points[i]})) return true;
+
+    return false;
+}
+bool _check_valid(Segment line)
+{
+    if (std::hypot(line.a.x - line.b.x, line.a.y - line.b.y) < EPS) return true;
+    auto start = line.a;
+    auto target = line.b;
+    bool valid = true;
+    if (_check_cross({start, target})) valid = false;
+    if (valid)
+    {
+        // 检测线段沿着垂直方向移动后是否可以直接连线
+        Vec2 rotate_dir = Vec2 {start, target}.rotate(M_PI / 2) * 10;
+        rotate_dir = rotate_dir / rotate_dir.length() * 0.6;
+        Vertex start_1 = {start.x + rotate_dir.x, start.y + rotate_dir.y};
+        Vertex target_1 = {target.x + rotate_dir.x, target.y + rotate_dir.y};
+        valid = !_check_cross({start_1, target_1});
+    }
+    if (valid)
+    {
+        Vec2 rotate_dir = Vec2 {start, target}.rotate(-M_PI / 2) * 10;
+        rotate_dir = rotate_dir / rotate_dir.length() * 0.6;
+        Vertex start_1 = {start.x + rotate_dir.x, start.y + rotate_dir.y};
+        Vertex target_1 = {target.x + rotate_dir.x, target.y + rotate_dir.y};
+        valid = !_check_cross({start_1, target_1});
+    }
+    return valid;
+}
+
 // 找到当前点所在的meta.map中的正方形 返回值 正方形x轴index y轴index 这个点坐标
 Pos current_pos(const Vertex &v)
 {
@@ -288,6 +324,62 @@ vector<Vertex> get_smooth_path(const vector<Vertex> &ori_path)
 }
 
 
+vector<Vertex> smooth_path_again(vector<Vertex> path)
+{
+    if (path.size() < 5) return path;
+    auto ori_path = path;
+    // 用两条直线的交点代替中间的两个点
+    size_t window_size = 30;
+
+    for (int i = 1; i < path.size(); i++)
+    {
+        // i-1->i 与 j-1->j能否合法相交
+        Segment line1 = {path[i - 1], path[i]};
+        for (int j = i + 2; j < min(i + 30, int(path.size())); j++)
+        {
+            Segment line2 = {path[j - 1], path[j]};
+            // 标准法求两条直线的交点
+            Vertex cross_point;
+            double a1 = line1.b.y - line1.a.y;
+            double b1 = line1.a.x - line1.b.x;
+            double c1 = line1.b.x * line1.a.y - line1.a.x * line1.b.y;
+            double a2 = line2.b.y - line2.a.y;
+            double b2 = line2.a.x - line2.b.x;
+            double c2 = line2.b.x * line2.a.y - line2.a.x * line2.b.y;
+            double d = a1 * b2 - a2 * b1;
+            // 检查是否平行
+            if (fabs(d) < EPS) continue;
+
+            cross_point.x = (b1 * c2 - b2 * c1) / d;
+            cross_point.y = (a2 * c1 - a1 * c2) / d;
+
+            if (_check_valid({line1.a, cross_point}) and _check_valid({cross_point, line2.b}))
+            {
+                cerr << "[debug][smooth_path_again] CONGRACTULATIONS! " << i << " " << j << endl;
+                // 删除掉[i, j-1]的点
+                path[i] = cross_point;
+                for (size_t k = i + 1; k < j; k++)
+                    path.erase(path.begin() + i + 1);
+                break;
+            }
+        }
+    }
+    if (path.size() < ori_path.size())
+    {
+        cerr << "smooth_path_again: " << ori_path.size() << " -> " << path.size() << endl;
+        cerr << "before_smooth = [";
+        for (auto &v : ori_path)
+            cerr << v << ",";
+        cerr << "]" << endl;
+        cerr << "after_smooth = [";
+        for (auto &v : path)
+            cerr << v << ",";
+        cerr << "]" << endl;
+    }
+
+    return path;
+}
+
 // vector<Vertex> smooth_path(vector<Vertex> path);
 // wrap 函数
 vector<Vertex> find_path(const Vertex &_start, const Vertex &_target, bool _have_good)
@@ -297,9 +389,8 @@ vector<Vertex> find_path(const Vertex &_start, const Vertex &_target, bool _have
     have_good = _have_good;
     const auto &ori_path = get_ori_path();
     const auto &smooth_path = get_smooth_path(ori_path);
-    return smooth_path;
+    return smooth_path_again(smooth_path);
 }
-
 
 vector<Vertex>
 find_shelter_path(const vector<Vertex> &sub_path, const vector<vector<Vertex>> &pri_path, bool have_good)
