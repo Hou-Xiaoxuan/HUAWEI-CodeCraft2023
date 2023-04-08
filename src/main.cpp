@@ -32,9 +32,12 @@ void robot()
         io::read_flame(std::cin);
         std::cerr << "[info] flame read end, flame: " << meta.current_flame << std::endl;
         route_stupid::give_pointing();
-        for (auto in : io::instructions)
+        if (_USE_LOG_)
         {
-            in->print(std::cerr);
+            for (auto in : io::instructions)
+            {
+                in->print(std::cerr);
+            }
         }
         io::print_instructions(io::instructions, std::cout, meta.current_flame);
         if (_USE_LOG_)

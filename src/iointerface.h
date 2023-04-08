@@ -63,7 +63,8 @@ void read_flame(std::istream &io_in)
     if (flame - model::meta.current_flame > 1)
     {
         std::cerr << "[error] !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! "
-                     "skip flame";
+                     "skip flame"
+                  << std::endl;
     }
     model::meta.current_flame = flame;
     model::meta.current_money = money;

@@ -296,27 +296,30 @@ public:
 
             double ppf = expected_profit / expected_flame_cost;
 
-
-            if (ppf > best_route.ppf)
+            if (_USE_LOG_)
             {
-                best_route = {i, meta.current_flame + expected_flame_cost, ppf};
-                cerr << "[info][__pointing] "
-                     << " [flame=" << meta.current_flame << "] robot_id: " << robot_id
-                     << " UPDATE best_profit_per_flame: " << best_route.ppf
-                     << " profit: " << expected_profit << " flame_cost: " << expected_flame_cost
-                     << " best_route_index: " << best_route.index << " route: " << route << endl;
-            }
-            else
-            {
-                cerr << "[info][__pointing] [flame=" << meta.current_flame << "] robot_id=" << robot_id
-                     << " profit=" << expected_profit << " flame_cost=" << expected_flame_cost
-                     << " route=" << route << " valid, but ppf=" << ppf << "with profit" << expected_profit
-                     << " flame_cost" << expected_flame_cost
-                     << " is not better than best_route.ppf=" << best_route.ppf << endl;
+                if (ppf > best_route.ppf)
+                {
+                    best_route = {i, meta.current_flame + expected_flame_cost, ppf};
+                    cerr << "[info][__pointing] "
+                         << " [flame=" << meta.current_flame << "] robot_id: " << robot_id
+                         << " UPDATE best_profit_per_flame: " << best_route.ppf
+                         << " profit: " << expected_profit << " flame_cost: " << expected_flame_cost
+                         << " best_route_index: " << best_route.index << " route: " << route << endl;
+                }
+                else
+                {
+                    cerr << "[info][__pointing] [flame=" << meta.current_flame << "] robot_id=" << robot_id
+                         << " profit=" << expected_profit << " flame_cost=" << expected_flame_cost
+                         << " route=" << route << " valid, but ppf=" << ppf << "with profit"
+                         << expected_profit << " flame_cost" << expected_flame_cost
+                         << " is not better than best_route.ppf=" << best_route.ppf << endl;
+                }
             }
 
             if (ppf > best_route.ppf) best_route = {i, meta.current_flame + expected_flame_cost, ppf};
         }
+
         // #ifdef DEBUG
         //         if (best_route.index == 0)
         //         {
@@ -421,7 +424,7 @@ void init()
                 }
             if (area.routes.size() > 0)
             {
-                for (int k=1; k < meta.robot.size(); k++)
+                for (int k = 1; k < meta.robot.size(); k++)
                 {
                     auto path = find_path(meta.robot[k].loc, meta.station[i].loc, false);
                     if (path.empty()) continue;
@@ -434,12 +437,17 @@ void init()
         }
     }
     // debug
-    for (int i = 1; i < areas.size(); i++)
-    {
-        cerr << "[info][init] area " << i << " routes size = " << areas[i].routes.size() << "station size"
-             << areas[i].stations.size() << endl;
 
-        cerr << endl;
+    if (_USE_LOG_)
+    {
+
+        for (int i = 1; i < areas.size(); i++)
+        {
+            cerr << "[info][init] area " << i << " routes size = " << areas[i].routes.size()
+                 << "station size" << areas[i].stations.size() << endl;
+
+            cerr << endl;
+        }
     }
 
     // enddebug
