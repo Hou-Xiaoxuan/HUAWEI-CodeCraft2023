@@ -319,6 +319,7 @@ vector<Vertex> find_path(const Vertex &_start, const Vertex &_target, bool _have
     return smooth_path;
 }
 
+
 vector<Vertex>
 find_shelter_path(const vector<Vertex> &sub_path, const vector<vector<Vertex>> &pri_path, bool have_good)
 {

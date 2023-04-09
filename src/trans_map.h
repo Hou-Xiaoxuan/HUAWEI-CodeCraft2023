@@ -340,6 +340,29 @@ struct SkipSegment : Segment {
     SkipSegment(const Segment &s) : Segment(s) { }
     SkipSegment(const Segment &s, const Vertex &a, const Vertex &b) : Segment(s), choice_a(a), choice_b(b)
     { }
+    Vertex get_skip_vertex(const Vertex &v, const pair<int, int> &dir)
+    {
+        if (Vertex::distance(v, choice_a) < Vertex::distance(v, choice_b))
+            return choice_b;
+        else if (Vertex::distance(v, choice_a) > Vertex::distance(v, choice_b))
+            return choice_a;
+        else
+        {
+            // 用ab做向量 dir做向量 比較向量夾角
+            Vec2 ab = Vec2(choice_a, choice_b);
+            Vec2 d;
+            d.x = dir.first;
+            d.y = dir.second;
+            if (ab * d > 0)
+            {
+                return choice_a;
+            }
+            else
+            {
+                return choice_b;
+            }
+        }
+    }
 };
 vector<SkipSegment> skip_line;
 vector<Segment> danger_line;

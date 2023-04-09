@@ -63,11 +63,11 @@ void local(const std::string &file)
     std::cerr << "[info] map read end" << std::endl;
     trans_map::init();
     std::cerr << "[info] trans map end" << std::endl;
-    route_stupid::init();
+    // route_stupid::init();
     std::cerr << "[info] route_stupid init end" << std::endl;
     puts("[info] init OK");
     // {20.5829, 19.5643}, {23.25, 31.25}
-    auto tmp1 = find_path_square::find_path(meta.robot.at(4).loc, meta.station.at(1).loc, false);
+    auto tmp1 = find_path_square::find_path({25.25 + 0.5, 9.75}, meta.station.at(36).loc, false);
     return;
 }
 
