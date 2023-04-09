@@ -103,37 +103,56 @@ vector<Vertex> get_ori_path()
             auto &npre = pre[nx][ny];
             if (npre.index_x != -1) continue;
 
-
-            bool is_stop = false;
-            bool is_two_squre = false;
-            for (const auto &line : trans_map::danger_line)
+            bool is_skip = false;
+            Vertex skip_center;
+            for (const auto &line : trans_map::skip_line)
             {
-                // 不算交点
-                if (not Segment::is_cross_2(line, Segment {now_center, ncenter})) continue;
+                if (not Segment::is_cross(line, Segment {now_center, ncenter})) continue;
+                is_skip = true;
+                skip_center = {(line.a.x + line.b.x) / 2, (line.a.y + line.b.y) / 2};
+                break;
+            }
 
-                is_two_squre = true;
-                ncenter = {(line.a.x + line.b.x) / 2, (line.a.y + line.b.y) / 2};
-                if (have_good)
+            if (is_skip)
+            {
+                ncenter = {2 * skip_center.x - now_center.x, 2 * skip_center.y - now_center.y};
+                Pos tmp_pos = current_pos(ncenter);
+                nx = tmp_pos.index_x;
+                ny = tmp_pos.index_y;
+            }
+            else
+            {
+                bool is_stop = false;
+                bool is_two_squre = false;
+                for (const auto &line : trans_map::danger_line)
                 {
-                    is_stop = true;
+                    // 不算交点
+                    if (not Segment::is_cross_2(line, Segment {now_center, ncenter})) continue;
+
+                    is_two_squre = true;
+                    ncenter = {(line.a.x + line.b.x) / 2, (line.a.y + line.b.y) / 2};
+                    if (have_good)
+                    {
+                        is_stop = true;
+                    }
                     break;
                 }
-            }
-            if (is_stop) continue;
+                if (is_stop) continue;
 
-            if (nx != target_pos.index_x or ny != target_pos.index_y)
-            {
-                // 不是起點 闊過雙線 一定合法
-                if ((start_pos.index_x != now_pos.first.index_x
-                        or start_pos.index_y != now_pos.first.index_y))
+                if (nx != target_pos.index_x or ny != target_pos.index_y)
                 {
-                    if (trans_map::valid_map[now_pos.first.index_x][now_pos.first.index_y][i]
-                        < limit_dis / 2)
-                        continue;
-                }
-                else
-                {
-                    if (not _is_valid({start_pos.pos, ncenter})) continue;
+                    // 不是起點 闊過雙線 一定合法
+                    if ((start_pos.index_x != now_pos.first.index_x
+                            or start_pos.index_y != now_pos.first.index_y))
+                    {
+                        if (trans_map::valid_map[now_pos.first.index_x][now_pos.first.index_y][i]
+                            < limit_dis / 2)
+                            continue;
+                    }
+                    else
+                    {
+                        if (not _is_valid({start_pos.pos, ncenter})) continue;
+                    }
                 }
             }
 
@@ -409,34 +428,56 @@ find_shelter_path(const vector<Vertex> &sub_path, const vector<vector<Vertex>> &
             auto &npre = pre[nx][ny];
             if (npre.index_x != -1) continue;
 
-            bool is_stop = false;
-            bool is_two_squre = false;
-            for (const auto &line : trans_map::danger_line)
+            bool is_skip = false;
+            Vertex skip_center;
+            for (const auto &line : trans_map::skip_line)
             {
-                // 不算交点
-                if (not Segment::is_cross_2(line, Segment {now_center, ncenter})) continue;
-
-                is_two_squre = true;
-                ncenter = {(line.a.x + line.b.x) / 2, (line.a.y + line.b.y) / 2};
-                if (have_good)
-                {
-                    is_stop = true;
-                    break;
-                }
+                if (not Segment::is_cross(line, Segment {now_center, ncenter})) continue;
+                is_skip = true;
+                skip_center = {(line.a.x + line.b.x) / 2, (line.a.y + line.b.y) / 2};
+                break;
             }
-            if (is_stop) continue;
 
-            // 不是起點 闊過雙線 一定合法
-            if ((start_pos.index_x != now_pos.first.index_x or start_pos.index_y != now_pos.first.index_y))
+            if (is_skip)
             {
-                if (trans_map::valid_map[now_pos.first.index_x][now_pos.first.index_y][i] < limit_dis / 2)
-                    continue;
+                ncenter = {2 * skip_center.x - now_center.x, 2 * skip_center.y - now_center.y};
+                Pos tmp_pos = current_pos(ncenter);
+                nx = tmp_pos.index_x;
+                ny = tmp_pos.index_y;
             }
             else
             {
-                if (not _is_valid({start_pos.pos, ncenter})) continue;
-            }
 
+                bool is_stop = false;
+                bool is_two_squre = false;
+                for (const auto &line : trans_map::danger_line)
+                {
+                    // 不算交点
+                    if (not Segment::is_cross_2(line, Segment {now_center, ncenter})) continue;
+
+                    is_two_squre = true;
+                    ncenter = {(line.a.x + line.b.x) / 2, (line.a.y + line.b.y) / 2};
+                    if (have_good)
+                    {
+                        is_stop = true;
+                        break;
+                    }
+                }
+                if (is_stop) continue;
+
+                // 不是起點 闊過雙線 一定合法
+                if ((start_pos.index_x != now_pos.first.index_x
+                        or start_pos.index_y != now_pos.first.index_y))
+                {
+                    if (trans_map::valid_map[now_pos.first.index_x][now_pos.first.index_y][i]
+                        < limit_dis / 2)
+                        continue;
+                }
+                else
+                {
+                    if (not _is_valid({start_pos.pos, ncenter})) continue;
+                }
+            }
 
             // 偏移起点和终点之外所有点
             Pos npos = {nx, ny, ncenter};
