@@ -240,12 +240,6 @@ vector<Vertex> get_smooth_path(const vector<Vertex> &ori_path)
         }
     }
 
-    // xxx 需要跟nav_nagivatorp停留在原地距离配合
-    while (smooth_path.size() > 2 and Vertex::distance(smooth_path[0], smooth_path[1]) < 0.1)
-    {
-        smooth_path.erase(smooth_path.begin());
-    }
-
     return smooth_path;
 }
 
