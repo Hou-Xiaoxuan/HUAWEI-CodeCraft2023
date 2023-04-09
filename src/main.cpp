@@ -63,18 +63,11 @@ void local(const std::string &file)
     std::cerr << "[info] map read end" << std::endl;
     trans_map::init();
     std::cerr << "[info] trans map end" << std::endl;
-    // 计时并输出运行时间
-
-
-    auto start = std::chrono::steady_clock::now();
-    // route_stupid::init();
-    auto end = std::chrono::steady_clock::now();
-    std::chrono::duration<double> diff = end - start;
-    std::cerr << "[info] route stupid init end, time:" << diff.count() << std::endl;
-    std::cerr << "[info] route stupid init end" << std::endl;
-
-    // route_stupid::give_pointing();
-    auto tmp1 = find_path_square::find_path({22.9579, 30.5276}, meta.station[13].loc, false);
+    route_stupid::init();
+    std::cerr << "[info] route_stupid init end" << std::endl;
+    puts("[info] init OK");
+    // {20.5829, 19.5643}, {23.25, 31.25}
+    auto tmp1 = find_path_square::find_path(meta.robot.at(4).loc, meta.station.at(1).loc, false);
     return;
 }
 

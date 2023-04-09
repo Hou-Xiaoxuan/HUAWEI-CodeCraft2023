@@ -119,7 +119,10 @@ private:
         }
     }
 
-    double _get_expected_profit(const Robot &robot, const Route &route)
+    double _get_expected_profit(const Robot &robot,
+        const Route &route,
+        int now_station,
+        const Path &now_station_path)
     {
         const auto &from_station = route.from_station();
         const auto &target_station = route.target_station();
@@ -161,28 +164,34 @@ private:
         {
 
             vector<navmesh::Vertex> path;
-            if (robot.in_station == -1)
+            if (now_station <= 0)
             {
                 if (_USE_LOG_)
                 {
                     // robot.loc->from_station.loc
-                    cerr << "[warning][get_expected_profit] robot[" << robot.id << "] is not in any station"
-                         << endl;
+                    cerr << "[warning][get_expected_profit] robot[" << robot.id
+                         << "] didn't have now station path" << endl;
                 }
+                path = find_path(robot.loc, from_station.loc, robot.goods > 0);
             }
             else
-                path = pathes[robot.in_station][from_station.id];
+                path = pathes[now_station][from_station.id];
 
             // empty_flame
             //     = max((from_station.timeleft - _estimated_move_flame(robot.loc, from_station.loc)), 0);
-            empty_flame = max((from_station.timeleft - _estimated_move_flame(path)), 0);
+            empty_flame = max((from_station.timeleft - _estimated_move_flame(path)
+                                  - _estimated_move_flame(now_station_path)),
+                0);
         }
         expected_profit
             -= empty_flame * Args::wait_blame;    // 空转惩罚，假设1000flame(20s)的预期收益是10000
         return expected_profit;
     }
 
-    int _get_expected_flame_cost(const Robot &robot, const Route &route, int station_now)
+    int _get_expected_flame_cost(const Robot &robot,
+        const Route &route,
+        int station_now,
+        const Path &now_station_path)
     {
         const auto &from_station = route.from_station();
         const auto &target_station = route.target_station();
@@ -201,11 +210,13 @@ private:
         else
             robot_to_from = pathes.at(station_now).at(from_station.id);
         from_to_target = pathes.at(from_station.id).at(target_station.id);
-        if (from_station.with_product == 0 and from_station.timeleft > _estimated_move_flame(robot_to_from))
+        if (from_station.with_product == 0
+            and from_station.timeleft
+                > _estimated_move_flame(robot_to_from) + _estimated_move_flame(now_station_path))
             expected_flame_cost = from_station.timeleft + _estimated_move_flame(from_to_target);
         else
-            expected_flame_cost
-                = _estimated_move_flame(robot_to_from) + _estimated_move_flame(from_to_target);
+            expected_flame_cost = _estimated_move_flame(robot_to_from)
+                + _estimated_move_flame(from_to_target) + _estimated_move_flame(now_station_path);
         return expected_flame_cost;
     }
 
@@ -288,11 +299,21 @@ public:
 
 
             /*计算、选择最佳ppf*/
-            double expected_profit = _get_expected_profit(robot, route);    // 预期利润
-            int expected_flame_cost = _get_expected_flame_cost(robot, route, now_station)
-                + _estimated_move_flame(now_station_path);    // 预期时间
+            double expected_profit
+                = _get_expected_profit(robot, route, now_station, now_station_path);    // 预期利润
+            int expected_flame_cost
+                = _get_expected_flame_cost(robot, route, now_station, now_station_path);    // 预期时间
 
-            if (meta.current_flame + expected_flame_cost > ConVar::time_limit) continue;    // *condition 4
+            if (meta.current_flame + expected_flame_cost > ConVar::time_limit)    // *condition 4
+            {
+                if (_USE_LOG_)
+                {
+                    cerr << "[info][give_pointing] frame" << meta.current_flame << " robot[" << robot_id
+                         << "] route[" << i << "] flame_cost[" << expected_flame_cost << "] > time_limit["
+                         << ConVar::time_limit << "]" << endl;
+                }
+                continue;
+            }
 
             double ppf = expected_profit / expected_flame_cost;
 
@@ -415,27 +436,33 @@ void init()
         int x = find_fa(i);
         if (x == i)
         {
-            Area area;
-            area.routes.reserve(100);
+            Area tmp_area;
+            tmp_area.routes.reserve(100);
             // 将包含x的所有route加入sub_area
             for (int j = 1; j < routes.size(); j++)
                 if (x == find_fa(routes[j].from_station_index)
                     or x == find_fa(routes[j].target_station_index))
                 {
-                    area.routes.emplace_back(routes[j]);
-                    area.stations.insert(routes[j].from_station_index);
-                    area.stations.insert(routes[j].target_station_index);
+                    tmp_area.routes.emplace_back(routes[j]);
+                    tmp_area.stations.insert(routes[j].from_station_index);
+                    tmp_area.stations.insert(routes[j].target_station_index);
                 }
-            if (area.routes.size() > 0)
+            if (tmp_area.routes.size() > 0)
             {
                 for (int k = 1; k < meta.robot.size(); k++)
                 {
                     auto path = find_path(meta.robot[k].loc, meta.station[i].loc, false);
                     if (path.empty()) continue;
                     // 合并
-                    for (auto &route : area.routes)
+                    for (auto &route : tmp_area.routes)
+                    {
                         areas[k].routes.emplace_back(route);
-                    areas[k].stations.insert(area.stations.begin(), area.stations.end());
+                        if (_USE_LOG_)
+                        {
+                            cerr << "[info][init] area " << k << " add route " << route << endl;
+                        }
+                    }
+                    areas[k].stations.insert(tmp_area.stations.begin(), tmp_area.stations.end());
                 }
             }
         }
@@ -665,7 +692,6 @@ void give_pointing()
                     stop_until[i] = -1;
             }
             auto &area = areas[i];
-            auto &route = area.routes[processing[i]];
             auto &robot = meta.robot[i];
 
             /* 重新获取任务 */
@@ -691,6 +717,7 @@ void give_pointing()
                 }
             }
 
+            auto &route = area.routes[processing[i]];
             /* 处理任务*/
             if (robot.goods == 0)
             {
@@ -720,7 +747,7 @@ void give_pointing()
                     if (_USE_LOG_)
                     {
                         cerr << "[error][__pointing] robot " << i << " 没有得到取from的路径, from"
-                             << robot.loc << "->" << route.from_station().loc << endl;
+                             << robot.loc << "-> route" << route << endl;
                     }
                 }
             }

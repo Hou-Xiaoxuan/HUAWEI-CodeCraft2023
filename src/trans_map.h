@@ -12,11 +12,52 @@ namespace trans_map
 using namespace navmesh;
 using namespace std;
 
+
+struct Pos {
+    int index_x = -1;
+    int index_y = -1;
+    Vertex pos = {-1, -1};
+};
+
+// 找到当前点所在的meta.map中的正方形 返回值 正方形x轴index y轴index 这个点坐标
+Pos current_pos(const Vertex &v)
+{
+
+    for (int i = 2 * int(v.x); i <= 2 * int(v.x) + 2; ++i)
+    {
+        for (int j = 2 * int(v.y); j <= 2 * int(v.y) + 2; ++j)
+        {
+            if (v.x <= i * 0.5 and v.x >= (i - 1) * 0.5 and v.y <= j * 0.5 and v.y >= (j - 1) * 0.5)
+                return {i, j, v};
+        }
+    }
+    if (_USE_LOG_)
+    {
+        cerr << "[error][current_pos] can't find current pos with " << v << endl;
+        throw "can't find current pos";
+    }
+}
+
 struct Poly {
     vector<Vertex> points;
     Poly() = default;
     Poly(vector<Vertex> points) : points(std::move(points)) { }
     Poly(const Polygon &poly) : points(poly.vertices) { }
+};
+
+// 获得正方形重心
+inline Vertex get_center(int i, int j) { return {(i - 1) * 0.5 + 0.25, (j - 1) * 0.5 + 0.25}; }
+
+// 顺时针 四向
+vector<pair<int, int>> dirs = {
+    { 0,  1},
+    { 1,  0},
+    { 0, -1},
+    {-1,  0},
+    {-1, -1},
+    { 1, -1},
+    { 1,  1},
+    {-1,  1}
 };
 
 // 三态函数，判断两个double在eps精度下的大小关系
@@ -81,13 +122,7 @@ void trans_map(const vector<vector<char>> &ori_map)
         }
     }
 
-    // 顺时针 四向
-    vector<pair<int, int>> dirs = {
-        { 0,  1},
-        { 1,  0},
-        { 0, -1},
-        {-1,  0}
-    };
+
 
     vector<vector<vector<int>>> map_status = vector<vector<vector<int>>>(
         Map::width + 2, vector<vector<int>>(Map::height + 2, vector<int>(4, 0)));
@@ -428,6 +463,71 @@ void get_danger_line()
     }
 }
 
+bool check_expand_danger(const Vertex &a, const Vertex &b)
+{
+    Pos pos_a = current_pos(a);
+    if (meta.map[pos_a.index_x][pos_a.index_y] == '#') return false;
+    Pos pos_b = current_pos(b);
+    if (meta.map[pos_b.index_x][pos_b.index_y] == '#') return false;
+    return true;
+}
+
+void expand_danger_line()
+{
+    // TODO 檢查
+    vector<Segment> tmp_danger_line;
+    for (auto &line : danger_line)
+    {
+        Vertex center = {(line.a.x + line.b.x) * 0.5, (line.a.y + line.b.y) * 0.5};
+        if (abs(line.a.x - line.b.x) < 1e-6)
+        {
+            Vertex tmp_1 = {center.x - 0.25, center.y + 0.25};
+            Vertex tmp_2 = {center.x - 0.25, center.y - 0.25};
+            if (check_expand_danger(tmp_1, tmp_2))
+            {
+                tmp_danger_line.push_back({
+                    Vertex {line.a.x - 0.5, line.a.y},
+                     Vertex {line.b.x - 0.5, line.b.y}
+                });
+            }
+            tmp_1 = {center.x + 0.25, center.y + 0.25};
+            tmp_2 = {center.x + 0.25, center.y - 0.25};
+            if (check_expand_danger(tmp_1, tmp_2))
+            {
+                tmp_danger_line.push_back({
+                    Vertex {line.a.x + 0.5, line.a.y},
+                     Vertex {line.b.x + 0.5, line.b.y}
+                });
+            }
+        }
+        else
+        {
+            Vertex tmp_1 = {center.x + 0.25, center.y - 0.25};
+            Vertex tmp_2 = {center.x - 0.25, center.y - 0.25};
+            if (check_expand_danger(tmp_1, tmp_2))
+            {
+                tmp_danger_line.push_back({
+                    Vertex {line.a.x, line.a.y - 0.5},
+                     Vertex {line.b.x, line.b.y - 0.5}
+                });
+            }
+            tmp_1 = {center.x + 0.25, center.y + 0.25};
+            tmp_2 = {center.x - 0.25, center.y + 0.25};
+            if (check_expand_danger(tmp_1, tmp_2))
+            {
+                tmp_danger_line.push_back({
+                    Vertex {line.a.x, line.a.y + 0.5},
+                     Vertex {line.b.x, line.b.y + 0.5}
+                });
+            }
+        }
+    }
+    // 合併danger_line 和 tmp_danger_line 排序 去重
+    danger_line.insert(danger_line.end(), tmp_danger_line.begin(), tmp_danger_line.end());
+    sort(danger_line.begin(), danger_line.end());
+    danger_line.erase(unique(danger_line.begin(), danger_line.end()), danger_line.end());
+}
+
 vector<vector<double>> nearest_obstacle(Map::width + 2, vector<double>(Map::height + 2, 1e9));
 
 void get_nearest_obstacle()
@@ -500,25 +600,45 @@ void test_print()
 
     fout.close();
 }
+
+
+vector<vector<vector<double>>> valid_map(Map::width + 2,
+    vector<vector<double>>(Map::height + 2, vector<double>(8, 0.0)));
+
+
+void get_valid_map()
+{
+    for (int i = 1; i <= Map::width; ++i)
+    {
+        for (int j = 1; j <= Map::height; ++j)
+        {
+            if (meta.map[i][j] == '#') continue;
+            Vertex now_center = get_center(i, j);
+            for (int k = 0; k < 8; ++k)
+            {
+                int nx = i + dirs[k].first;
+                int ny = j + dirs[k].second;
+                if (meta.map[nx][ny] == '#') continue;
+                Vertex ncenter = get_center(nx, ny);
+                Segment seg = {now_center, ncenter};
+                double tmp = 1e9;
+                for (const auto &poly : trans_map::polys)
+                {
+                    const auto &points = poly.points;
+                    for (int _k = 0; _k < points.size(); ++_k)
+                    {
+                        tmp = min(
+                            tmp, Segment::distance(seg, {points[_k], points[(_k + 1) % points.size()]}));
+                    }
+                }
+                valid_map[i][j][k] = tmp;
+            }
+        }
+    }
+}
+
 vector<Polygon> init()
 {
-    /*识别 .#  #.
-          #.  .#
-    两种情况，填上一个.
-    */
-    /* 识别
-
-    */
-    for (int i = 2; i <= 100; i++)
-        for (int j = 1; j <= 100; j++)
-        {
-            if (meta.map[i][j] == '#' and meta.map[i - 1][j] == '.' and meta.map[i][j - 1] == '.'
-                and meta.map[i - 1][j - 1] == '#')
-                model::meta.map[i - 1][j] = '#';
-            if (meta.map[i][j] == '.' and meta.map[i - 1][j] == '#' and meta.map[i][j - 1] == '#'
-                and meta.map[i - 1][j - 1] == '.')
-                model::meta.map[i - 1][j - 1] = '#';
-        }
 
     trans_map(meta.map);
     sort(polys.begin(), polys.end(), [](const Poly &b, const Poly &a) {
@@ -538,30 +658,9 @@ vector<Polygon> init()
     get_result(tree.back(), 0);
     get_danger_line();
     get_nearest_obstacle();
-#ifdef DEBUG
-    test_print();
-#endif
-
-    // // 根据danger_line填充修改地图
-    // for (auto &line : danger_line)
-    // {
-    //     // 填充a->b上，很纵坐标为0.25倍数的点
-    //     double x = line.a.x;
-    //     double y = line.a.y;
-    //     double k = (line.b.y - line.a.y) / (line.b.x - line.a.x);
-    //     double b = line.a.y - k * line.a.x;
-    //     do{
-    //         int x1 = (int)(x * 2);
-    //         int y1 = (int)(y * 2);
-    //         if(meta.map[x1][y1] == '.')
-    //             model::meta.map[x1][y1] = '&';
-    //         x += 0.25;
-    //         y = k * x + b;
-    //     }while(x < line.b.x);
-    // }
-    // 打印修改后的地图
     if (_USE_LOG_)
     {
+        test_print();
         for (auto &i : model::meta.map)
         {
             for (char j : i)
@@ -571,7 +670,7 @@ vector<Polygon> init()
             cerr << endl;
         }
     }
-
+    get_valid_map();
     return result;
 }
 }    // namespace

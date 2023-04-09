@@ -13,12 +13,11 @@ namespace find_path_square
 {
 using namespace std;
 using namespace navmesh;
+using trans_map::current_pos;
+using trans_map::dirs;
+using trans_map::get_center;
+using trans_map::Pos;
 
-struct Pos {
-    int index_x = -1;
-    int index_y = -1;
-    Vertex pos = {-1, -1};
-};
 
 int cnt_path = 0;
 int pre_cnt_path = 0;
@@ -32,17 +31,10 @@ Vertex start;
 Vertex target;
 bool have_good;
 
-vector<pair<int, int>> dirs = {
-    { 0,  1},
-    { 1,  0},
-    { 0, -1},
-    {-1,  0},
-};
-
 bool _is_valid(Segment line)
 {
     ++cnt_path;
-    double limit_dis = have_good ? ConVar::robot_radius_goods * 2 : ConVar::robot_radius * 2;
+    double limit_dis = have_good ? ConVar::robot_radius_goods : ConVar::robot_radius;
     for (const auto &poly : trans_map::polys)
     {
         const auto &points = poly.points;
@@ -57,28 +49,7 @@ bool _is_valid(Segment line)
     return true;
 }
 
-// 找到当前点所在的meta.map中的正方形 返回值 正方形x轴index y轴index 这个点坐标
-Pos current_pos(const Vertex &v)
-{
 
-    for (int i = 2 * int(v.x); i <= 2 * int(v.x) + 2; ++i)
-    {
-        for (int j = 2 * int(v.y); j <= 2 * int(v.y) + 2; ++j)
-        {
-            if (v.x <= i * 0.5 and v.x >= (i - 1) * 0.5 and v.y <= j * 0.5 and v.y >= (j - 1) * 0.5)
-                return {i, j, v};
-        }
-    }
-    if (_USE_LOG_)
-    {
-        cerr << "[error][current_pos] can't find current pos with " << v << endl;
-        throw "can't find current pos";
-    }
-}
-
-
-// 获得正方形重心
-inline Vertex get_center(int i, int j) { return {(i - 1) * 0.5 + 0.25, (j - 1) * 0.5 + 0.25}; }
 
 
 // 优先队列排序函数
@@ -119,38 +90,25 @@ vector<Vertex> get_ori_path()
         const pair<Pos, int> now_pos = que.top();
         que.pop();
 
-        Vertex now_center = get_center(now_pos.first.index_x, now_pos.first.index_y);
+        Vertex now_center = now_pos.first.pos;
 
-        for (int i = 0; i < 4; ++i)
+        for (int i = 0; i < 8; ++i)
         {
             int nx = now_pos.first.index_x + dirs[i].first;
             int ny = now_pos.first.index_y + dirs[i].second;
+            Vertex ncenter = get_center(nx, ny);
 
             if (meta.map[nx][ny] == '#') continue;
 
             auto &npre = pre[nx][ny];
             if (npre.index_x != -1) continue;
 
-            bool is_stop = false;
-            Vertex ncenter = get_center(nx, ny);
-            if (start_pos.index_x != now_pos.first.index_x or start_pos.index_y != now_pos.first.index_y)
-            {
-                for (const auto &line : trans_map::stop_line)
-                {
-                    {
-                        if (Segment::is_cross(line, Segment {now_center, ncenter}))
-                        {
-                            is_stop = true;
-                            break;
-                        }
-                    }
-                }
-            }
-            if (is_stop and not(nx == target_pos.index_x and ny == target_pos.index_y)) continue;
 
+            bool is_stop = false;
             bool is_two_squre = false;
             for (const auto &line : trans_map::danger_line)
             {
+                // 不算交点
                 if (not Segment::is_cross_2(line, Segment {now_center, ncenter})) continue;
 
                 is_two_squre = true;
@@ -162,15 +120,24 @@ vector<Vertex> get_ori_path()
                 }
             }
             if (is_stop) continue;
-            // 四个方向上的点在地图上没有#
-            if (not(nx == target_pos.index_x and ny == target_pos.index_y) and not is_two_squre
-                and (meta.map[nx][ny + 1] == '#' or meta.map[nx][ny - 1] == '#'
-                    or meta.map[nx + 1][ny] == '#' or meta.map[nx - 1][ny] == '#'))
-                continue;
 
+            if (nx != target_pos.index_x or ny != target_pos.index_y)
+            {
+                // 不是起點 闊過雙線 一定合法
+                if ((start_pos.index_x != now_pos.first.index_x
+                        or start_pos.index_y != now_pos.first.index_y))
+                {
+                    if (trans_map::valid_map[now_pos.first.index_x][now_pos.first.index_y][i]
+                        < limit_dis / 2)
+                        continue;
+                }
+                else
+                {
+                    if (not _is_valid({start_pos.pos, ncenter})) continue;
+                }
+            }
 
             Pos npos = {nx, ny, ncenter};
-
             npre = now_pos.first;
             que.push({npos, now_pos.second + 1});
             que_bak.push(npos);
@@ -327,8 +294,14 @@ vector<Vertex> find_path(const Vertex &_start, const Vertex &_target, bool _have
     target = _target;
     have_good = _have_good;
     const auto &ori_path = get_ori_path();
+    if (_USE_LOG_)
+    {
+        for (auto &p : ori_path)
+            cerr << p << "->";
+        cerr << endl;
+    }
     const auto &smooth_path = get_smooth_path(ori_path);
-    return smooth_path_again(smooth_path);
+    return smooth_path;
 }
 
 vector<Vertex>
@@ -375,7 +348,7 @@ find_shelter_path(const vector<Vertex> &sub_path, const vector<vector<Vertex>> &
         const pair<Pos, int> now_pos = que.top();
         que.pop();
 
-        Vertex now_center = get_center(now_pos.first.index_x, now_pos.first.index_y);
+        Vertex now_center = now_pos.first.pos;
 
         // 走得到 这个点距离所有对方路径的前3m的线段 距离大于1.2m
         // 避免迎头撞上对方
@@ -423,10 +396,13 @@ find_shelter_path(const vector<Vertex> &sub_path, const vector<vector<Vertex>> &
             break;
         }
 
-        for (int i = 0; i < 4; ++i)
+        if (now_pos.second == 6) continue;
+
+        for (int i = 0; i < 8; ++i)
         {
             int nx = now_pos.first.index_x + dirs[i].first;
             int ny = now_pos.first.index_y + dirs[i].second;
+            Vertex ncenter = get_center(nx, ny);
 
             if (meta.map[nx][ny] == '#') continue;
 
@@ -434,29 +410,14 @@ find_shelter_path(const vector<Vertex> &sub_path, const vector<vector<Vertex>> &
             if (npre.index_x != -1) continue;
 
             bool is_stop = false;
-            Vertex ncenter = get_center(nx, ny);
-            if (start_pos.index_x != now_pos.first.index_x or start_pos.index_y != now_pos.first.index_y)
-            {
-                for (const auto &line : trans_map::stop_line)
-                {
-                    if (Segment::is_cross(line, Segment {now_center, ncenter}))
-                    {
-                        is_stop = true;
-                        break;
-                    }
-                }
-            }
-
-            if (is_stop) continue;
-
             bool is_two_squre = false;
             for (const auto &line : trans_map::danger_line)
             {
+                // 不算交点
                 if (not Segment::is_cross_2(line, Segment {now_center, ncenter})) continue;
 
                 is_two_squre = true;
                 ncenter = {(line.a.x + line.b.x) / 2, (line.a.y + line.b.y) / 2};
-
                 if (have_good)
                 {
                     is_stop = true;
@@ -464,13 +425,18 @@ find_shelter_path(const vector<Vertex> &sub_path, const vector<vector<Vertex>> &
                 }
             }
             if (is_stop) continue;
-            // 四个方向上的点在地图上没有#
-            if (not is_two_squre
-                and (meta.map[nx][ny + 1] == '#' or meta.map[nx][ny - 1] == '#'
-                    or meta.map[nx + 1][ny] == '#' or meta.map[nx - 1][ny] == '#'))
-                continue;
 
-            if (now_pos.second == 6) continue;
+            // 不是起點 闊過雙線 一定合法
+            if ((start_pos.index_x != now_pos.first.index_x or start_pos.index_y != now_pos.first.index_y))
+            {
+                if (trans_map::valid_map[now_pos.first.index_x][now_pos.first.index_y][i] < limit_dis / 2)
+                    continue;
+            }
+            else
+            {
+                if (not _is_valid({start_pos.pos, ncenter})) continue;
+            }
+
 
             // 偏移起点和终点之外所有点
             Pos npos = {nx, ny, ncenter};
