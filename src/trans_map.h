@@ -334,8 +334,14 @@ bool check_segment_valid(const Segment &line, const Polygon &poly)
     return true;
 }
 
-
-vector<Segment> skip_line;
+struct SkipSegment : Segment {
+    Vertex choice_a;
+    Vertex choice_b;
+    SkipSegment(const Segment &s) : Segment(s) { }
+    SkipSegment(const Segment &s, const Vertex &a, const Vertex &b) : Segment(s), choice_a(a), choice_b(b)
+    { }
+};
+vector<SkipSegment> skip_line;
 vector<Segment> danger_line;
 vector<Segment> stop_line;
 
@@ -450,7 +456,6 @@ void get_skip_line()
                 }
             }
         }
-        
 }
 
 void get_danger_line()
