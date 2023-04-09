@@ -108,7 +108,7 @@ vector<Vertex> get_ori_path()
             {
                 if (not Segment::is_cross(line, Segment {now_center, ncenter})) continue;
                 is_skip = true;
-                skip_center = {(line.a.x + line.b.x) / 2, (line.a.y + line.b.y) / 2};
+                skip_center = line.get_skip_vertex(now_center, dirs[i]);
                 break;
             }
 
@@ -430,7 +430,7 @@ find_shelter_path(const vector<Vertex> &sub_path, const vector<vector<Vertex>> &
             {
                 if (not Segment::is_cross(line, Segment {now_center, ncenter})) continue;
                 is_skip = true;
-                skip_center = {(line.a.x + line.b.x) / 2, (line.a.y + line.b.y) / 2};
+                skip_center = line.get_skip_vertex(now_center, dirs[i]);
                 break;
             }
 

@@ -340,7 +340,7 @@ struct SkipSegment : Segment {
     SkipSegment(const Segment &s) : Segment(s) { }
     SkipSegment(const Segment &s, const Vertex &a, const Vertex &b) : Segment(s), choice_a(a), choice_b(b)
     { }
-    Vertex get_skip_vertex(const Vertex &v, const pair<int, int> &dir)
+    Vertex get_skip_vertex(const Vertex &v, const pair<int, int> &dir) const
     {
         if (Vertex::distance(v, choice_a) < Vertex::distance(v, choice_b))
             return choice_b;
