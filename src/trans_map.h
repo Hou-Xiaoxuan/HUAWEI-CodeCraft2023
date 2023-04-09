@@ -401,24 +401,25 @@ void get_skip_line()
         ...
         ..#
     */
-    for(int i=1; i+3<=Map::width; i++)
-        for(int j=1; j+4<=Map::height; j++)
+    for (int i = 1; i + 3 <= Map::width; i++)
+        for (int j = 1; j + 4 <= Map::height; j++)
         {
-            if(meta.map[i][j+4]=='#' and meta.map[i+3][j]=='#')
+            if (meta.map[i][j + 4] == '#' and meta.map[i + 3][j] == '#')
             {
                 bool flag = true;
-                for(int _i=i; _i<=i+3 and flag; _i++)
-                    for(int _j=j; _j<=j+4 and flag; _j++)
+                for (int _i = i; _i <= i + 3 and flag; _i++)
+                    for (int _j = j; _j <= j + 4 and flag; _j++)
                     {
-                        if(_i==i and _j==j+4) continue;
-                        if(_i==i+3 and _j==j) continue;
-                        if(meta.map[_i][_j]=='#') flag = false;
+                        if (_i == i and _j == j + 4) continue;
+                        if (_i == i + 3 and _j == j) continue;
+                        if (meta.map[_i][_j] == '#') flag = false;
                     }
-                if(flag)
+                if (flag)
                 {
-                    auto a = get_center(i, j+4);
-                    auto b = get_center(i+3, j);
-                    skip_line.emplace_back(Vertex{a.x+0.25, a.y-0.25}, Vertex{b.x-0.25, b.y+0.25});
+                    auto a = get_center(i, j + 4);
+                    auto b = get_center(i + 3, j);
+                    skip_line.emplace_back(
+                        Vertex {a.x + 0.25, a.y - 0.25}, Vertex {b.x - 0.25, b.y + 0.25});
                 }
             }
         }
@@ -427,28 +428,28 @@ void get_skip_line()
         ...
         #..
     */
-    for(int i=1; i+3<=Map::width; i++)
-        for(int j=1; j+4<=Map::height; j++)
+    for (int i = 1; i + 3 <= Map::width; i++)
+        for (int j = 1; j + 4 <= Map::height; j++)
         {
-            if(meta.map[i][j]=='#' and meta.map[i+3][j+4]=='#')
+            if (meta.map[i][j] == '#' and meta.map[i + 3][j + 4] == '#')
             {
                 bool flag = true;
-                for(int _i=i; _i<=i+3 and flag; _i++)
-                    for(int _j=j; _j<=j+4 and flag; _j++)
+                for (int _i = i; _i <= i + 3 and flag; _i++)
+                    for (int _j = j; _j <= j + 4 and flag; _j++)
                     {
-                        if(_i==i and _j==j) continue;
-                        if(_i==i+3 and _j==j+4) continue;
-                        if(meta.map[_i][_j]=='#') flag = false;
+                        if (_i == i and _j == j) continue;
+                        if (_i == i + 3 and _j == j + 4) continue;
+                        if (meta.map[_i][_j] == '#') flag = false;
                     }
-                if(flag)
+                if (flag)
                 {
                     auto a = get_center(i, j);
-                    auto b = get_center(i+3, j+4);
-                    skip_line.emplace_back(Vertex{a.x+0.25, a.y+0.25}, Vertex{b.x-0.25, b.y-0.25});
+                    auto b = get_center(i + 3, j + 4);
+                    skip_line.emplace_back(
+                        Vertex {a.x + 0.25, a.y + 0.25}, Vertex {b.x - 0.25, b.y - 0.25});
                 }
             }
         }
-
 }
 
 void get_danger_line()
@@ -711,6 +712,16 @@ void test_print()
         fout << line.b.y << endl;
     }
 
+
+    fout << skip_line.size() << endl;
+    for (auto &line : skip_line)
+    {
+        fout << line.a.x << endl;
+        fout << line.a.y << endl;
+        fout << line.b.x << endl;
+        fout << line.b.y << endl;
+    }
+
     fout.close();
 }
 
@@ -770,7 +781,10 @@ vector<Polygon> init()
     get_polygon();
     get_result(tree.back(), 0);
     get_danger_line();
+    expand_danger_line();
     get_nearest_obstacle();
+    get_valid_map();
+    get_skip_line();
     if (_USE_LOG_)
     {
         test_print();
@@ -783,7 +797,6 @@ vector<Polygon> init()
             cerr << endl;
         }
     }
-    get_valid_map();
     return result;
 }
 }    // namespace
