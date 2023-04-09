@@ -335,8 +335,14 @@ bool check_segment_valid(const Segment &line, const Polygon &poly)
 }
 
 
+vector<Segment> skip_line;
 vector<Segment> danger_line;
 vector<Segment> stop_line;
+
+void get_skip_line()
+{
+    // TODO
+}
 
 void get_danger_line()
 {
