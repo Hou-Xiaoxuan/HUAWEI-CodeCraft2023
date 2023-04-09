@@ -392,8 +392,10 @@ void get_skip_line()
                 {
                     auto a = get_center(i, j);
                     auto b = get_center(i + 3, j + 2);
-                    skip_line.emplace_back(
-                        Vertex {a.x + 0.25, a.y + 0.25}, Vertex {b.x - 0.25, b.y - 0.25});
+                    skip_line.emplace_back(Segment {
+                        Vertex {a.x + 0.25, a.y + 0.25},
+                         Vertex {b.x - 0.25, b.y - 0.25}
+                    });
                     skip_line.back().choice_a = {a.x, b.y};
                     skip_line.back().choice_b = {b.x, a.y};
                 }
@@ -420,8 +422,10 @@ void get_skip_line()
                 {
                     auto a = get_center(i, j + 2);
                     auto b = get_center(i + 3, j);
-                    skip_line.emplace_back(
-                        Vertex {a.x + 0.25, a.y - 0.25}, Vertex {b.x - 0.25, b.y + 0.25});
+                    skip_line.emplace_back(Segment {
+                        Vertex {a.x + 0.25, a.y - 0.25},
+                         Vertex {b.x - 0.25, b.y + 0.25}
+                    });
                     skip_line.back().choice_a = {a.x, b.y};
                     skip_line.back().choice_b = {b.x, a.y};
                 }
@@ -451,8 +455,10 @@ void get_skip_line()
                 {
                     auto a = get_center(i, j + 3);
                     auto b = get_center(i + 2, j);
-                    skip_line.emplace_back(
-                        Vertex {a.x + 0.25, a.y - 0.25}, Vertex {b.x - 0.25, b.y + 0.25});
+                    skip_line.emplace_back(Segment {
+                        Vertex {a.x + 0.25, a.y - 0.25},
+                         Vertex {b.x - 0.25, b.y + 0.25}
+                    });
                     skip_line.back().choice_a = {a.x, b.y};
                     skip_line.back().choice_b = {b.x, a.y};
                 }
@@ -480,8 +486,10 @@ void get_skip_line()
                 {
                     auto a = get_center(i, j);
                     auto b = get_center(i + 2, j + 3);
-                    skip_line.emplace_back(
-                        Vertex {a.x + 0.25, a.y + 0.25}, Vertex {b.x - 0.25, b.y - 0.25});
+                    skip_line.emplace_back(Segment {
+                        Vertex {a.x + 0.25, a.y + 0.25},
+                         Vertex {b.x - 0.25, b.y - 0.25}
+                    });
                     skip_line.back().choice_a = {a.x, b.y};
                     skip_line.back().choice_b = {b.x, a.y};
                 }
