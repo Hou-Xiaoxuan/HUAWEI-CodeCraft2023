@@ -346,23 +346,23 @@ void get_skip_line()
        ....
        #...
     */
-    for (int i = 1; i + 4 <= Map::width; i++)
-        for (int j = 1; j + 3 <= Map::height; j++)
+    for (int i = 1; i + 3 <= Map::width; i++)
+        for (int j = 1; j + 2 <= Map::height; j++)
         {
             if (meta.map[i][j] == '#' and meta.map[i + 4][j + 3] == '#')
             {
                 bool flag = true;
-                for (int _i = i; _i <= i + 4 and flag; _i++)
+                for (int _i = i; _i <= i + 3 and flag; _i++)
                     for (int _j = j; _j <= j + 3 and flag; _j++)
                     {
                         if (_i == i and _j == j) continue;
-                        if (_i == i + 4 and _j == j + 3) continue;
+                        if (_i == i + 4 and _j == j + 2) continue;
                         if (_i == '#') flag = false;
                     }
                 if (flag)
                 {
                     auto a = get_center(i, j);
-                    auto b = get_center(i + 4, j + 3);
+                    auto b = get_center(i + 3, j + 2);
                     skip_line.emplace_back(
                         Vertex {a.x + 0.25, a.y + 0.25}, Vertex {b.x - 0.25, b.y - 0.25});
                 }
@@ -372,23 +372,23 @@ void get_skip_line()
         ....
         ...#
     */
-    for (int i = 1; i + 4 <= Map::width; i++)
-        for (int j = 1; j + 3 <= Map::height; j++)
+    for (int i = 1; i + 3 <= Map::width; i++)
+        for (int j = 1; j + 2 <= Map::height; j++)
         {
-            if (meta.map[i][j + 3] == '#' and meta.map[i + 4][j] == '#')
+            if (meta.map[i][j + 2] == '#' and meta.map[i + 3][j] == '#')
             {
                 bool flag = true;
                 for (int _i = i; _i <= i + 4 and flag; _i++)
                     for (int _j = j; _j <= j + 3 and flag; _j++)
                     {
-                        if (_i == i and _j == j + 3) continue;
-                        if (_i == i + 4 and _j == j) continue;
+                        if (_i == i and _j == j + 2) continue;
+                        if (_i == i + 3 and _j == j) continue;
                         if (meta.map[_i][_j] == '#') flag = false;
                     }
                 if (flag)
                 {
-                    auto a = get_center(i, j + 3);
-                    auto b = get_center(i + 4, j);
+                    auto a = get_center(i, j + 2);
+                    auto b = get_center(i + 3, j);
                     skip_line.emplace_back(
                         Vertex {a.x + 0.25, a.y - 0.25}, Vertex {b.x - 0.25, b.y + 0.25});
                 }
@@ -401,23 +401,23 @@ void get_skip_line()
         ...
         ..#
     */
-    for(int i=1; i+3<=Map::width; i++)
-        for(int j=1; j+4<=Map::height; j++)
+    for(int i=1; i+2<=Map::width; i++)
+        for(int j=1; j+3<=Map::height; j++)
         {
-            if(meta.map[i][j+4]=='#' and meta.map[i+3][j]=='#')
+            if(meta.map[i][j+3]=='#' and meta.map[i+2][j]=='#')
             {
                 bool flag = true;
-                for(int _i=i; _i<=i+3 and flag; _i++)
-                    for(int _j=j; _j<=j+4 and flag; _j++)
+                for(int _i=i; _i<=i+2 and flag; _i++)
+                    for(int _j=j; _j<=j+3 and flag; _j++)
                     {
-                        if(_i==i and _j==j+4) continue;
-                        if(_i==i+3 and _j==j) continue;
+                        if(_i==i and _j==j+3) continue;
+                        if(_i==i+2 and _j==j) continue;
                         if(meta.map[_i][_j]=='#') flag = false;
                     }
                 if(flag)
                 {
-                    auto a = get_center(i, j+4);
-                    auto b = get_center(i+3, j);
+                    auto a = get_center(i, j+3);
+                    auto b = get_center(i+2, j);
                     skip_line.emplace_back(Vertex{a.x+0.25, a.y-0.25}, Vertex{b.x-0.25, b.y+0.25});
                 }
             }
@@ -427,23 +427,23 @@ void get_skip_line()
         ...
         #..
     */
-    for(int i=1; i+3<=Map::width; i++)
-        for(int j=1; j+4<=Map::height; j++)
+    for(int i=1; i+2<=Map::width; i++)
+        for(int j=1; j+3<=Map::height; j++)
         {
             if(meta.map[i][j]=='#' and meta.map[i+3][j+4]=='#')
             {
                 bool flag = true;
-                for(int _i=i; _i<=i+3 and flag; _i++)
-                    for(int _j=j; _j<=j+4 and flag; _j++)
+                for(int _i=i; _i<=i+2 and flag; _i++)
+                    for(int _j=j; _j<=j+3 and flag; _j++)
                     {
                         if(_i==i and _j==j) continue;
-                        if(_i==i+3 and _j==j+4) continue;
+                        if(_i==i+2 and _j==j+3) continue;
                         if(meta.map[_i][_j]=='#') flag = false;
                     }
                 if(flag)
                 {
                     auto a = get_center(i, j);
-                    auto b = get_center(i+3, j+4);
+                    auto b = get_center(i+2, j+3);
                     skip_line.emplace_back(Vertex{a.x+0.25, a.y+0.25}, Vertex{b.x-0.25, b.y-0.25});
                 }
             }
