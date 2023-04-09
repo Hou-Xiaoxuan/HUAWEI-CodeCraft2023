@@ -13,6 +13,20 @@
 /*clangd的傻逼bug，main.cpp里的第一个函数不能被识别*/
 void sb_clangd() { }
 
+void specific_args()
+{
+
+    // 正式赛
+    if (meta.station[1].loc.x == 25.25 and meta.station[1].loc.y == 49.25 and meta.station[2].loc.x == 4.25
+        and meta.station[2].loc.y == 48.75)
+    {
+        Args::turn_cost = 5;
+        Args::distance_factor = 1;
+        int stop_frame_bias = 100;
+        double deeper_profit_ratio = 0.5;
+        double super_demand_ratio = 0.4;
+    }
+}
 void robot()
 {
     io::init(std::cin);
