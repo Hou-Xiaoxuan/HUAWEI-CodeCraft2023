@@ -100,8 +100,7 @@ vector<Vertex> get_ori_path()
 
             if (meta.map[nx][ny] == '#') continue;
 
-            auto &npre = pre[nx][ny];
-            if (npre.index_x != -1) continue;
+            if (pre[nx][ny].index_x != -1) continue;
 
             bool is_skip = false;
             Vertex skip_center;
@@ -119,6 +118,15 @@ vector<Vertex> get_ori_path()
                 Pos tmp_pos = current_pos(ncenter);
                 nx = tmp_pos.index_x;
                 ny = tmp_pos.index_y;
+                if (meta.map[nx][ny] == '#')
+                {
+                    cerr << "[error][find_ori_path]"
+                         << "skip error " << nx << " " << ny << endl;
+                    continue;
+                }
+
+                auto &npre = pre[nx][ny];
+                if (npre.index_x != -1) continue;
             }
             else
             {
@@ -157,7 +165,7 @@ vector<Vertex> get_ori_path()
             }
 
             Pos npos = {nx, ny, ncenter};
-            npre = now_pos.first;
+            pre[nx][ny] = now_pos.first;
             que.push({npos, now_pos.second + 1});
             que_bak.push(npos);
         }
@@ -313,12 +321,6 @@ vector<Vertex> find_path(const Vertex &_start, const Vertex &_target, bool _have
     target = _target;
     have_good = _have_good;
     const auto &ori_path = get_ori_path();
-    if (_USE_LOG_)
-    {
-        for (auto &p : ori_path)
-            cerr << p << "->";
-        cerr << endl;
-    }
     const auto &smooth_path = get_smooth_path(ori_path);
     return smooth_path;
 }
@@ -425,8 +427,7 @@ find_shelter_path(const vector<Vertex> &sub_path, const vector<vector<Vertex>> &
 
             if (meta.map[nx][ny] == '#') continue;
 
-            auto &npre = pre[nx][ny];
-            if (npre.index_x != -1) continue;
+            if (pre[nx][ny].index_x != -1) continue;
 
             bool is_skip = false;
             Vertex skip_center;
@@ -482,7 +483,7 @@ find_shelter_path(const vector<Vertex> &sub_path, const vector<vector<Vertex>> &
             // 偏移起点和终点之外所有点
             Pos npos = {nx, ny, ncenter};
 
-            npre = now_pos.first;
+            pre[nx][ny] = now_pos.first;
             que.push({npos, now_pos.second + 1});
             que_bak.push(npos);
         }

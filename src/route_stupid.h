@@ -452,7 +452,16 @@ void init()
                 for (int k = 1; k < meta.robot.size(); k++)
                 {
                     auto path = find_path(meta.robot[k].loc, meta.station[i].loc, false);
-                    if (path.empty()) continue;
+                    if (path.empty())
+                    {
+                        if (_USE_LOG_)
+                        {
+                            cerr << "[waring][route_stupid init] robot " << k
+                                 << " can't reach station class " << i << endl;
+                        }
+                        continue;
+                    }
+
                     // 合并
                     for (auto &route : tmp_area.routes)
                     {
