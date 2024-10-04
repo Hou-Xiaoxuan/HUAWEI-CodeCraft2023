@@ -4,9 +4,7 @@
 #include "nav_model.h"
 #include "trans_map.h"
 #include <algorithm>
-#include <optional>
 #include <queue>
-#include <unordered_map>
 #include <vector>
 
 namespace find_path_square

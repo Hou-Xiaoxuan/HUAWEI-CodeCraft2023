@@ -1,5 +1,6 @@
 #ifndef _NVV_MODEL_H_
 #define _NVV_MODEL_H_
+#include "args.h"
 #include "model.h"
 #include <algorithm>
 #include <cmath>

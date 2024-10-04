@@ -1,9 +1,9 @@
 #ifndef __IOINTERFACE_H__
 #define __IOINTERFACE_H__
+#include "args.h"
 #include "const.h"
 #include "model.h"
 #include <iostream>
-#include <map>
 #include <vector>
 
 

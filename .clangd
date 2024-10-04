@@ -11,6 +11,7 @@ Diagnostics:
             bugprone-easily-swappable-parameters, # 易错参数
             modernize-use-trailing-return-type, # 返回值类型
             modernize-use-nodiscard, # 忽略返回值
+            performance-avoid-endl, # 避免使用endl
             # 不知道是啥
         ]
 CompileFlags:
